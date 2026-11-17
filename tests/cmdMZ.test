@@ -214,6 +214,9 @@ test cmdMZ-return-2.21 {return option handling} {
 # Check that the result of a [return -options $opts $result] is
 # indistinguishable from that of the originally caught script, no matter what
 # the script is/does. (TIP 90)
+# Make sure ::errorCode and ::errorInfo exist when these tests run alone.
+set ::errorCode NONE
+set ::errorInfo {}
 foreach {testid script} {
     cmdMZ-return-3.0 {}
     cmdMZ-return-3.1 {format x}

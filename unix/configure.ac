@@ -36,7 +36,10 @@ EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
 # Setup configure arguments for bundled packages
 #------------------------------------------------------------------------
 
-PKG_CFG_ARGS="$ac_configure_args ${PKG_CFG_ARGS}"
+# Tcl's own --srcdir must not be passed on: the packages find their sources
+# from the (absolute) path used to run their configure scripts.
+PKG_CFG_ARGS="`echo "$ac_configure_args" | sed \
+    -e "s/'--*srcdir=[[^']]*'//g" -e "s/'--*srcdir' '[[^']]*'//g"` ${PKG_CFG_ARGS}"
 
 if test -r "$cache_file" -a -f "$cache_file"; then
     case $cache_file in
@@ -457,22 +460,6 @@ AC_CACHE_CHECK([for gettimeofday declaration], tcl_cv_grep_gettimeofday, [
 	tcl_cv_grep_gettimeofday=present, tcl_cv_grep_gettimeofday=missing)])
 if test $tcl_cv_grep_gettimeofday = missing ; then
     AC_DEFINE(GETTOD_NOT_DECLARED, 1, [Is gettimeofday() actually declared in <sys/time.h>?])
-fi
-
-#--------------------------------------------------------------------
-#	The following code checks to see whether it is possible to get
-#	signed chars on this platform.  This is needed in order to
-#	properly generate sign-extended ints from character values.
-#--------------------------------------------------------------------
-
-AC_C_CHAR_UNSIGNED
-AC_CACHE_CHECK([signed char declarations], tcl_cv_char_signed, [
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-	signed char *p;
-	p = 0;
-	]])],[tcl_cv_char_signed=yes],[tcl_cv_char_signed=no])])
-if test $tcl_cv_char_signed = yes; then
-    AC_DEFINE(HAVE_SIGNED_CHAR, 1, [Are characters signed?])
 fi
 
 #--------------------------------------------------------------------

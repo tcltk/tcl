@@ -2028,8 +2028,15 @@ ConvertLocalToUTCUsingTable(
 	if ((row == NULL)
 		|| TclListObjGetElements(interp, row, &cellc,
 		    &cellv) != TCL_OK
-		|| TclGetIntFromObj(interp, cellv[1],
-		    &fields->tzOffset) != TCL_OK) {
+		|| ((cellc > 1) && (TclGetIntFromObj(interp, cellv[1],
+		    &fields->tzOffset) != TCL_OK))) {
+	    return TCL_ERROR;
+	}
+	if (cellc < 4) {
+	malformed:
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "malformed time zone data", TCL_AUTO_LENGTH));
+	    Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 	    return TCL_ERROR;
 	}
 	for (i = 0; i < nHave; ++i) {
@@ -2038,7 +2045,7 @@ ConvertLocalToUTCUsingTable(
 	    }
 	}
 	if (nHave == 8) {
-	    Tcl_Panic("loop in ConvertLocalToUTCUsingTable");
+	    goto malformed;
 	}
 	have[nHave].tzName = cellv[3];
 	have[nHave++].tzOffset = fields->tzOffset;
@@ -2168,7 +2175,13 @@ TclConvertUTCToLocal(
 
 	    tzdata = ClockGetTZData(dataPtr, interp, timezoneObj);
 	    if (TclListObjGetElements(interp, tzdata, &rowc, &rowv) != TCL_OK
-		    || Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK) {
+		    || ((rowc > 0) && Tcl_ListObjIndex(interp, rowv[0], 3, &tzName) != TCL_OK)) {
+		return TCL_ERROR;
+	    }
+	    if (!rowc) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"malformed time zone data", TCL_AUTO_LENGTH));
+		Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 		return TCL_ERROR;
 	    }
 	    TclSetObjRef(dataPtr->gmtTZName, tzName);
@@ -2296,7 +2309,13 @@ ConvertUTCToLocalUsingTable(
     row = TclClockLookupLastTransition(interp, fields->seconds, rowc, rowv, rangesVal);
     if (row == NULL
 	    || TclListObjGetElements(interp, row, &cellc, &cellv) != TCL_OK
-	    || TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK) {
+	    || ((cellc > 1) && (TclGetIntFromObj(interp, cellv[1], &fields->tzOffset) != TCL_OK))) {
+	return TCL_ERROR;
+    }
+    if (cellc < 4) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"malformed time zone data", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 	return TCL_ERROR;
     }
 
@@ -2432,7 +2451,14 @@ TclClockLookupLastTransition(
      */
 
     if (Tcl_ListObjIndex(interp, rowv[0], 0, &compObj) != TCL_OK
-	    || TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+	    || (compObj && (TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK))) {
+	return NULL;
+    }
+    if (!compObj) {
+    malformed:
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"malformed time zone data", TCL_AUTO_LENGTH));
+	Tcl_SetErrorCode(interp, "CLOCK", "malformedTimeZoneData", (char *)NULL);
 	return NULL;
     }
 
@@ -2459,8 +2485,11 @@ TclClockLookupLastTransition(
 	Tcl_Size m = (l + u + 1) / 2;
 
 	if (Tcl_ListObjIndex(interp, rowv[m], 0, &compObj) != TCL_OK ||
-		TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK) {
+		(compObj && (TclGetWideIntFromObj(interp, compObj, &compVal) != TCL_OK))) {
 	    return NULL;
+	}
+	if (!compObj) {
+	    goto malformed;
 	}
 	if (tick >= compVal) {
 	    l = m;
@@ -2516,8 +2545,14 @@ GetYearWeekDay(
     GetGregorianEraYearDay(&temp, changeover);
     if (temp.flags & CLF_BCE) {
 	temp.iso8601Year = temp.year - 1;
-    } else {
+    } else if (temp.year < INT_MAX) {
 	temp.iso8601Year = temp.year + 1;
+    } else {
+	/*
+	 * The ISO8601 year after INT_MAX cannot be represented; the day of
+	 * week is still calculated correctly. [f894a85b9a]
+	 */
+	temp.iso8601Year = INT_MAX;
     }
     temp.iso8601Week = 1;
     temp.dayOfWeek = 1;
@@ -2761,7 +2796,8 @@ GetJulianDayFromEraYearWeekDay(
      * Advance to the given week and day.
      */
 
-    fields->julianDay = firstMonday + 7 * (fields->iso8601Week - 1)
+    fields->julianDay = firstMonday
+	    + 7 * ((Tcl_WideInt)fields->iso8601Week - 1)
 	    + fields->dayOfWeek - 1;
     if (fields->julianDay >= changeover) {
 	fields->flags &= ~CLF_BGREG;
@@ -2792,11 +2828,17 @@ GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    Tcl_WideInt ym1, ym1o4, ym1o100, ym1o400;
-    int year, month, mm1, q, r;
+    /*
+     * The year and the month can be anywhere in the int range (the month is
+     * not validated in all cases), so calculate in Tcl_WideInt.
+     * [f894a85b9a]
+     */
+
+    Tcl_WideInt year, mm1, q, ym1, ym1o4, ym1o100, ym1o400;
+    int month, r;
 
     if (fields->flags & CLF_BCE) {
-	year = 1 - fields->year;
+	year = 1 - (Tcl_WideInt)fields->year;
     } else {
 	year = fields->year;
     }
@@ -2805,10 +2847,9 @@ GetJulianDayFromEraYearMonthDay(
      * Reduce month modulo 12.
      */
 
-    month = fields->month;
-    mm1 = month - 1;
+    mm1 = (Tcl_WideInt)fields->month - 1;
     q = mm1 / 12;
-    r = (mm1 % 12);
+    r = (int)(mm1 % 12);
     if (r < 0) {
 	r += 12;
 	q -= 1;
@@ -2818,16 +2859,18 @@ GetJulianDayFromEraYearMonthDay(
     ym1 = year - 1;
 
     /*
-     * Adjust the year after reducing the month.
+     * Adjust the year after reducing the month. A year that does not fit
+     * into an int is clamped; the julian day is still calculated correctly
+     * from the unclamped year.
      */
 
     fields->flags &= ~CLF_BGREG;
     if (year < 1) {
 	fields->flags |= CLF_BCE;
-	fields->year = 1 - year;
+	fields->year = (1 - year > INT_MAX) ? INT_MAX : (int)(1 - year);
     } else {
 	fields->flags &= ~CLF_BCE;
-	fields->year = year;
+	fields->year = (year > INT_MAX) ? INT_MAX : (int)year;
     }
 
     /*
@@ -2844,7 +2887,7 @@ GetJulianDayFromEraYearMonthDay(
     if (ym1 >= 0) {
 	ym1o4 = ym1 / 4;
     } else {
-	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+	ym1o4 = - (Tcl_WideInt) (((Tcl_WideUInt) -ym1) / 4);
     }
 #endif
     if (ym1 % 4 < 0) {
@@ -2859,8 +2902,9 @@ GetJulianDayFromEraYearMonthDay(
 	ym1o400--;
     }
     fields->julianDay = JDAY_1_JAN_1_CE_GREGORIAN - 1
-	    + fields->dayOfMonth
-	    + daysInPriorMonths[TclIsGregorianLeapYear(fields)][month - 1]
+	    + (Tcl_WideInt)fields->dayOfMonth
+	    + daysInPriorMonths[year % 4 == 0
+		    && (year % 100 != 0 || year % 400 == 0)][month - 1]
 	    + (ONE_YEAR * ym1)
 	    + ym1o4
 	    - ym1o100
@@ -2874,7 +2918,7 @@ GetJulianDayFromEraYearMonthDay(
     if (fields->julianDay < changeover) {
 	fields->flags |= CLF_BGREG;
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
-		+ fields->dayOfMonth
+		+ (Tcl_WideInt)fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
 		+ (ONE_YEAR * ym1)
 		+ ym1o4;
@@ -4051,6 +4095,116 @@ ClockValidDate(
     return TCL_ERROR;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * InvalidYearError --
+ *
+ *	Sets the error for a free-form scanned date whose year cannot be
+ *	represented.
+ *
+ * Results:
+ *	TCL_ERROR.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InvalidYearError(
+    Tcl_Interp *interp)
+{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "unable to convert input string: invalid year", -1));
+    Tcl_SetErrorCode(interp, "CLOCK", "invInpStr", "year", (char *)NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RelTimeRangeError --
+ *
+ *	Sets the error for a date that gets out of range after adding a
+ *	relative time, in [clock scan] or [clock add].
+ *
+ * Results:
+ *	TCL_ERROR.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+RelTimeRangeError(
+    ClockFmtScnCmdArgs *opts)
+{
+    if (opts->flags & CLF_CLOCK_ADD) {
+	Tcl_SetObjResult(opts->interp,
+		opts->dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
+	return TCL_ERROR;
+    }
+    return InvalidYearError(opts->interp);
+}
+
+/*
+ * The year calculated from a julian day must fit into an int, so keep the
+ * day within the range of the clock seconds. [f894a85b9a]
+ */
+
+static inline int
+JulianDayInRange(
+    Tcl_WideInt julianDay)
+{
+    return julianDay >= JULIAN_DAY_POSIX_EPOCH
+	    + TCL_MIN_SECONDS / SECONDS_PER_DAY
+	    && julianDay <= JULIAN_DAY_POSIX_EPOCH
+	    + TCL_MAX_SECONDS / SECONDS_PER_DAY;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAstroYear, SetAstroYear --
+ *
+ *	Get and set the year of a date as an astronomical year (1 B.C.E. is
+ *	0, 2 B.C.E. is -1, etc.), so that relative years can be added to it.
+ *	SetAstroYear sets the era and checks that the year of the era fits
+ *	into an int.
+ *
+ * Results:
+ *	GetAstroYear returns the year, SetAstroYear a standard Tcl result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline Tcl_WideInt
+GetAstroYear(
+    const TclDateFields *fields)
+{
+    if (fields->flags & CLF_BCE) {
+	return 1 - (Tcl_WideInt)fields->year;
+    }
+    return (Tcl_WideInt)fields->year;
+}
+
+static int
+SetAstroYear(
+    ClockFmtScnCmdArgs *opts,
+    TclDateFields *fields,
+    Tcl_WideInt year)
+{
+    if (year < 1 - (Tcl_WideInt)INT_MAX || year > INT_MAX) {
+	return RelTimeRangeError(opts);
+    }
+    if (year < 1) {
+	fields->flags |= CLF_BCE;
+	fields->year = (int)(1 - year);
+    } else {
+	fields->flags &= ~CLF_BCE;
+	fields->year = (int)year;
+    }
+    return TCL_OK;
+}
+
 /*----------------------------------------------------------------------
  *
  * ClockFreeScan --
@@ -4087,12 +4241,23 @@ ClockFreeScan(
      */
     yyInput = TclGetString(strObj);
 
+    info->dateYear = (Tcl_WideInt)yyYear;
     if (TclClockFreeScan(interp, info) != TCL_OK) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to convert date-time string \"%s\": %s",
 		TclGetString(strObj), Tcl_GetString(Tcl_GetObjResult(interp))));
 	return TCL_ERROR;
     }
+
+    /*
+     * The parser stores the year as a Tcl_WideInt; a year that does not fit
+     * into an int cannot be represented. [f894a85b9a]
+     */
+
+    if (info->dateYear < INT_MIN || info->dateYear > INT_MAX) {
+	return InvalidYearError(interp);
+    }
+    yyYear = (int) info->dateYear;
 
     /*
      * If the caller supplied a date in the string, update the date with
@@ -4229,7 +4394,8 @@ ClockCalcRelTime(
     /* add relative months (or years in months) */
 
     if (yyRelMonth != 0) {
-	int m, h;
+	int h;
+	Tcl_WideInt year, m;
 
 	/* if needed extract year, month, etc. again */
 	if (info->flags & CLF_ASSEMBLE_DATE) {
@@ -4239,16 +4405,24 @@ ClockCalcRelTime(
 	    info->flags &= ~CLF_ASSEMBLE_DATE;
 	}
 
-	/* add the requisite number of months */
-	yyMonth += (int)yyRelMonth - 1;
-	yyYear += yyMonth / 12;
-	m = yyMonth % 12;
+	/*
+	 * Add the requisite number of months to the astronomical year. The
+	 * relative count is a Tcl_WideInt, and without validation the month
+	 * can be out of range, so calculate in Tcl_WideInt. [f894a85b9a]
+	 */
+	year = GetAstroYear(&yydate) + yyRelMonth / 12;
+	m = (Tcl_WideInt)yyMonth - 1 + yyRelMonth % 12;
+	year += m / 12;
+	m %= 12;
 	/* compiler fix for signed-mod - wrap y, m = (0, -1) -> (-1, 11) */
 	if (m < 0) {
 	    m += 12;
-	    yyYear--;
+	    year--;
 	}
-	yyMonth = m + 1;
+	if (SetAstroYear(opts, &yydate, year) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	yyMonth = (int)m + 1;
 
 	/* if the day doesn't exist in the current month, repair it */
 	h = hath[TclIsGregorianLeapYear(&yydate)][m];
@@ -4270,6 +4444,9 @@ ClockCalcRelTime(
 	    info->flags &= ~CLF_ASSEMBLE_JULIANDAY;
 	}
 	yydate.julianDay += yyRelDay;
+	if (!JulianDayInRange(yydate.julianDay)) {
+	    return RelTimeRangeError(opts);
+	}
 
 	/* julianDay was changed, on demand (lazy) extract year, month, etc. again */
 	info->flags |= CLF_ASSEMBLE_DATE | CLF_ASSEMBLE_SECONDS;
@@ -4304,7 +4481,10 @@ ClockCalcRelTime(
 	}
 
 	/* process it further via relative times */
-	yyYear += yyMonthOrdinalIncr;
+	if (SetAstroYear(opts, &yydate,
+		GetAstroYear(&yydate) + yyMonthOrdinalIncr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
 	yyRelMonth += monthDiff;
 	info->flags &= ~CLF_ORDINALMONTH;
 	info->flags |= CLF_ASSEMBLE_JULIANDAY|CLF_ASSEMBLE_SECONDS;
@@ -4329,6 +4509,9 @@ ClockCalcRelTime(
 		+ 7 * yyDayOrdinal;
 	if (yyDayOrdinal > 0) {
 	    yydate.julianDay -= 7;
+	}
+	if (!JulianDayInRange(yydate.julianDay)) {
+	    return RelTimeRangeError(opts);
 	}
 	info->flags |= CLF_ASSEMBLE_DATE|CLF_ASSEMBLE_SECONDS;
     }
@@ -4405,12 +4588,13 @@ ClockCalcRelTime(
  *----------------------------------------------------------------------
  */
 
-static inline int
+static inline Tcl_WideInt
 ClockWeekdaysOffs(
     int dayOfWeek,
-    int offs)
+    Tcl_WideInt offs)
 {
-    int weeks, resDayOfWeek;
+    Tcl_WideInt weeks;
+    int resDayOfWeek;
 
     /* offset in days */
     weeks = offs / 5;
@@ -4424,7 +4608,7 @@ ClockWeekdaysOffs(
 
     /* resulting day of week */
     {
-	int day = (offs % 7);
+	int day = (int)(offs % 7);
 
 	/* compiler fix for negative offs - wrap (0, -1) -> (-1, 6) */
 	if (day < 0) {
@@ -4520,7 +4704,7 @@ ClockAddObjCmd(
     };
     int unitIndex = CLC_ADD_SECONDS;	/* Index of an option. */
     Tcl_Size i;
-    Tcl_WideInt offs;
+    Tcl_WideInt offs, maxOffs;
 
     /* even number of arguments */
     if ((objc & 1) == 1) {
@@ -4541,6 +4725,7 @@ ClockAddObjCmd(
     if (ret != TCL_OK) {
 	goto done;
     }
+    opts.flags |= CLF_CLOCK_ADD;
 
     /* time together as seconds of the day */
     yySecondOfDay = yydate.localSeconds % SECONDS_PER_DAY;
@@ -4569,9 +4754,16 @@ ClockAddObjCmd(
 		&unitIndex) != TCL_OK) {
 	    goto done;
 	}
+	/*
+	 * Limit the offset, so that converting it to seconds cannot
+	 * overflow. [f894a85b9a]
+	 */
+	maxOffs = unitIndex < CLC_ADD_HOURS ? 0x7fffffff
+		: unitIndex == CLC_ADD_HOURS ? TCL_MAX_SECONDS / 3600
+		: unitIndex == CLC_ADD_MINUTES ? TCL_MAX_SECONDS / 60
+		: TCL_MAX_SECONDS;
 	if (TclHasInternalRep(objv[i], &tclBignumType)
-		|| offs > (unitIndex < CLC_ADD_HOURS ? 0x7fffffff : TCL_MAX_SECONDS)
-		|| offs < (unitIndex < CLC_ADD_HOURS ? -0x7fffffff : TCL_MIN_SECONDS)) {
+		|| offs > maxOffs || offs < -maxOffs) {
 	    Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	    goto done;
 	}
@@ -4592,35 +4784,38 @@ ClockAddObjCmd(
 	    }
 	}
 
-	/* process increment by offset + unit */
+	/*
+	 * Process increment by offset + unit. The sums are clamped, so that
+	 * many offsets cannot overflow them. [f894a85b9a]
+	 */
 	switch (unitIndex) {
 	case CLC_ADD_YEARS:
-	    yyRelMonth += offs * 12;
+	    yyRelMonth = RelClamp(yyRelMonth + offs * 12);
 	    break;
 	case CLC_ADD_MONTHS:
-	    yyRelMonth += offs;
+	    yyRelMonth = RelClamp(yyRelMonth + offs);
 	    break;
 	case CLC_ADD_WEEK:
 	case CLC_ADD_WEEKS:
-	    yyRelDay += offs * 7;
+	    yyRelDay = RelClamp(yyRelDay + offs * 7);
 	    break;
 	case CLC_ADD_DAYS:
-	    yyRelDay += offs;
+	    yyRelDay = RelClamp(yyRelDay + offs);
 	    break;
 	case CLC_ADD_WEEKDAYS:
 	    /* add number of week days (skipping Saturdays and Sundays)
 	     * to a relative days value. */
-	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, (int)offs);
-	    yyRelDay += offs;
+	    offs = ClockWeekdaysOffs(yy.date.dayOfWeek, offs);
+	    yyRelDay = RelClamp(yyRelDay + offs);
 	    break;
 	case CLC_ADD_HOURS:
-	    yyRelSeconds += offs * 60 * 60;
+	    yyRelSeconds = RelClamp(yyRelSeconds + offs * 60 * 60);
 	    break;
 	case CLC_ADD_MINUTES:
-	    yyRelSeconds += offs * 60;
+	    yyRelSeconds = RelClamp(yyRelSeconds + offs * 60);
 	    break;
 	case CLC_ADD_SECONDS:
-	    yyRelSeconds += offs;
+	    yyRelSeconds = RelClamp(yyRelSeconds + offs);
 	    break;
 	default:
 	    TCL_UNREACHABLE();
@@ -4644,6 +4839,17 @@ ClockAddObjCmd(
     /* Convert date info structure into UTC seconds */
 
     ret = ClockScanCommit(&yy, &opts);
+
+    /*
+     * The result must be in the same range as the base (this also rejects
+     * the clamped sums of offsets). [f894a85b9a]
+     */
+
+    if (ret == TCL_OK && (yy.date.seconds < TCL_MIN_SECONDS
+	    || yy.date.seconds > TCL_MAX_SECONDS)) {
+	Tcl_SetObjResult(interp, dataPtr->literals[LIT_INTEGER_VALUE_TOO_LARGE]);
+	ret = TCL_ERROR;
+    }
 
   done:
     TclUnsetObjRef(yy.date.tzName);

@@ -146,7 +146,7 @@ if "%debug%" == "" (
     set "debugOpts=-Zi -Od"
 )
 
-nmake /s /nologo /f makefile.vc OUT_DIR=%outDir% TMP_DIR=outDir%\objs OPTS=pdbs,%2 cdebug="%debugOpts%" INSTALLDIR=%INSTROOT%-%1 %TARGETS% || goto error
+nmake /s /nologo /f makefile.vc OUT_DIR=%outDir% TMP_DIR=%outDir%\objs OPTS=pdbs,%2 cdebug="%debugOpts%" INSTALLDIR=%INSTROOT%-%1 %TARGETS% || goto error
 echo Build binaries in %outDir%
 goto :eof
 
