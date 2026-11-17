@@ -1084,7 +1084,7 @@ ReflectInput(
     rtPtr->readIsDrained = 0;
     while (toRead > 0) {
 	/*
-	 * Loop until the request is satisfied (or no data available from
+	 * Loop until some data is available (or no data available from
 	 * below, possibly EOF).
 	 */
 
@@ -1093,7 +1093,12 @@ ReflectInput(
 	buf += copied;
 	gotBytes += copied;
 
-	if (toRead == 0) {
+	if (gotBytes > 0) {
+	    /*
+	     * Return a short read rather than read the parent again: in
+	     * blocking mode that read waits for more data. [Bug d48728e10b]
+	     */
+
 	    goto stop;
 	}
 

@@ -322,6 +322,31 @@ test notify-2.15 {remove and replace marker event at middle} \
     } \
     -result {one four three}
 
+test notify-3.1 {Tcl_DeleteEventSource from a setup proc, bug [055240025a]} \
+    -constraints {testevent} \
+    -body {
+	testevent deletesource setup
+    } \
+    -result 0
+test notify-3.2 {Tcl_DeleteEventSource from a check proc, bug [055240025a]} \
+    -constraints {testevent} \
+    -body {
+	testevent deletesource check
+    } \
+    -result 0
+test notify-3.3 {Tcl_DeleteEventSource from a setup proc in Tcl_ServiceAll} \
+    -constraints {testevent} \
+    -body {
+	testevent deletesource setup serviceall
+    } \
+    -result 0
+test notify-3.4 {Tcl_DeleteEventSource from a check proc in Tcl_ServiceAll} \
+    -constraints {testevent} \
+    -body {
+	testevent deletesource check serviceall
+    } \
+    -result 0
+
 # cleanup
 ::tcltest::cleanupTests
 return

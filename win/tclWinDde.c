@@ -1458,6 +1458,8 @@ DdeObjCmd(
 	    }
 	    break;
 	}
+    default:
+	TCL_UNREACHABLE();
     }
 
     Initialize();
@@ -1913,7 +1915,10 @@ DdeObjCmd(
 		Tcl_DecrRefCount(resultPtr);
 	    }
 	}
+	break;
     }
+    default:
+	TCL_UNREACHABLE();
     }
 
   cleanup:
