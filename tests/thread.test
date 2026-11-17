@@ -1485,6 +1485,20 @@ test thread-9.1 {transfer of a channel from its own file event handler} -constra
 	vwait forever
     }
 } -result ok
+test thread-9.2 {create a thread when stdin is closed} -constraints {
+    testthread stdio
+} -setup {
+    set script [makeFile {
+	close stdin
+	set t [testthread create {testthread wait}]
+	puts [testthread send $t {expr {6 * 7}}]
+    } closedstdin.tcl]
+} -body {
+    exec [interpreter] $script
+} -cleanup {
+    removeFile closedstdin.tcl
+    unset -nocomplain script
+} -result 42
 
 # cleanup
 ::tcltest::cleanupTests
