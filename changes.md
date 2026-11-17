@@ -87,19 +87,20 @@ to the userbase.
  - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
  - [MS-Win: fix exec+wish call of batch files with spaces in path or arguments](https://core.tcl-lang.org/tcl/tktview/f91ab723f3)
  - [Tcl_ListObjReplace() and oo:define LIST_MAX overflow error handling](https://core.tcl-lang.org/tcl/tktview/40f628e8e3)
- - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tctview/7b0e690b70)
- - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tctview/4d3f21)
- - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tctview/f1a25e)
+ - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tktview/7b0e690b70)
+ - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tktview/4d3f21)
+ - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tktview/f1a25e)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
+ - itcl 4.3.9
  - msgcat 1.7.2
  - platform 1.1.2
  - sqlite3 3.54.1
  - tcltest 2.6.1
  - tcl::idna 1.0.2
  - tcltest 2.6.0
- - Thread 3.0.7
+ - thread 3.0.7
  - tzdata 2026f
  - Unicode 18.0.0
  - zlib 1.4.0
