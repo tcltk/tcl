@@ -28,7 +28,7 @@ In the simplest case there is one loop variable, \fIvarname\fR, and one list,
 element to \fIvarname\fR as if the \fBlindex\fR command had been used to
 extract the element, then calls the Tcl interpreter to execute \fIbody\fR.
 If execution of the script completes normally and produces a true value,
-that element of \fIlist\fR is appended to an accumulator list. \fBlmap\fR
+that element of \fIlist\fR is appended to an accumulator list. \fBlfilter\fR
 returns the accumulator list.
 .PP
 In the general case there can be more than one value list (e.g., \fIlist1\fR

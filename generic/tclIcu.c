@@ -899,6 +899,8 @@ IcuNormalizeUCharDString(
     case MODE_NFKD:
 	fn = unorm2_getNFKDInstance;
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     if (fn == NULL || unorm2_normalize == NULL) {
 	return FunctionNotAvailableError(interp);
