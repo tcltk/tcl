@@ -85,13 +85,14 @@ to the userbase.
  - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
  - [MS-Win: fix exec+wish call of batch files with spaces in path or arguments](https://core.tcl-lang.org/tcl/tktview/f91ab7)
  - [Tcl_ListObjReplace() and oo:define LIST_MAX overflow error handling](https://core.tcl-lang.org/tcl/tktview/40f628)
- - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tctview/7b0e69)
- - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tctview/4d3f21)
- - [under Tk, runAllTests exited with status 0 before reporting errors](https://core.tcl-lang.org/tcl/tctview/7abc14)
- - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tctview/f1a25e)
+ - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tktview/7b0e69)
+ - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tktview/4d3f21)
+ - [under Tk, runAllTests exited with status 0 before reporting errors](https://core.tcl-lang.org/tcl/tktview/7abc14)
+ - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tktview/f1a25e)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
+ - itcl 4.3.9
  - msgcat 1.7.2
  - sqlite3 3.54.1
  - tcltest 2.6.1
