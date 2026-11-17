@@ -21,7 +21,7 @@ catch [list package require -exact tcl::test [info patchlevel]]
 
 testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint testasync [llength [info commands testasync]]
-testConstraint knownMsvcBug [expr {[tcl::build-info msvc]>0}]
+testConstraint knownMsvcBug [expr {![tcl::build-info msvc]}]
 
 proc async1 {result code} {
     global aresult acode
@@ -222,6 +222,22 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
     after 100
     testasync delete $hm
 }
+
+test async-5.1 {async handler invoked from the event loop, without interp} -constraints {
+    testasync thread
+} -setup {
+    set hm [testasync create async1]
+} -body {
+    # The handler fires while waiting in [vwait], where Tcl_AsyncInvoke() is
+    # called with NULL interp.
+    testasync marklater $hm
+    after 500 {set ::done 1}
+    vwait ::done
+    return ok
+} -cleanup {
+    testasync delete $hm
+    unset -nocomplain ::done
+} -result ok
 
 # cleanup
 if {[testConstraint testasync]} {

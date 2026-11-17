@@ -652,6 +652,97 @@ test namespace-12.1 {InvokeImportedCmd} {
     }
     list [test_ns_import::cmd1]
 } {::test_ns_export}
+test namespace-12.2 {compiled imported command redefined, Bug 7b51dbf6ca} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    namespace eval test_ns_export {
+	namespace export cmd1
+	proc cmd1 {args} {}
+    }
+    namespace eval test_ns_import {
+	namespace import ::test_ns_export::cmd1
+	proc p {} {cmd1 x}
+    }
+} -body {
+    set l [list [test_ns_import::p]]
+    proc test_ns_export::cmd1 {args} {return "cmd1 $args"}
+    lappend l [test_ns_import::p]
+} -cleanup {
+    namespace delete test_ns_export test_ns_import
+} -result {{} {cmd1 x}}
+test namespace-12.3 {compiled imported command replaced, Bug 7b51dbf6ca} -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	namespace eval test_ns_import {
+	    namespace import ::tcl::mathop::+
+	    proc p {} {+ 1 2}
+	}
+	set l [list [test_ns_import::p]]
+	proc ::tcl::mathop::+ {args} {return "+ $args"}
+	lappend l [test_ns_import::p]
+    }
+} -cleanup {
+    interp delete $i
+    unset i
+} -result {3 {+ 1 2}}
+test namespace-12.4 {compiled import of an import redefined, Bug 7b51dbf6ca} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    namespace eval test_ns_export {
+	namespace export cmd1
+	proc cmd1 {args} {}
+    }
+    namespace eval test_ns_middle {
+	namespace import ::test_ns_export::cmd1
+	namespace export cmd1
+    }
+    namespace eval test_ns_import {
+	namespace import ::test_ns_middle::cmd1
+	proc p {} {cmd1 x}
+    }
+} -body {
+    set l [list [test_ns_import::p]]
+    proc test_ns_export::cmd1 {args} {return "cmd1 $args"}
+    lappend l [test_ns_import::p]
+} -cleanup {
+    namespace delete test_ns_export test_ns_middle test_ns_import
+} -result {{} {cmd1 x}}
+test namespace-12.5 {compiled imported command deleted, Bug 7b51dbf6ca} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    namespace eval test_ns_export {
+	namespace export cmd1
+	proc cmd1 {args} {}
+    }
+    namespace eval test_ns_import {
+	namespace import ::test_ns_export::cmd1
+	proc p {} {cmd1 x}
+    }
+} -body {
+    test_ns_import::p
+    rename test_ns_import::cmd1 {}
+    test_ns_import::p
+} -cleanup {
+    namespace delete test_ns_export test_ns_import
+} -returnCodes error -result {invalid command name "cmd1"}
+test namespace-12.6 {compiled imported command with trace, Bug 7b51dbf6ca} -setup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+    namespace eval test_ns_export {
+	namespace export cmd1
+	proc cmd1 {args} {}
+    }
+    namespace eval test_ns_import {
+	namespace import ::test_ns_export::cmd1
+	proc p {} {cmd1 x}
+    }
+    set l {}
+} -body {
+    trace add execution test_ns_import::cmd1 enter \
+	    [list apply {{args} {lappend ::l [lindex $args 0]}}]
+    test_ns_import::p
+    set l
+} -cleanup {
+    namespace delete test_ns_export test_ns_import
+    unset l
+} -result {{cmd1 x}}
 
 test namespace-13.1 {DeleteImportedCmd, deletes imported cmds} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
