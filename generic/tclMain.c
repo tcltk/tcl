@@ -281,7 +281,11 @@ Tcl_SourceRCFile(
 TCL_NORETURN void
 Tcl_MainEx(
     Tcl_Size argc,		/* Number of arguments. */
+#if defined(_WIN32) && defined(UNICODE)
+    const void *argv1,		/* Array of argument strings. */
+#else
     TCHAR **argv,		/* Array of argument strings. */
+#endif
     Tcl_AppInitProc *appInitProc,
 				/* Application-specific initialization
 				 * function to call after most initialization
@@ -295,6 +299,9 @@ Tcl_MainEx(
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
+#if defined(_WIN32) && defined(UNICODE)
+    TCHAR **argv = (TCHAR **)argv1;
+#endif
 
     if (argc > 0) {
 	--argc;			/* consume argv[0] */
