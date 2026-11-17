@@ -312,6 +312,11 @@ to the expression parser as if it had been enclosed in braces.
 Like \fBTCL_TOKEN_VARIABLE\fR, this token may appear wherever a variable
 substitution is allowed, including inside the index of an array variable and
 as an operand in an expression.
+This token is returned by \fBTcl_ParseCommand\fR, \fBTcl_ParseExpr\fR and the
+other procedures that parse a whole word or expression. It is never returned
+by \fBTcl_ParseVarName\fR, and \fBTcl_ParseVar\fR does not evaluate an
+expression substitution: these two procedures handle only variable references,
+so that the string \fBTcl_ParseVar\fR returns is always the value of a variable.
 .IP \fBTCL_TOKEN_SUB_EXPR\fR
 The token describes one subexpression of an expression
 (or an entire expression).

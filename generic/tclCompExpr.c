@@ -927,7 +927,7 @@ ParseExpr(
 		break;
 
 	    case VARIABLE:
-		code = Tcl_ParseVarName(NULL, start, numBytes, parsePtr, 1);
+		code = TclParseVarName(NULL, start, numBytes, parsePtr, 1, 1);
 
 		/*
 		 * Handle the quirk that Tcl_ParseVarName reports a successful

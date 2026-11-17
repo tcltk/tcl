@@ -4778,9 +4778,10 @@ TestparsevarCmd(
     Tcl_Obj *const *objv)	/* The argument objects. */
 {
     const char *value, *name, *termPtr;
+    const char *value2 = NULL;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName");
+    if (objc != 2 && objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName ?varName2?");
 	return TCL_ERROR;
     }
     name = Tcl_GetString(objv[1]);
@@ -4788,8 +4789,23 @@ TestparsevarCmd(
     if (value == NULL) {
 	return TCL_ERROR;
     }
+    if (objc == 3) {
+	/*
+	 * Parse a second reference while still holding the first value, and
+	 * only then use both: this is what callers of Tcl_ParseVar may rely
+	 * on.
+	 */
+
+	value2 = Tcl_ParseVar(interp, Tcl_GetString(objv[2]), NULL);
+	if (value2 == NULL) {
+	    return TCL_ERROR;
+	}
+    }
 
     Tcl_AppendElement(interp, value);
+    if (value2 != NULL) {
+	Tcl_AppendElement(interp, value2);
+    }
     Tcl_AppendElement(interp, termPtr);
     return TCL_OK;
 }

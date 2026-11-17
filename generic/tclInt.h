@@ -3639,6 +3639,9 @@ MODULE_SCOPE Tcl_Size	TclParseBackslash(const char *src,
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    const char *expected, const char *bytes,
 			    Tcl_Size numBytes, const char **endPtrPtr, int flags);
+MODULE_SCOPE int	TclParseVarName(Tcl_Interp *interp, const char *start,
+			    Tcl_Size numBytes, Tcl_Parse *parsePtr, int append,
+			    int exprSubst);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    Tcl_Size numBytes, Tcl_Parse *parsePtr);
 MODULE_SCOPE Tcl_Size	TclParseAllWhiteSpace(const char *src, Tcl_Size numBytes);

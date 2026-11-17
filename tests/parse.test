@@ -1162,12 +1162,42 @@ test parse-22.2 {expression substitution: inside a quoted word} -constraints tes
 test parse-22.3 {expression substitution: inner parentheses are part of the body} -constraints testparser -body {
     testparser {$(((1+2)*3))} 0
 } -result [string map [list %L $lp %R $rp] {- {$(((1+2)*3))} 1 word {$(((1+2)*3))} 2 exprsubst {$(((1+2)*3))} 1 text %L(1+2)*3%R 0 {}}]
-test parse-22.4 {expression substitution: Tcl_ParseVarName} -constraints testparsevarname -body {
+# Tcl_ParseVarName and Tcl_ParseVar only parse variable references. They do not
+# recognize an expression substitution, so their behaviour is what it always
+# was and a value that is only held by the interp result never reaches a C
+# caller (which could not tell how long it stays valid). The parser, the
+# compiler and "subst" do handle the expression substitution (tests above and
+# below), through an internal function.
+test parse-22.4 {expression substitution: Tcl_ParseVarName does not parse it} -constraints testparsevarname -body {
     testparsevarname {$((1+(2*3)))z} 20 0
-} -result [string map [list %L $lp %R $rp] {- {} 0 exprsubst {$((1+(2*3)))} 1 text %L1+(2*3)%R 0 z}]
-test parse-22.5 {expression substitution: Tcl_ParseVar result stays valid} testparsevar {
-    lindex [testparsevar {$((7*6))z}] 0
-} 42
+} -returnCodes error -result {invalid character in array index}
+test parse-22.5 {expression substitution: Tcl_ParseVar does not evaluate it} -constraints testparsevar -body {
+    testparsevar {$((7*6))z}
+} -returnCodes error -result {invalid character in array index}
+test parse-22.5.1 {Tcl_ParseVar: two values stay valid together} -constraints testparsevar -setup {
+    set x 10
+    set y 20
+} -body {
+    testparsevar {$x} {$y}
+} -cleanup {
+    unset x y
+} -result {10 20 {}}
+test parse-22.5.2 {Tcl_ParseVar: a second reference does not invalidate the first, array elements} -constraints testparsevar -setup {
+    array set arr {a 1002 b 2003}
+} -body {
+    testparsevar {$arr(a)} {$arr(b)}
+} -cleanup {
+    unset arr
+} -result {1002 2003 {}}
+test parse-22.5.3 {Tcl_ParseVar: the interp result is reset after a variable} -constraints testparsevar -setup {
+    set x 10
+} -body {
+    testparsevar {$x}
+    set ::tcl_testresult [testparsevar {$x}]
+} -cleanup {
+    unset x
+    unset -nocomplain ::tcl_testresult
+} -result {10 {}}
 test parse-22.6 {expression substitution: body is not substituted by the parser} -constraints testparser -body {
     testparser {$(($x [y] \n))} 0
 } -result [string map [list %L $lp %R $rp] {- {$(($x [y] \n))} 1 word {$(($x [y] \n))} 2 exprsubst {$(($x [y] \n))} 1 text {%L$x [y] \n%R} 0 {}}]
@@ -1384,7 +1414,7 @@ test parse-22.94 {expression substitution: a close paren after a nested brace gr
 
 # Parsing is limited to numBytes bytes: no truncated prefix of a valid
 # substitution may be accepted as one, whatever follows the cut.
-test parse-22.93 {expression substitution: truncated input is never accepted} -constraints testparsevarname -body {
+test parse-22.93 {expression substitution: truncated input is never accepted} -constraints testparser -body {
     set bad {}
     foreach s [list \
 	    {$((1+2))} {$(([llength {a b}]))} {$(({a {b )} c} eq {a {b )} c}))} \
@@ -1393,11 +1423,11 @@ test parse-22.93 {expression substitution: truncated input is never accepted} -c
 	    {$((1\)+2))}] {
 	set n [string length $s]
 	for {set L 2} {$L < $n} {incr L} {
-	    if {![catch {testparsevarname $s $L 0} r] && [string match *exprsubst* $r]} {
+	    if {![catch {testparser $s $L} r] && [string match *exprsubst* $r]} {
 		lappend bad [list $s $L $r]
 	    }
 	}
-	if {[catch {testparsevarname $s $n 0} r] || ![string match *exprsubst* $r]} {
+	if {[catch {testparser $s $n} r] || ![string match *exprsubst* $r]} {
 	    lappend bad [list $s full $r]
 	}
     }
@@ -1463,7 +1493,7 @@ test parse-22.80 {expression substitution: memory leak} -constraints {testparsev
     for {set i 0} {$i < 5} {incr i} {
 	set r1 [subst $s]
 	set r2 [testevalex {set v a$((1+1))b}]
-	set r3 [testparsevar {$((7*6))z}]
+	set r3 [catch {testparsevar {$((7*6))z}}]
 	catch {subst $bad}
 	catch {testevalex {set v $((1+))}}
 	catch {subst $rc}

@@ -1165,8 +1165,8 @@ ParseTokens(
 	     */
 
 	    varToken = parsePtr->numTokens;
-	    if (Tcl_ParseVarName(parsePtr->interp, src, numBytes, parsePtr,
-		    1) != TCL_OK) {
+	    if (TclParseVarName(parsePtr->interp, src, numBytes, parsePtr,
+		    1, 1) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
@@ -1547,11 +1547,19 @@ ExprSubstSyntaxError(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ParseVarName --
+ * Tcl_ParseVarName, TclParseVarName --
  *
  *	Given a string starting with a $ sign, parse off a variable name and
  *	return information about the parse. No more than numBytes bytes will
  *	be scanned.
+ *
+ *	Tcl_ParseVarName is the public function. It parses a variable name
+ *	only, as it always has: "$((" is not recognized as an expression
+ *	substitution there, so its result is always a TCL_TOKEN_VARIABLE
+ *	(or a lone "$"). TclParseVarName is the internal function, used by
+ *	the parser and the expression parser, which also accepts an
+ *	expression substitution when exprSubst is non-zero; the first token
+ *	is then of type TCL_TOKEN_EXPR_SUBST.
  *
  * Results:
  *	The return value is TCL_OK if the command was parsed successfully and
@@ -1586,6 +1594,30 @@ Tcl_ParseVarName(
 				 * information in parsePtr; zero means ignore
 				 * existing tokens in parsePtr and
 				 * reinitialize it. */
+{
+    return TclParseVarName(interp, start, numBytes, parsePtr, append, 0);
+}
+
+int
+TclParseVarName(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting; if
+				 * NULL, then no error message is provided. */
+    const char *start,		/* Start of variable substitution string.
+				 * First character must be "$". */
+    Tcl_Size numBytes,		/* Total number of bytes in string. If -1,
+				 * the string consists of all bytes up to the
+				 * first null character. */
+    Tcl_Parse *parsePtr,	/* Structure to fill in with information about
+				 * the variable name. */
+    int append,			/* Non-zero means append tokens to existing
+				 * information in parsePtr; zero means ignore
+				 * existing tokens in parsePtr and
+				 * reinitialize it. */
+    int exprSubst)		/* Non-zero means "$((" (or "$(" in the build
+				 * that selects that spelling) starts an
+				 * expression substitution. Zero means it
+				 * does not: the name is then parsed as it is
+				 * in stock Tcl. */
 {
     Tcl_Token *tokenPtr;
     const char *src;
@@ -1684,7 +1716,7 @@ Tcl_ParseVarName(
 	tokenPtr[-1].size = src - tokenPtr[-1].start;
 	parsePtr->numTokens++;
 	src++;
-    } else if ((*src == '(') && ((TCL_EXPR_SUBST_PARENS == 1)
+    } else if (exprSubst && (*src == '(') && ((TCL_EXPR_SUBST_PARENS == 1)
 	    || ((numBytes > 1) && (src[1] == '(')))) {
 	/*
 	 * Expression substitution: $(expr) when TCL_EXPR_SUBST_PARENS is 1,
@@ -1870,7 +1902,6 @@ Tcl_ParseVar(
 {
     Tcl_Obj *objPtr;
     int code;
-    bool isExprSubst;
     Tcl_Parse *parsePtr = (Tcl_Parse *)TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     if (Tcl_ParseVarName(interp, start, TCL_INDEX_NONE, parsePtr, 0) != TCL_OK) {
@@ -1890,7 +1921,6 @@ Tcl_ParseVar(
 	return "$";
     }
 
-    isExprSubst = (parsePtr->tokenPtr->type == TCL_TOKEN_EXPR_SUBST);
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL);
     Tcl_FreeParse(parsePtr);
@@ -1899,17 +1929,6 @@ Tcl_ParseVar(
 	return NULL;
     }
     objPtr = Tcl_GetObjResult(interp);
-
-    if (isExprSubst) {
-	/*
-	 * The value of an expression substitution is not held by any
-	 * variable; the interp result is the only reference to it. Leave it
-	 * there (rather than resetting the result as below) so the returned
-	 * string stays valid until the interp result is next changed.
-	 */
-
-	return TclGetString(objPtr);
-    }
 
     /*
      * At this point we should have an object containing the value of a
