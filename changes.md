@@ -89,6 +89,7 @@ to the userbase.
  - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tktview/4d3f21)
  - [under Tk, runAllTests exited with status 0 before reporting errors](https://core.tcl-lang.org/tcl/tktview/7abc14)
  - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tktview/f1a25e)
+ - [unexpected 'result' in trace execution leave](https://core.tcl-lang.org/tcl/tktview/281138)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3

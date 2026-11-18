@@ -273,7 +273,7 @@ Tcl_UniCharToUtf(
 	    buf[3] = (char) (0x80 | (0x3F & ch));
 	    buf[2] = (char) (0x80 | (0x3F & (ch >> 6)));
 	    buf[1] = (char) (0x80 | (0x3F & (ch >> 12)));
-	    buf[0] = (char) (0xF0 |         (ch >> 18));
+	    buf[0] = (char) (0xF0 | (ch >> 18));
 	    return 4;
 	}
     } else if (ch == -1) {
@@ -295,7 +295,7 @@ Tcl_UniCharToUtf(
 three:
     buf[2] = (char) (0x80 | (0x3F & ch));
     buf[1] = (char) (0x80 | (0x3F & (ch >> 6)));
-    buf[0] = (char) (0xE0 |         (ch >> 12));
+    buf[0] = (char) (0xE0 | (ch >> 12));
     return 3;
 }
 
@@ -1722,9 +1722,9 @@ TclUtfCmp(
 
     /* Step through the largest common initial prefix of the two strings. */
     while (*s == *t) {
-        if (*s == '\0') return 0;
-        s++;
-        t++;
+	if (*s == '\0') return 0;
+	s++;
+	t++;
     }
 
     /*
@@ -1752,10 +1752,10 @@ TclUtfCmp(
      */
 
     if (*s == 0xC0 && s[1] == 0x80) {
-        return (*t == '\0') ? 1 : -1;
+	return (*t == '\0') ? 1 : -1;
     }
     if (*t == 0xC0 && t[1] == 0x80) {
-        return (*s == '\0') ? -1 : 1;
+	return (*s == '\0') ? -1 : 1;
     }
     return (int)*s - (int)*t;
 }

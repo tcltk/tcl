@@ -1489,7 +1489,7 @@ test thread-9.2 {create a thread when stdin is closed} -constraints {
     testthread stdio
 } -setup {
     set script [makeFile {
-	catch {load tcltest90.dll};# On Windows, we run tclsh, not tcltest.
+	catch {load tcltest91.dll};# On Windows, we run tclsh, not tcltest.
 	close stdin
 	set t [testthread create {testthread wait}]
 	puts [testthread send $t {expr {6 * 7}}]
