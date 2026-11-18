@@ -1038,6 +1038,40 @@ namespace eval test_ns_zipfs {
 	puts $fd blah
     } -result {channel "*" wasn't opened for writing} -match glob -returnCodes error
 
+    test zipfs-read-fileevent "Readable event on file opened for read" -setup {
+	mount [zippath test.zip]
+	set fd [open [file join $defMountPt test]]
+    } -cleanup {
+	close $fd
+	cleanup
+    } -body {
+	set done timeout
+	set id [after 1000 [namespace code {set done timeout}]]
+	fileevent $fd readable [namespace code {set done [gets $fd]}]
+	vwait [namespace current]::done
+	after cancel $id
+	set done
+    } -result test
+
+    test zipfs-read-fcopy-async "Background fcopy from file opened for read" -setup {
+	mount [zippath test.zip]
+	set fd [open [file join $defMountPt test]]
+	set out [file tempfile outname]
+    } -cleanup {
+	close $fd
+	close $out
+	file delete $outname
+	cleanup
+    } -body {
+	set done timeout
+	set id [after 1000 [namespace code {set done timeout}]]
+	fcopy $fd $out -command [namespace code {set done}]
+	vwait [namespace current]::done
+	after cancel $id
+	seek $out 0
+	list $done [read $out]
+    } -result [list 5 test\n]
+
     #
     # Write
     proc testzipfswrite {id zippath result filename mode args} {
