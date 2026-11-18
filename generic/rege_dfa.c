@@ -414,14 +414,14 @@ freeDFA(
 /*
  - hash - construct a hash code for a bitvector
  * There are probably better ways, but they're more expensive.
- ^ static unsigned hash(unsigned *, int);
+ ^ static unsigned hash(unsigned *, size_t);
  */
 static unsigned
 hash(
     unsigned *const uv,
-    int n)
+    size_t n)
 {
-    int i;
+    size_t i;
     unsigned h;
 
     h = 0;
@@ -619,20 +619,23 @@ checkLAConstraint(
     size_t n;
     struct subre *sub;
     struct dfa *d;
-    struct smalldfa sd;
     chr *end;
+
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(v)) {
+	ERR(REG_ETOOBIG);
+	return 0;
+    }
 
     n = co - pcnfa->ncolors;
     assert(n < v->g->nlacons && v->g->lacons != NULL);
     FDEBUG(("=== testing lacon %" TCL_Z_MODIFIER "u\n", n));
     sub = &v->g->lacons[n];
-    d = newDFA(v, &sub->cnfa, &v->g->cmap, &sd);
+    d = getladfa(v, n);
     if (d == NULL) {
-	ERR(REG_ESPACE);
 	return 0;
     }
     end = longest(v, d, cp, v->stop, NULL);
-    freeDFA(d);
     FDEBUG(("=== lacon %" TCL_Z_MODIFIER "u match %d\n", n, (end != NULL)));
     return (sub->subno) ? (end != NULL) : (end == NULL);
 }
