@@ -2522,7 +2522,7 @@ TclCompileRegexpCmd(
 	 */
 
 	int cflags = TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0);
-	Tcl_BytecodeLabel fast, done;
+	Tcl_BytecodeLabel fast, done = 0;
 
 	if (!sawLast) {
 	    /*
