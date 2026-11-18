@@ -2226,7 +2226,7 @@ TclCompileRegexpCmd(
 	 */
 
 	int cflags = TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0);
-	int fast, done;
+	int fast, done = 0;
 
 	if (!sawLast) {
 	    /*
