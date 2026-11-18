@@ -88,6 +88,7 @@ to the userbase.
  - [Tcl_DeleteEventSource called from a setup or check proc](https://core.tcl-lang.org/tcl/tktview/055240)
  - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
  - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
+ - [compiled code calling an imported command kept the old compiled form](https://core.tcl-lang.org/tcl/tktview/7b51db)
  - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
  - [MS-Win: fix exec+wish call of batch files with spaces in path or arguments](https://core.tcl-lang.org/tcl/tktview/f91ab7)
  - [Tcl_ListObjReplace() and oo:define LIST_MAX overflow error handling](https://core.tcl-lang.org/tcl/tktview/40f628)
