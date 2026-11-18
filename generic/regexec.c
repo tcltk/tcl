@@ -98,6 +98,8 @@ struct smalldfa {
 
 struct vars {
     regex_t *re;
+    const char *stackbase;	/* for STACK_TOO_DEEP() */
+    size_t stackmax;		/* for STACK_TOO_DEEP() */
     struct guts *g;
     int eflags;			/* copies of arguments */
     size_t nmatch;
@@ -108,6 +110,7 @@ struct vars {
     chr *stop;			/* just past end of string */
     int err;			/* error code if any (0 none) */
     struct dfa **subdfas;	/* per-subre DFAs */
+    struct dfa **ladfas;	/* per-lacon DFAs */
     struct smalldfa dfa1;
     struct smalldfa dfa2;
 };
@@ -127,6 +130,7 @@ struct vars {
 /* === regexec.c === */
 int exec(regex_t *, const chr *, size_t, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 static struct dfa *getsubdfa(struct vars *, struct subre *);
+static struct dfa *getladfa(struct vars *, size_t);
 static int simpleFind(struct vars *const, struct cnfa *const, struct colormap *const);
 static int complicatedFind(struct vars *const, struct cnfa *const, struct colormap *const);
 static int complicatedFindLoop(struct vars *const, struct dfa *const, struct dfa *const, chr **const);
@@ -146,7 +150,7 @@ static chr *shortest(struct vars *const, struct dfa *const, chr *const, chr *con
 static chr *lastCold(struct vars *const, struct dfa *const);
 static struct dfa *newDFA(struct vars *const, struct cnfa *const, struct colormap *const, struct smalldfa *);
 static void freeDFA(struct dfa *const);
-static unsigned hash(unsigned *const, int);
+static unsigned hash(unsigned *const, size_t);
 static struct sset *initialize(struct vars *const, struct dfa *const, chr *const);
 static struct sset *miss(struct vars *const, struct dfa *const, struct sset *const, const pcolor, chr *const, chr *const);
 static int checkLAConstraint(struct vars *const, struct cnfa *const, chr *const, const pcolor);
@@ -174,9 +178,10 @@ exec(
     int flags)
 {
     AllocVars(v);
+    char stackmarker;
     int st, backref;
-    int n;
-    int i;
+    size_t n;
+    size_t i;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
 #define LOCALDFAS	40
@@ -200,6 +205,8 @@ exec(
      */
 
     v->re = re;
+    v->stackbase = REG_STACK_ADDR(stackmarker);
+    v->stackmax = 0;
     v->g = (struct guts *)re->re_guts;
     if ((v->g->cflags&REG_EXPECT) && details == NULL) {
 	FreeVars(v);
@@ -258,6 +265,23 @@ exec(
     }
     for (i = 0; i < n; i++)
 	v->subdfas[i] = NULL;
+    v->ladfas = NULL;
+    if (v->g->nlacons > 0) {
+	v->ladfas = (struct dfa **)
+		MALLOC(v->g->nlacons * sizeof(struct dfa *));
+	if (v->ladfas == NULL) {
+	    if (v->subdfas != subdfas) {
+		FREE(v->subdfas);
+	    }
+	    if (v->pmatch != pmatch && v->pmatch != mat) {
+		FREE(v->pmatch);
+	    }
+	    FreeVars(v);
+	    return REG_ESPACE;
+	}
+	for (i = 0; i < v->g->nlacons; i++)
+	    v->ladfas[i] = NULL;
+    }
 
     /*
      * Do it.
@@ -296,6 +320,14 @@ exec(
     if (v->subdfas != subdfas) {
 	FREE(v->subdfas);
     }
+    if (v->ladfas != NULL) {
+	for (i = 0; i < v->g->nlacons; i++) {
+	    if (v->ladfas[i] != NULL) {
+		freeDFA(v->ladfas[i]);
+	    }
+	}
+	FREE(v->ladfas);
+    }
     FreeVars(v);
     return st;
 }
@@ -316,6 +348,29 @@ getsubdfa(struct vars * v,
 	}
     }
     return v->subdfas[t->id];
+}
+
+/*
+ - getladfa - create or re-fetch the DFA for a LACON subre node
+ * This is the same as getsubdfa() but for LACONs.  Besides saving the
+ * work of building the DFA again for each check, it keeps the DFA off
+ * the stack in the recursion through checkLAConstraint().
+ */
+static struct dfa *
+getladfa(struct vars * v,
+	  size_t n)
+{
+    assert(n > 0 && n < v->g->nlacons && v->g->lacons != NULL);
+
+    if (v->ladfas[n] == NULL) {
+	struct subre *sub = &v->g->lacons[n];
+
+	v->ladfas[n] = newDFA(v, &sub->cnfa, &v->g->cmap, NULL);
+	if (ISERR()) {
+	    return NULL;
+	}
+    }
+    return v->ladfas[n];
 }
 
 /*
@@ -603,7 +658,7 @@ subset(
     chr *const begin,
     chr *const end)
 {
-    int n = sub->subno;
+    size_t n = sub->subno;
 
     assert(n > 0);
     if ((size_t)n >= v->nmatch) {
@@ -657,6 +712,12 @@ cdissect(
     int er;
 
     assert(t != NULL);
+
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(v)) {
+	return REG_ETOOBIG;
+    }
+
     MDEBUG(("cdissect %" TCL_Z_MODIFIER "u-%" TCL_Z_MODIFIER "u %c\n", LOFF(begin), LOFF(end), t->op));
 
     switch (t->op) {
@@ -905,7 +966,8 @@ cbrdissect(
     chr *begin,		/* beginning of relevant substring */
     chr *end)		/* end of same */
 {
-    int n = t->subno, min = t->min, max = t->max;
+    size_t n = t->subno;
+    int min = t->min, max = t->max;
     size_t numreps;
     size_t tlen;
     size_t brlen;
@@ -914,7 +976,6 @@ cbrdissect(
 
     assert(t != NULL);
     assert(t->op == 'b');
-    assert(n >= 0);
     assert((size_t)n < v->nmatch);
 
     MDEBUG(("cbackref n%d %d{%d-%d}\n", t->id, n, min, max));
