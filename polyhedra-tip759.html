@@ -79,9 +79,10 @@ table.sum a { color: inherit; text-decoration: none; }
 .t-var { color: var(--var); } .t-num { color: var(--num); } .t-str { color: var(--str); } .t-com { color: var(--com); font-style: italic; }
 .t-br { color: var(--br); } .t-bk { color: var(--bk); } .t-pn { color: var(--pn); } .t-op { color: var(--op); } .t-fn { color: var(--fn); }
 .t-ex { color: var(--ex); font-weight: 700; }
-#v-tip:checked ~ main .v-calc, #v-calc:checked ~ main .v-tip { display: none; }
-.switch { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-#v-tip:checked ~ main label[for="v-tip"], #v-calc:checked ~ main label[for="v-calc"] { background: var(--accent); color: #fff; }
+body:has(#v-tip:checked) .v-calc, body:has(#v-calc:checked) .v-tip { display: none; }
+.seg { position: relative; }
+.switch { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+#v-tip:checked + label, #v-calc:checked + label { background: var(--accent); color: #fff; }
 .seg label { padding: 5px 12px; cursor: pointer; color: var(--muted); }
 .endnote { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; background: var(--panel); max-width: 980px; }
 .endnote p { margin: 0 0 8px; } .endnote p:last-child { margin: 0; }
@@ -90,8 +91,6 @@ footer { color: var(--muted); font-size: 13px; margin-top: 30px; max-width: 980p
 </style>
 </head>
 <body>
-<input type="radio" name="view" id="v-tip" class="switch" checked>
-<input type="radio" name="view" id="v-calc" class="switch">
 <main>
 <h1>polyhedra.tcl: plain Tcl and <em>TIP 759</em></h1>
 <p class="lede">The rotating polyhedra demo by Gerard Sookahet (2005), on the left as it was, and on the right with its maths written with the
@@ -120,7 +119,7 @@ TIP 282 assignments <code>x = …;</code>, expression scripts <code>{( … )}</c
 
 <div class="bar">
   <span class="seg" role="group" aria-label="Right column">
-    <label for="v-tip">TIP 759</label><label for="v-calc">Calc</label>
+    <input type="radio" name="view" id="v-tip" class="switch" checked><label for="v-tip">TIP 759</label><input type="radio" name="view" id="v-calc" class="switch"><label for="v-calc">Calc</label>
   </span>
   <nav><a href="#p-Barycenter">Barycenter</a><a href="#p-CrossProduct">CrossProduct</a><a href="#p-MatrixVectorProduct">MatrixVectorProduct</a><a href="#p-MatrixProduct">MatrixProduct</a><a href="#p-MatrixRotation">MatrixRotation</a><a href="#p-NormalVector">NormalVector</a><a href="#p-Projection">Projection</a><a href="#p-Transformations">Transformations</a><a href="#p-Intensity">Intensity</a><a href="#p-DisplayModel">DisplayModel</a><a href="#p-Operators">Vector operators</a><a href="#p-Calc">Calc-specific code</a></nav>
 </div>
