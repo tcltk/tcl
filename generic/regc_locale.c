@@ -14,7 +14,7 @@
 
 static const struct cname {
     const char *name;
-    const char code;
+    char code;
 } cnames[] = {
     {"NUL",		'\x00'},
     {"SOH",		'\x01'},
