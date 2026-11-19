@@ -11,10 +11,14 @@ nav input { width: 100%; box-sizing: border-box; margin-bottom: .75rem; padding:
 	-webkit-appearance: none; appearance: none; border: 1px solid #888; border-radius: .5rem; }
 nav ul { list-style: none; padding-left: .6rem; margin: 0; }
 nav li { margin: .1rem 0; }
+/* the last level of the outline has no triangle, but its label is indented like the labels of the sections next to it */
+nav li.leaf { padding-left: var(--triangle-advance); }
 @media (max-width: 40rem) { .layout { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; } }
 nav a.current { background: #BADA55; color: #222; font-weight: 600; border-radius: .25rem; padding: .05rem .4rem; margin-left: -.4rem; }
 
-/* larger outline triangles: replace the native marker */
+/* larger outline triangles: replace the native marker;
+   --triangle-advance = the space a triangle takes (width + negative margin of the ::before below) */
+:root { --triangle-advance: 1.2rem; }
 nav summary { cursor: pointer; list-style: none; }
 nav summary::-webkit-details-marker { display: none; }
 nav summary::before { content: "\25B8"; display: inline-block; width: 1.5rem; margin-left: -.3rem; font-size: 2.2rem; line-height: 1; vertical-align: -.2rem; color: #696969; }

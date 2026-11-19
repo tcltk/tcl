@@ -9,107 +9,89 @@
 package require Tcl 9
 package require json   ;# from tcllib
 
-
-# all pages with metadata determining how they will occur in the HTML outline
-# are listed in the separate file markdown2html-pages.txt (next to this script).
-# The file describes one manual page per line, each line being a Tcl list with four elements:
-# - file   = the file name of the markdown file without the .md extension
-# - title  = the page title for the outline item linking to the page
-# - group1 = the initial level of the hierarchical outline: the book, either Tcl or Tk
-#            (this also selects the output folder, see pageFolder)
-# - group2 = the second level of the hierarchical ouline: the section within the book,
-#            e.g. Commands or C API (a label ending in "C API" selects the C API folder).
-#            Only the combination of group1 and group2 identifies a section, so different
-#            books can use the same group2 labels (e.g. Tcl|Commands and Tk|Commands).
-# (a page may appear several times, e.g. one entry per C API function documented on it)
+# all pages that appear in the HTML outline are listed in the file markdown2html-pages.txt (next to this script).
+# The file defines one outline entry per line. The same manual page file may appear on several lines,
+# e.g. one entry per C API function documented on it. Each line in the file is a Tcl list with these two elements:
+# - path = the position in the hierarchical outline, itself a list, e.g. {Tcl Commands after}
+#          or {Tcl {C API} Tcl_Alloc}. Every element but the last is a path node of the outline hierarchy
+#          (it can be opened and closed). The last element is the label of the entry linking
+#          to a specific manual page. The outline is built in the order of the appearance
+#          in the file. The first element is the toplevel node in the outline (Tcl, Tk, Keywords).
+# - file = the file name of the markdown file without the .md extension (within the "markdown" folder defined below)
+#
+# For later (after TIP 700):
+# Another element acting as an anchor within the page, so that several entries can lead to different places of the same page):
+# - append the name of the element to pageFields (and give it a default in pageDefaults)
+# - use it where the entries are turned into links (see pageHref)
 #
 set pagesFile [file join [file dirname [info script]] markdown2html-pages.txt]
-set fh [open $pagesFile]
-while {[gets $fh line] >= 0} {
-	if {[string trim $line] eq ""} continue
-	if {[llength $line] != 4} {
-		close $fh
-		return -code error "$pagesFile: expected 4 elements (file title group1 group2), got [llength $line]: $line"
-	}
-	lassign $line file title group1 group2
-	# code here to build the left panel of the webpage for navigation:
-	dict set manFiles $group1/$group2/$title [list file $file title $title group1 $group1 group2 $group2]
-}
-close $fh
+## the elements of a line of the pages file, in this order; only the first pageFieldsRequired are mandatory:
+set pageFields {path file}
+set pageFieldsRequired 2
+## values of the elements that are missing in a line:
+set pageDefaults {}
 
 
-## ordering of the books (group1) in the outline:
-set groupOrder {
-	Tcl
-	Tk
-}
 
-## ordering of the sections (group2) within each book:
-set pageOrder {
-	{Syntax}
-	{Applications}
-	{Commands}
-	{TclOO commands}
-	{Variables}
-	{Math functions}
-	{Math operators}
-	{Filename conventions}
-	{Regular expression syntax}
-	{Library procedures}
-	{C API}
-	{TclOO C API}
+proc isCAPI {path} {
+	#
+	# whether a page belongs to the C API (as opposed to script commands etc.)
+	#
+	# path - the outline path of the page, e.g. {Tcl {C API} Tcl_Alloc}
+	#
+	string match {*C API} [lindex $path 1]
 }
 
 
-# convert the markdown-formatted manual pages
-# (as produced by man2markdown.tcl) into HTML-formatted manual pages,
-# using Pandoc.
-# These parts are shwon in the right panel of the webpage when clicking on the respective entry in the outline of the left panel:
-# - the Tcl pages go into the Tcl folder, the Tk pages into the Tk folder (as determined by "group1" in the pages table)
-# - the Tcl C API goes into the TclCAPI folder, the Tk C API into the TkCAPI folder (as determined by "group1" and "group2" in the pages table)
-file mkdir \
-	../doc/html/Tcl \
-	../doc/html/Tk \
-	../doc/html/TclCAPI \
-	../doc/html/TkCAPI
-
-
-# template file for pandoc that outputs just the front matter as JSON
-# (equivalent to --template=<(echo '$meta-json$') ).
-# This is used to extract the YAML frontmatter from the markdown files
-# and retrieve "Keywords" and "Links":
-set metaTemplate {}
-set fh [file tempfile metaTemplate]
-puts -nonewline $fh {$meta-json$}
-close $fh
-
-
-set converted [dict create]
-
-
-proc isCAPI {group2} {
+proc pageFolder {path} {
 	#
-	# tells whether a section holds C API pages (as opposed to commands etc.)
-	#
-	# group2 - the section label from the pages table, e.g. "C API" or "TclOO C API"
-	#
-	string match {*C API} $group2
-}
-
-
-proc pageFolder {group1 group2} {
-	#
-	# determines into which folder a specific manual page needs to go:
+	# determines into which HTML output folder a specific manual page needs to go:
 	# Tcl or Tk for commands etc., TclCAPI or TkCAPI for the C API
 	#
-	# group1 - the book of the page (Tcl or Tk)
-	# group2 - the section within the book (see the manFiles dict)
+	# path - the outline path of the page
 	#
-	if {$group1 ni {Tcl Tk}} {
-		return -code error "unknown book '$group1' (group1 must be Tcl or Tk)"
+	set toplevel [lindex $path 0]
+	if {$toplevel ni {Tcl Tk}} {
+		return -code error "unknown toplevel '$toplevel' in path $path (the first element must be Tcl, Tk or Keywords)"
 	}
-	if {[isCAPI $group2]} {return ${group1}CAPI}
-	return $group1
+	if {[isCAPI $path]} {return ${toplevel}CAPI}
+	return $toplevel
+}
+
+
+proc pageHref {page} {
+	#
+	# link target of an outline entry, relative to index.html
+	#
+	# page - the dict of the entry (see manFiles)
+	#
+	set href [dict get $page folder]/[dict get $page file].html
+	# further elements of the lines can be used here, e.g. [dict getdef $page anchor {}]
+	return $href
+}
+
+
+proc parsePageLine {line} {
+	#
+	# turns a line of the pages file into a dict with one key per element (see pageFields)
+	#
+	# line - the line, a Tcl list
+	#
+	global pageFields pageFieldsRequired pageDefaults
+	if {[llength $line] < $pageFieldsRequired || [llength $line] > [llength $pageFields]} {
+		set expected [expr {$pageFieldsRequired == [llength $pageFields] ? "exactly $pageFieldsRequired" : "$pageFieldsRequired to [llength $pageFields]"}]
+		return -code error "expected $expected elements ($pageFields), got [llength $line]: $line"
+	}
+	set page $pageDefaults
+	for {set i 0} {$i < [llength $line]} {incr i} {
+		dict set page [lindex $pageFields $i] [lindex $line $i]
+	}
+	if {[llength [dict get $page path]] < 2} {
+		return -code error "the path must have at least two elements (toplevel and one node): $line"
+	}
+	# the output folder follows from the path:
+	dict set page folder [pageFolder [dict get $page path]]
+	return $page
 }
 
 
@@ -163,7 +145,7 @@ proc resolveLink {link} {
 proc readMeta {mdFile} {
 	#
 	# returns the front matter (yaml) of a markdown file as a dict
-	# using the template "metaTemplate" written above
+	# using the template "metaTemplate"
 	#
 	# mdFile - a markdown-formatted manual page
 	#
@@ -175,7 +157,7 @@ proc readMeta {mdFile} {
 
 proc seeAlsoHtml {folder myFile links} {
 	#
-	# html for the "See also" block at the bottom of a page
+	# HTML for the "See also" block at the bottom of a page
 	#
 	# folder - folder of this page
 	# myFile - file name of this page
@@ -201,6 +183,135 @@ proc seeAlsoHtml {folder myFile links} {
 }
 
 
+proc leafHtml {label href keywords} {
+	#
+	# HTML of an outline entry linking to a page (the last level of the outline, without open/close triangle)
+	#
+	# label    - the text of the entry
+	# href     - the link target
+	# keywords - the keywords of the page, used by the filter field
+	#
+	set keywordAttr [attr [string tolower [join $keywords |]]]
+	return "<li class=\"leaf\" data-keywords=\"$keywordAttr\"><a href=\"[attr $href]\" target=\"content\">[esc $label]</a></li>\n"
+}
+
+
+proc outlineHtml {parent} {
+	#
+	# HTML of the outline below a path, one nesting level of lists per level of the path:
+	# sections (with children) can be opened and closed, the last element of a path is a link
+	#
+	# parent - the path of the section to render, {} for the whole outline
+	#
+	global children manFiles fileKeywords
+	set html {}
+	foreach name [dict get $children $parent] {
+		set path [list {*}$parent $name]
+		if {[dict exists $children $path]} {
+			append html {<li><details><summary>} [esc $name] {</summary>} \n {<ul>} \n
+			append html [outlineHtml $path]
+			append html {</ul></details></li>} \n
+		} else {
+			set page [dict get $manFiles $path]
+			set key [dict get $page folder]/[dict get $page file]
+			append html [leafHtml $name [pageHref $page] [dict getdef $fileKeywords $key {}]]
+		}
+	}
+	return $html
+}
+
+
+
+######## MAIN PROGRAM STARTS HERE ############
+
+
+# manFiles: path -> dict (path file folder, plus the further elements of the line);
+# "children": the outline, parent path -> the names of the entries below it (the root has the path {}):
+set manFiles [dict create]
+set children [dict create]
+set fh [open $pagesFile]
+while {[gets $fh line] >= 0} {
+	if {[string trim $line] eq ""} continue
+	if {[catch {parsePageLine $line} page]} {
+		close $fh
+		return -code error "$pagesFile: $page"
+	}
+	set path [dict get $page path]
+	if {[dict exists $manFiles $path]} {
+		close $fh
+		return -code error "$pagesFile: duplicate path: $path"
+	}
+	dict set manFiles $path $page
+	# register the path in the outline, creating missing sections on the way:
+	for {set i 0} {$i < [llength $path]} {incr i} {
+		set parent [lrange $path 0 $i-1]
+		set name [lindex $path $i]
+		if {$name ni [dict getdef $children $parent {}]} {dict lappend children $parent $name}
+	}
+}
+close $fh
+# a path cannot be a page and a section at the same time:
+foreach path [dict keys $manFiles] {
+	if {[dict exists $children $path]} {
+		return -code error "$pagesFile: path is both a page and a section of the outline: $path"
+	}
+}
+
+
+# compare the pages file with the markdown files that exist:
+# - a listed file that does not exist is an error (collected, so that all of them are reported at once)
+# - a markdown file that is not listed does not appear in the HTML at all, which is only warned about
+#   (a page may be left out on purpose)
+set markdownDir [file join [file dirname [info script]] .. doc markdown]
+set listed [dict create]
+foreach path [dict keys $manFiles] {
+	dict set listed [dict get $manFiles $path folder]/[dict get $manFiles $path file] $path
+}
+set missing {}
+foreach key [dict keys $listed] {
+	if {![file exists [file join $markdownDir $key.md]]} {
+		lappend missing "$key.md (outline path: [dict get $listed $key])"
+	}
+}
+if {[llength $missing]} {
+	return -code error "$pagesFile: [llength $missing] listed markdown file(s) not found in $markdownDir:\n  [join $missing "\n  "]"
+}
+foreach folder {Tcl TclCAPI Tk TkCAPI} {
+	foreach mdFile [lsort [glob -nocomplain -directory [file join $markdownDir $folder] *.md]] {
+		set key $folder/[file rootname [file tail $mdFile]]
+		if {![dict exists $listed $key]} {
+			puts stderr "warning: $key.md is not listed in the pages file and will not appear in the manual"
+		}
+	}
+}
+
+
+# convert the markdown-formatted manual pages
+# (as produced by man2markdown.tcl) into HTML-formatted manual pages,
+# using Pandoc.
+# These parts are shwon in the right panel of the webpage when clicking on the respective entry in the outline of the left panel:
+# - the Tcl pages go into the Tcl folder, the Tk pages into the Tk folder (as determined by the path in the pages file)
+# - the Tcl C API goes into the TclCAPI folder, the Tk C API into the TkCAPI folder (see pageFolder)
+file mkdir \
+	../doc/html/Tcl \
+	../doc/html/Tk \
+	../doc/html/TclCAPI \
+	../doc/html/TkCAPI
+
+
+# template file for pandoc that outputs just the front matter as JSON
+# (equivalent to --template=<(echo '$meta-json$') ).
+# This is used to extract the YAML frontmatter from the markdown files
+# and retrieve "Keywords" and "Links":
+set metaTemplate {}
+set fh [file tempfile metaTemplate]
+puts -nonewline $fh {$meta-json$}
+close $fh
+
+
+set converted [dict create]
+
+
 #
 # lookup of the pages that the "Links" of the front matter can point to:
 # linkTarget <kind> <name> -> {folder file}
@@ -210,12 +321,11 @@ proc seeAlsoHtml {folder myFile links} {
 set linkTarget [dict create]
 foreach by {title file} {
 	foreach entry [dict keys $manFiles] {
-		set group1 [dict get $manFiles $entry group1]
-		set group2 [dict get $manFiles $entry group2]
-		set kind [expr {[isCAPI $group2] ? "api" : "cmd"}]
-		set name [dict get $manFiles $entry $by]
+		set kind [expr {[isCAPI $entry] ? "api" : "cmd"}]
+		# the page title is the label of the entry, i.e. the last element of the path:
+		set name [expr {$by eq "title" ? [lindex $entry end] : [dict get $manFiles $entry file]}]
 		if {![dict exists $linkTarget $kind $name]} {
-			dict set linkTarget $kind $name [list [pageFolder $group1 $group2] [dict get $manFiles $entry file]]
+			dict set linkTarget $kind $name [list [dict get $manFiles $entry folder] [dict get $manFiles $entry file]]
 		}
 	}
 }
@@ -226,7 +336,7 @@ foreach by {title file} {
 #
 foreach entry [dict keys $manFiles] {
 	set myFile [dict get $manFiles $entry file]
-	set myFolder [pageFolder [dict get $manFiles $entry group1] [dict get $manFiles $entry group2]]
+	set myFolder [dict get $manFiles $entry folder]
 	# pages of different folders (e.g. Tcl and Tk) may have the same file name,
 	# so everything that is looked up per page is keyed by folder and file:
 	set pageKey $myFolder/$myFile
@@ -263,15 +373,6 @@ file delete $metaTemplate
 # now create the index.html file with all links to the individual pages
 #
 puts "\ncreate index.html\n"
-foreach entry [dict keys $manFiles] {
-	dict with manFiles $entry {
-		set folder [pageFolder $group1 $group2]
-		# the section is identified by book and section label together:
-		dict lappend tree [list $group1 $group2] [list $title $folder/$file.html [dict getdef $fileKeywords $folder/$file {}]]
-	}
-}
-
-
 # title shown in the fixed header bar and as page title:
 set manualTitle {Tcl/Tk manual, version 9.1}
 
@@ -281,26 +382,7 @@ file copy -force Tcl9Logo.svg [file join .. doc html Tcl9Logo.svg]
 set nav {<ul class="outline">}
 append nav \n
 
-foreach g1 $groupOrder {
-	# first level: the book (Tcl, Tk); skipped if it has no pages (yet)
-	set sections [list]
-	foreach g2 $pageOrder {
-		if {[dict exists $tree [list $g1 $g2]]} {lappend sections $g2}
-	}
-	if {![llength $sections]} continue
-	append nav {<li><details><summary>} [esc $g1] {</summary>} \n {<ul>} \n
-	foreach g2 $sections {
-		# second level: the section of the book
-		append nav {<li><details><summary>} [esc $g2] {</summary>} \n {<ul>} \n
-		foreach item [dict get $tree [list $g1 $g2]] {
-			lassign $item title href keywords
-			set keywordAttr [attr [string tolower [join $keywords |]]]
-			append nav "<li data-keywords=\"$keywordAttr\"><a href=\"$href\" target=\"content\">[esc $title]</a></li>\n"
-		}
-		append nav {</ul></details></li>} \n
-	}
-	append nav {</ul></details></li>} \n
-}
+append nav [outlineHtml {}]
 
 # the keywords of the manual pages as a group of their own after the last group:
 # one entry per keyword, containing the pages that have this keyword
@@ -313,10 +395,9 @@ if {[info exists keywordPages]} {
 	append nav {<li><details><summary>Keywords</summary>} \n {<ul>} \n
 	foreach keyword [lsort -dictionary [dict keys $keywordPages]] {
 		append nav "<li><details><summary>[esc $keyword]</summary>\n<ul>\n"
-		set keywordAttr [attr [string tolower $keyword]]
 		foreach item [lsort -dictionary -index 0 -unique [dict get $keywordPages $keyword]] {
 			lassign $item title href
-			append nav "<li data-keywords=\"$keywordAttr\"><a href=\"$href\" target=\"content\">[esc $title]</a></li>\n"
+			append nav [leafHtml $title $href [list $keyword]]
 		}
 		append nav {</ul></details></li>} \n
 	}
