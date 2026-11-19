@@ -1,0 +1,7 @@
+<script>
+// included in the head of every manual page by markdown2html.tcl:
+// when shown in the content frame of index.html, tell the outline which page this is,
+// so that it can mark the matching entry (unlike reading the location of the frame,
+// this also works when the pages are opened from file:// URLs)
+if (window.parent !== window) window.parent.postMessage({manualPage: location.href.split('#')[0]}, '*');
+</script>

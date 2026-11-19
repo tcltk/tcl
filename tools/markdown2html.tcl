@@ -17,7 +17,10 @@ package require json   ;# from tcllib
 #          (it can be opened and closed). The last element is the label of the entry linking
 #          to a specific manual page. The outline is built in the order of the appearance
 #          in the file. The first element is the toplevel node in the outline (Tcl, Tk, Keywords).
-# - file = the file name of the markdown file without the .md extension (within the "markdown" folder defined below)
+#          A path with just one element is a toplevel entry linking directly to a page that belongs to
+#          none of the sections, currently this is only {Introduction}.
+# - file = the file name of the markdown file without the .md extension (within the "markdown" folder defined below,
+#          see pageFolder for the subfolder)
 #
 # For later (after TIP 700):
 # Another element acting as an anchor within the page, so that several entries can lead to different places of the same page):
@@ -45,11 +48,14 @@ proc isCAPI {path} {
 
 proc pageFolder {path} {
 	#
-	# determines into which HTML output folder a specific manual page needs to go:
-	# Tcl or Tk for commands etc., TclCAPI or TkCAPI for the C API
+	# determines into which HTML output folder a specific manual page needs to go
+	# (and in which subfolder of the markdown folder it is found):
+	# Tcl or Tk for commands etc., TclCAPI or TkCAPI for the C API,
+	# no folder at all (an empty string: next to index.html) for the toplevel entries with a path of just one element
 	#
 	# path - the outline path of the page
 	#
+	if {[llength $path] == 1} {return {}}
 	set toplevel [lindex $path 0]
 	if {$toplevel ni {Tcl Tk}} {
 		return -code error "unknown toplevel '$toplevel' in path $path (the first element must be Tcl, Tk or Keywords)"
@@ -65,7 +71,7 @@ proc pageHref {page} {
 	#
 	# page - the dict of the entry (see manFiles)
 	#
-	set href [dict get $page folder]/[dict get $page file].html
+	set href [file join [dict get $page folder] [dict get $page file]].html
 	# further elements of the lines can be used here, e.g. [dict getdef $page anchor {}]
 	return $href
 }
@@ -86,8 +92,8 @@ proc parsePageLine {line} {
 	for {set i 0} {$i < [llength $line]} {incr i} {
 		dict set page [lindex $pageFields $i] [lindex $line $i]
 	}
-	if {[llength [dict get $page path]] < 2} {
-		return -code error "the path must have at least two elements (toplevel and one node): $line"
+	if {[llength [dict get $page path]] < 1} {
+		return -code error "the path must have at least one element: $line"
 	}
 	# the output folder follows from the path:
 	dict set page folder [pageFolder [dict get $page path]]
@@ -155,6 +161,20 @@ proc readMeta {mdFile} {
 }
 
 
+proc relativeHref {folder targetFolder targetFile} {
+	#
+	# link from a page to another page, both given by their output folder (an empty string for the folder next to index.html)
+	#
+	# folder       - folder of the page holding the link
+	# targetFolder - folder of the page linked to
+	# targetFile   - file name of the page linked to (without .html)
+	#
+	if {$targetFolder eq $folder} {return $targetFile.html}
+	set up [expr {$folder eq "" ? "" : "../"}]
+	return $up[file join $targetFolder $targetFile].html
+}
+
+
 proc seeAlsoHtml {folder myFile links} {
 	#
 	# HTML for the "See also" block at the bottom of a page
@@ -175,7 +195,7 @@ proc seeAlsoHtml {folder myFile links} {
 		}
 		lassign $target targetFolder targetFile
 		if {$targetFolder eq $folder && $targetFile eq $myFile} {continue}
-		set href [expr {$targetFolder eq $folder ? "$targetFile.html" : "../$targetFolder/$targetFile.html"}]
+		set href [relativeHref $folder $targetFolder $targetFile]
 		lappend items "<li><a href=\"[attr $href]\">[esc $link]</a></li>"
 	}
 	if {![llength $items]} {return {}}
@@ -203,17 +223,18 @@ proc outlineHtml {parent} {
 	#
 	# parent - the path of the section to render, {} for the whole outline
 	#
-	global children manFiles fileKeywords
+	global children manFiles fileKeywords initiallyOpen
 	set html {}
 	foreach name [dict get $children $parent] {
 		set path [list {*}$parent $name]
 		if {[dict exists $children $path]} {
-			append html {<li><details><summary>} [esc $name] {</summary>} \n {<ul>} \n
+			set open [expr {$path in $initiallyOpen ? " open data-open" : ""}]
+			append html "<li><details$open><summary>" [esc $name] {</summary>} \n {<ul>} \n
 			append html [outlineHtml $path]
 			append html {</ul></details></li>} \n
 		} else {
 			set page [dict get $manFiles $path]
-			set key [dict get $page folder]/[dict get $page file]
+			set key [file join [dict get $page folder] [dict get $page file]]
 			append html [leafHtml $name [pageHref $page] [dict getdef $fileKeywords $key {}]]
 		}
 	}
@@ -223,6 +244,11 @@ proc outlineHtml {parent} {
 
 
 ######## MAIN PROGRAM STARTS HERE ############
+
+
+## List of sections of the outline that are open when index.html is loaded (each one an outline path).
+## All others are closed, except for those leading to the page shown
+set initiallyOpen {Tcl}
 
 
 # manFiles: path -> dict (path file folder, plus the further elements of the line);
@@ -265,7 +291,7 @@ foreach path [dict keys $manFiles] {
 set markdownDir [file join [file dirname [info script]] .. doc markdown]
 set listed [dict create]
 foreach path [dict keys $manFiles] {
-	dict set listed [dict get $manFiles $path folder]/[dict get $manFiles $path file] $path
+	dict set listed [file join [dict get $manFiles $path folder] [dict get $manFiles $path file]] $path
 }
 set missing {}
 foreach key [dict keys $listed] {
@@ -276,9 +302,9 @@ foreach key [dict keys $listed] {
 if {[llength $missing]} {
 	return -code error "$pagesFile: [llength $missing] listed markdown file(s) not found in $markdownDir:\n  [join $missing "\n  "]"
 }
-foreach folder {Tcl TclCAPI Tk TkCAPI} {
+foreach folder {{} Tcl TclCAPI Tk TkCAPI} {
 	foreach mdFile [lsort [glob -nocomplain -directory [file join $markdownDir $folder] *.md]] {
-		set key $folder/[file rootname [file tail $mdFile]]
+		set key [file join $folder [file rootname [file tail $mdFile]]]
 		if {![dict exists $listed $key]} {
 			puts stderr "warning: $key.md is not listed in the pages file and will not appear in the manual"
 		}
@@ -292,6 +318,7 @@ foreach folder {Tcl TclCAPI Tk TkCAPI} {
 # These parts are shwon in the right panel of the webpage when clicking on the respective entry in the outline of the left panel:
 # - the Tcl pages go into the Tcl folder, the Tk pages into the Tk folder (as determined by the path in the pages file)
 # - the Tcl C API goes into the TclCAPI folder, the Tk C API into the TkCAPI folder (see pageFolder)
+# - pages with a one-element path go into the html folder itself, next to index.html
 file mkdir \
 	../doc/html/Tcl \
 	../doc/html/Tk \
@@ -339,7 +366,7 @@ foreach entry [dict keys $manFiles] {
 	set myFolder [dict get $manFiles $entry folder]
 	# pages of different folders (e.g. Tcl and Tk) may have the same file name,
 	# so everything that is looked up per page is keyed by folder and file:
-	set pageKey $myFolder/$myFile
+	set pageKey [file join $myFolder $myFile]
 	if {[dict exists $converted $pageKey]} continue
 	dict set converted $pageKey 1
 	puts "$pageKey.md -> $pageKey.html"
@@ -347,7 +374,7 @@ foreach entry [dict keys $manFiles] {
 	# the keywords go into the search index (see below):
 	dict set fileKeywords $pageKey [dict getdef $meta Keywords {}]
 	dict set fileTitle $pageKey [dict getdef $meta title $myFile]
-	dict set fileHref $pageKey $myFolder/$myFile.html
+	dict set fileHref $pageKey $pageKey.html
 	# the links go to the bottom of the page:
 	set seeAlso {}
 	set seeAlsoHtml [seeAlsoHtml $myFolder $myFile [dict getdef $meta Links {}]]
@@ -360,8 +387,9 @@ foreach entry [dict keys $manFiles] {
 	exec pandoc -f markdown-tex_math_dollars-smart-raw_html -t html \
 		--lua-filter markdown2html.lua \
 		{*}$seeAlso \
+		--include-in-header [file join [file dirname [info script]] markdown2html-header.html] \
 		--toc --toc-depth=2 \
-		-s -c [file join .. tcl-docs.css] \
+		-s -c [expr {$myFolder eq "" ? "tcl-docs.css" : "../tcl-docs.css"}] \
 		-o [file join .. doc html $myFolder $myFile.html] \
 		[file join .. doc markdown $myFolder $myFile.md]
 	if {$seeAlso ne ""} {file delete $seeAlsoFile}
@@ -373,6 +401,9 @@ file delete $metaTemplate
 # now create the index.html file with all links to the individual pages
 #
 puts "\ncreate index.html\n"
+# the page shown in the right panel when index.html is opened: the first entry of the pages file
+set startPage [pageHref [dict get $manFiles [lindex [dict keys $manFiles] 0]]]
+
 # title shown in the fixed header bar and as page title:
 set manualTitle {Tcl/Tk manual, version 9.1}
 
@@ -419,7 +450,7 @@ puts $fh [subst -nocommands {<!DOCTYPE html>
 <input id="filter" type="search" placeholder="Filter..." autocomplete="off">
 $nav
 </nav>
-<iframe name="content" src="Tcl/Tcl.html" title="Manual page"></iframe>
+<iframe name="content" src="$startPage" title="Manual page"></iframe>
 </div>
 <script>
 const frame = document.querySelector('iframe[name=content]');
@@ -432,15 +463,20 @@ function mark(a) {
   a.scrollIntoView({block: 'nearest'});
 }
 links.forEach(a => a.addEventListener('click', () => mark(a)));
-// follow links clicked inside the content frame (works where the browser allows access to the frame's location):
+// mark the entry of the page shown in the content frame (when a link inside of a page was clicked):
+function follow(url) {
+  const cur = document.querySelector('nav a.current');
+  if (cur && cur.href.split('#')[0] === url) return;
+  const m = links.find(l => l.href.split('#')[0] === url);
+  if (m) mark(m);
+}
+// - the pages report themselves (see markdown2html-header.html); this also works with file:// URLs:
+window.addEventListener('message', e => {
+  if (e.source === frame.contentWindow && e.data && typeof e.data.manualPage === 'string') follow(e.data.manualPage);
+});
+// - fallback for pages without that script, where the browser allows access to the frame's location:
 frame.addEventListener('load', () => {
-  try {
-    const p = frame.contentWindow.location.pathname;
-    const cur = document.querySelector('nav a.current');
-    if (cur && cur.pathname === p) return;
-    const m = links.find(l => l.pathname === p);
-    if (m) mark(m);
-  } catch (e) {}
+  try { follow(frame.contentWindow.location.href.split('#')[0]); } catch (e) {}
 });
 mark(links.find(a => a.getAttribute('href') === frame.getAttribute('src')));
 document.getElementById('filter').addEventListener('input', e => {
@@ -454,7 +490,8 @@ document.getElementById('filter').addEventListener('input', e => {
     d.parentElement.hidden = q && !d.querySelector('li:not([hidden]) > a');
   });
   const cur = document.querySelector('nav a.current');
-  document.querySelectorAll('nav details').forEach(d => d.open = !!q || d.contains(cur));
+  // without a filter, the sections open at the start stay open as well:
+  document.querySelectorAll('nav details').forEach(d => d.open = !!q || d.contains(cur) || d.hasAttribute('data-open'));
 });
 </script>
 </body></html>}]
