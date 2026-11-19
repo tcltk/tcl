@@ -111,7 +111,7 @@ static const struct cname {
     {"right-curly-bracket", '}'},
     {"tilde",		'~'},
     {"DEL",		'\x7F'},
-    {NULL,		'\x00'}
+    {NULL,		0}
 };
 
 /*
@@ -930,11 +930,18 @@ range(
 
     /*
      * When case-independent, it's hard to decide when cvec ranges are usable,
-     * so for now at least, we won't try. We allocate enough space for two
-     * case variants plus a little extra for the two title case variants.
+     * so for now at least, we won't try. For each character the loop below
+     * stores the character itself plus up to three case variants (lower,
+     * upper and title), so reserve four slots per character. Four is the
+     * structural maximum (the number of addchr() calls per iteration) and so
+     * cannot be exceeded whatever the case tables contain. The previous
+     * estimate of two variants per character undercounted the Latin
+     * title-case digraphs (U+01C4-U+01CC and U+01F1-U+01F3), which each add
+     * three entries; a wide case-insensitive bracket range covering them,
+     * e.g. the range U+01C4 to U+01F4, overflowed the cvec during compilation.
      */
 
-    nchrs = (b - a + 1)*2 + 4;
+    nchrs = (b - a + 1)*4;
 
     cv = getcvec(v, nchrs, 0);
     NOERRN();
@@ -1212,24 +1219,24 @@ cclass(
 	}
 	break;
     case CC_PRINT:
-    	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
-    	if (cv) {
-    	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
-    		addrange(cv, spaceRangeTable[i].start,
-    				spaceRangeTable[i].end);
-    	    }
-    	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
-    		addchr(cv, spaceCharTable[i]);
-    	    }
-    	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
-    		addrange(cv, graphRangeTable[i].start,
-    				graphRangeTable[i].end);
-    	    }
-    	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
-    		addchr(cv, graphCharTable[i]);
-    	    }
-    	}
-    	break;
+	cv  = getcvec(v, NUM_SPACE_CHAR + NUM_GRAPH_CHAR, NUM_SPACE_RANGE + NUM_GRAPH_RANGE  - 1);
+	if (cv) {
+	    for (i=1 ; i<NUM_SPACE_RANGE ; i++) {
+		addrange(cv, spaceRangeTable[i].start,
+				spaceRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
+		addchr(cv, spaceCharTable[i]);
+	    }
+	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
+		addrange(cv, graphRangeTable[i].start,
+				graphRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
+		addchr(cv, graphCharTable[i]);
+	    }
+	}
+	break;
     case CC_GRAPH:
 	cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE);
 	if (cv) {
