@@ -5069,7 +5069,7 @@ TEBCresume(
 	    if (TclListObjIsNative(value2Ptr)) {
 		ListObjLength(value2Ptr, value2Len);
 	    } else if ((lenProc = TclObjTypeHasProc(value2Ptr, lengthProc))
-		       != NULL) {
+		    != NULL) {
 		value2Len = lenProc(value2Ptr);
 	    } else {
 		/*
