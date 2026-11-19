@@ -197,7 +197,7 @@ static void		ZlibStreamCleanup(ZlibStreamHandle *zshPtr);
 static int		ZlibStreamSubcmd(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 static inline void	ZlibTransformEventTimerKill(ZlibChannelData *cd);
-static void		ZlibTransformTimerRun(ClientData clientData);
+static void		ZlibTransformTimerRun(void *clientData);
 
 /*
  * Type of zlib-based compressing and decompressing channels.
@@ -894,7 +894,7 @@ Tcl_ZlibStreamInit(
 
 static void
 ZlibStreamCmdDelete(
-    ClientData cd)
+    void *cd)
 {
     ZlibStreamHandle *zshPtr = (ZlibStreamHandle *)cd;
 
@@ -1780,10 +1780,10 @@ Tcl_ZlibInflate(
 	 * Start with a buffer (up to) 3 times the size of the input data.
 	 */
 
-	if (inLen < 32*1024*1024) {
-	    bufferSize = 3*inLen;
-	} else if (inLen < 256*1024*1024) {
-	    bufferSize = 2*inLen;
+	if (inLen < 32 * 1024 * 1024) {
+	    bufferSize = 3 * inLen;
+	} else if (inLen < 256 * 1024 * 1024) {
+	    bufferSize = 2 * inLen;
 	} else {
 	    bufferSize = inLen;
 	}
@@ -1792,8 +1792,7 @@ Tcl_ZlibInflate(
     TclNewObj(obj);
     outData = Tcl_SetByteArrayLength(obj, bufferSize);
     memset(&stream, 0, sizeof(z_stream));
-    stream.avail_in = (uInt) inLen+1;	/* +1 because zlib can "over-request"
-					 * input (but ignore it!) */
+    stream.avail_in = (uInt) inLen;
     stream.next_in = inData;
     stream.avail_out = bufferSize;
     stream.next_out = outData;
@@ -1837,7 +1836,7 @@ Tcl_ZlibInflate(
 	}
 	newBufferSize = bufferSize + 5 * stream.avail_in;
 	if (newBufferSize == bufferSize) {
-	    newBufferSize = bufferSize+1000;
+	    newBufferSize = bufferSize + 1000;
 	}
 	newOutData = Tcl_SetByteArrayLength(obj, newBufferSize);
 
@@ -1934,7 +1933,7 @@ Tcl_ZlibAdler32(
 
 static int
 ZlibCmd(
-    ClientData notUsed,
+    void *notUsed,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2533,7 +2532,7 @@ ZlibPushSubcmd(
 
 static int
 ZlibStreamCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2659,7 +2658,7 @@ ZlibStreamCmd(
 
 static int
 ZlibStreamAddCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2783,7 +2782,7 @@ ZlibStreamAddCmd(
 
 static int
 ZlibStreamPutCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2872,7 +2871,7 @@ ZlibStreamPutCmd(
 
 static int
 ZlibStreamHeaderCmd(
-    ClientData cd,
+    void *cd,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const objv[])
@@ -2911,7 +2910,7 @@ ZlibStreamHeaderCmd(
 
 static int
 ZlibTransformClose(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
@@ -3011,7 +3010,7 @@ ZlibTransformClose(
 
 static int
 ZlibTransformInput(
-    ClientData instanceData,
+    void *instanceData,
     char *buf,
     int toRead,
     int *errorCodePtr)
@@ -3146,7 +3145,7 @@ copyDecompressed:
 
 static int
 ZlibTransformOutput(
-    ClientData instanceData,
+    void *instanceData,
     const char *buf,
     int toWrite,
     int *errorCodePtr)
@@ -3269,7 +3268,7 @@ ZlibTransformFlush(
 
 static int
 ZlibTransformSetOption(			/* not used */
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     const char *value)
@@ -3382,7 +3381,7 @@ ZlibTransformSetOption(			/* not used */
 
 static int
 ZlibTransformGetOption(
-    ClientData instanceData,
+    void *instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     Tcl_DString *dsPtr)
@@ -3503,7 +3502,7 @@ ZlibTransformGetOption(
 
 static void
 ZlibTransformWatch(
-    ClientData instanceData,
+    void *instanceData,
     int mask)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
@@ -3526,7 +3525,7 @@ ZlibTransformWatch(
 
 static int
 ZlibTransformEventHandler(
-    ClientData instanceData,
+    void *instanceData,
     int interestMask)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
@@ -3547,7 +3546,7 @@ ZlibTransformEventTimerKill(
 
 static void
 ZlibTransformTimerRun(
-    ClientData clientData)
+    void *clientData)
 {
     ZlibChannelData *cd = (ZlibChannelData *)clientData;
 
@@ -3565,12 +3564,11 @@ ZlibTransformTimerRun(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformGetHandle(
-    ClientData instanceData,
+    void *instanceData,
     int direction,
-    ClientData *handlePtr)
+    void **handlePtr)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
 
@@ -3586,10 +3584,9 @@ ZlibTransformGetHandle(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ZlibTransformBlockMode(
-    ClientData instanceData,
+    void *instanceData,
     int mode)
 {
     ZlibChannelData *cd = (ZlibChannelData *)instanceData;
@@ -3614,7 +3611,6 @@ ZlibTransformBlockMode(
  *
  *----------------------------------------------------------------------
  */
-
 static Tcl_Channel
 ZlibStackChannelTransform(
     Tcl_Interp *interp,		/* Where to write error messages. */
@@ -3778,7 +3774,6 @@ ZlibStackChannelTransform(
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ResultDecompress(
     ZlibChannelData *cd,
@@ -3868,7 +3863,7 @@ ResultDecompress(
 
   handleError:
     errObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj("-errorcode",-1));
+    Tcl_ListObjAppendElement(NULL, errObj, Tcl_NewStringObj("-errorcode", -1));
     Tcl_ListObjAppendElement(NULL, errObj,
 	    ConvertErrorToList(e, cd->inStream.adler));
     Tcl_ListObjAppendElement(NULL, errObj,
@@ -3880,7 +3875,10 @@ ResultDecompress(
 
 /*
  *----------------------------------------------------------------------
- *	Finally, the TclZlibInit function. Used to install the zlib API.
+ *
+ *	Finally, the TclZlibInit function. Used to install the zlib API apart
+ *	from the ensemble command.
+ *
  *----------------------------------------------------------------------
  */
 
