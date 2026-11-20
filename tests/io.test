@@ -3294,6 +3294,30 @@ test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug 
     unset -nocomplain ::done ::cli ::cnt s c
 } -result [lrepeat 6 {<1 line>} {<2 line>} {<3 line>}]
 
+test io-29.36.3 {gets on translation auto, "\r" then a buffer without eol, bug [4c5a98f5a0]} -setup {
+    lassign [chan pipe] r w
+    fconfigure $r -blocking 0 -translation auto
+    fconfigure $w -translation binary -buffering none
+    set res {}
+} -body {
+    puts -nonewline $w "a\r"
+    lappend res [gets $r]
+    puts -nonewline $w "b"
+    lappend res [gets $r] [fblocked $r]
+    puts -nonewline $w "\nc\n"
+    lappend res [gets $r] [gets $r]
+    puts -nonewline $w "d\r"
+    lappend res [gets $r]
+    puts -nonewline $w "e"
+    lappend res [gets $r]
+    puts -nonewline $w "\n\rf\n"
+    lappend res [gets $r] [gets $r] [gets $r]
+} -cleanup {
+    close $w
+    close $r
+    unset -nocomplain r w res
+} -result {a {} 1 b c d {} e {} f}
+
 # Test end of line translations. Procedures tested are Tcl_Write, Tcl_Read.
 
 test io-30.1 {Tcl_Write lf, Tcl_Read lf} {
