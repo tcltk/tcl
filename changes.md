@@ -98,6 +98,7 @@ to the userbase.
  - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tktview/f1a25e)
  - [unexpected 'result' in trace execution leave](https://core.tcl-lang.org/tcl/tktview/281138)
  - [Possible overread in Tcl_ZlibInflate()](https://core.tcl-lang.org/tcl/tktview/1b803e)
+ - [time limit timer callback could re-run](https://core.tcl-lang.org/tcl/tktview/302782)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
