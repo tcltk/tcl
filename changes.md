@@ -92,6 +92,7 @@ to the userbase.
  - [unexpected 'result' in trace execution leave](https://core.tcl-lang.org/tcl/tktview/281138)
  - [Possible overread in Tcl_ZlibInflate()](https://core.tcl-lang.org/tcl/tktview/1b803e)
  - [time limit timer callback could re-run](https://core.tcl-lang.org/tcl/tktview/302782)
+ - [writes accepted after non-blocking chan close write](https://core.tcl-lang.org/tcl/tktview/2b6b0a)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
