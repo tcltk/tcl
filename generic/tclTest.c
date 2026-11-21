@@ -367,6 +367,7 @@ static Tcl_ObjCmdProc2	TestUtfToNormalizedDStringCmd;
 static Tcl_ObjCmdProc2	TestUtfToNormalizedCmd;
 static Tcl_ObjCmdProc2	TestNumUtfCharsCmd;
 static Tcl_ObjCmdProc2	TestGetUniCharCmd;
+static Tcl_ObjCmdProc2	TestGraphemeCmd;
 static Tcl_ObjCmdProc2	TestFindFirstCmd;
 static Tcl_ObjCmdProc2	TestFindLastCmd;
 static Tcl_ObjCmdProc2	TestHashSystemHashCmd;
@@ -781,6 +782,9 @@ Tcltest_Init(
 	    TestUtfToNormalizedCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testutftonormalizeddstring",
 	    TestUtfToNormalizedDStringCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "testgrapheme",
+	    TestGraphemeCmd, NULL, NULL);
+
 #if defined(_WIN32)
     Tcl_CreateObjCommand2(interp, "testhandlecount", TestHandleCountCmd,
 	    NULL, NULL);
@@ -10452,6 +10456,338 @@ TestpostinitCmd(
 }
 
 /******************* End of TIP 755 Test routines *********************/
+
+
+/******************* Start of TIP 756 Test routines *********************/
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TestGraphemeCmd --
+ *
+ *      Implements the testgrapheme command.
+ *          testgrapheme FUNCTION STRING LENGTH ?options?
+ *      objv[1] - name of the API function being tested.
+ *      objv[2] - byte array in TUTF-8 or Tcl_UniChar's depending on the API.
+ *                A byte array so we can pass invalid encoded data.
+ *      objv[3] - length argument to pass to the API. Note this is explicitly
+ *                passed and not based on objv[2]. If passed as negative,
+ *                caller must ensure objv[2] is properly nul terminated !!!
+ *      objv[4] - options to commands. Options not relevant to a command
+ *                are ignored without an error being raised.
+ *
+ * Results:
+ *	Standard Tcl result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *------------------------------------------------------------------------
+ */
+static int
+TestGraphemeCmd(
+    TCL_UNUSED(void *),
+    Tcl_Interp *interp,
+    Tcl_Size objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc < 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "apiname string length ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    static const char *const cmds[] = {
+	"Tcl_GraphemeCount", "Tcl_GraphemeUniCount",
+	"Tcl_GraphemeNext", "Tcl_GraphemeUniNext",
+	"Tcl_GraphemePrev", "Tcl_GraphemeUniPrev",
+	"Tcl_GraphemeIndex", "Tcl_GraphemeUniIndex",
+	"Tcl_GraphemeRange", "Tcl_GraphemeUniRange",
+	"Tcl_GraphemeReverse", "Tcl_GraphemeUniReverse",
+	NULL
+    };
+    enum {
+	COUNT, UNICOUNT,
+	NEXT, UNINEXT,
+	PREV, UNIPREV,
+	INDEX, UNIINDEX,
+	RANGE, UNIRANGE,
+	REVERSE, UNIREVERSE
+    };
+    int cmd;
+
+    static const char *const opts[] = {
+	"-first", "-last", "-capacity",
+	"-nowidthptr", "-nonumbytesptr", "-noendptrptr",
+	NULL
+    };
+    enum { FIRST, LAST, CAPACITY, NOWIDTHPTR, NONUMBYTESPTR, NOENDPTRPTR };
+    int opt;
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    Tcl_Size lengthArg;
+    if (Tcl_GetSizeIntFromObj(interp, objv[3], &lengthArg) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_Size numBytes = 0;
+    Tcl_Size uniLen = 0;
+    Tcl_Size first = 0;
+    Tcl_Size last = TCL_SIZE_MAX;
+    Tcl_Size capacity = -1;
+    Tcl_Size grWidth = -1;
+    const char *bytes;
+    Tcl_Size *grWidthPtr = &grWidth;
+    Tcl_Size *numBytesPtr = &numBytes;
+    bool noEndPtr = false;
+
+    for (int i = 4; i < objc; ++i) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], opts, "option", 0, &opt)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (opt) {
+	case FIRST:
+	case LAST:
+	case CAPACITY:
+	    if (++i >= objc) {
+		Tcl_SetObjResult(interp,
+			Tcl_ObjPrintf("Missing value for option %s",
+				opts[opt]));
+		return TCL_ERROR;
+	    } else {
+		Tcl_Size len;
+		if (Tcl_GetSizeIntFromObj(interp, objv[i], &len) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		switch (opt) {
+		case FIRST: first = len; break;
+		case LAST: last = len; break;
+		case CAPACITY: capacity = len; break;
+		}
+	    }
+	    break;
+	case NOWIDTHPTR:
+	    grWidthPtr = NULL;
+	    break;
+	case NONUMBYTESPTR:
+	    numBytesPtr = NULL;
+	    break;
+	case NOENDPTRPTR:
+	    noEndPtr = true;
+	    break;
+	}
+    }
+
+    /* Get bytes last to avoid shimmering issues */
+    bytes = (char *) Tcl_GetBytesFromObj(interp, objv[2], &numBytes);
+    if (bytes == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (lengthArg != -1) {
+	switch (cmd) {
+	case COUNT:
+	case NEXT:
+	case PREV:
+	case INDEX:
+	case RANGE:
+	case REVERSE:
+	    if (lengthArg > numBytes) {
+		Tcl_SetObjResult(interp,
+			Tcl_ObjPrintf(
+				"length argument value %" TCL_SIZE_MODIFIER
+				"d is greater "
+				"than the length %" TCL_SIZE_MODIFIER
+				"d of passed byte sequence",
+				lengthArg, numBytes));
+		return TCL_ERROR;
+	    }
+	    break;
+	case UNICOUNT:
+	case UNINEXT:
+	case UNIPREV:
+	case UNIINDEX:
+	case UNIREVERSE:
+	    uniLen = numBytes / sizeof(Tcl_UniChar);
+	    if (lengthArg > uniLen) {
+		Tcl_SetObjResult(interp,
+			Tcl_ObjPrintf(
+				"length argument value %" TCL_SIZE_MODIFIER
+				"d * sizeof(Tcl_UniChar) is greater "
+				"than the length %" TCL_SIZE_MODIFIER
+				"d of passed byte sequence",
+				lengthArg, numBytes));
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+    }
+
+    Tcl_Size len = 0;
+    Tcl_Size count = -1;
+    const char *tutf8Ptr = NULL;
+    const Tcl_UniChar *uniPtr;
+    const char *tutf8EndPtr = NULL;
+    const Tcl_UniChar *uniEndPtr = NULL;
+    Tcl_Obj *resultObj = NULL;
+    void *outBufPtr = NULL;
+    switch (cmd) {
+    case COUNT:
+	count = Tcl_GraphemeCount(bytes, lengthArg);
+	resultObj = Tcl_NewWideIntObj(count);
+	break;
+    case UNICOUNT:
+	count = Tcl_GraphemeUniCount((Tcl_UniChar *)bytes, lengthArg);
+	resultObj = Tcl_NewWideIntObj(count);
+	break;
+    case NEXT:
+	tutf8Ptr = Tcl_GraphemeNext(bytes, lengthArg, &grWidth);
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewStringObj(bytes, tutf8Ptr - bytes));
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(grWidth));
+	break;
+    case UNINEXT:
+	uniPtr = Tcl_GraphemeUniNext((Tcl_UniChar *)bytes, lengthArg, &grWidth);
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewUnicodeObj((Tcl_UniChar *)bytes, grWidth));
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(grWidth));
+	break;
+    case PREV:
+	tutf8Ptr = Tcl_GraphemePrev(lengthArg + bytes, lengthArg, &grWidth);
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewStringObj(tutf8Ptr, bytes - tutf8Ptr));
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(grWidth));
+	break;
+    case UNIPREV:
+	uniPtr = Tcl_GraphemeUniPrev(lengthArg + (Tcl_UniChar *)bytes,
+		lengthArg, &grWidth);
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewUnicodeObj(uniPtr, grWidth));
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(grWidth));
+	break;
+    case INDEX:
+	tutf8Ptr = Tcl_GraphemeIndex(bytes, lengthArg, first, grWidthPtr,
+		numBytesPtr);
+	resultObj = Tcl_NewListObj(3, NULL);
+	if (tutf8Ptr == NULL) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
+	} else {
+	    if (numBytesPtr) {
+		len = *numBytesPtr;
+	    } else {
+		if (numBytes) {
+		    /* Originally caller passed empty string */
+		    len = 0;
+		} else {
+		    if (!Tcl_UtfCharComplete(tutf8Ptr, numBytes - first)) {
+			Tcl_SetResult(interp, "Incomplete UTF-8 sequence.",
+				TCL_STATIC);
+			return TCL_ERROR;
+		    }
+		    /*
+		     * If we did not pass numBytesPtr, it was primarily to
+		     * ensure no crashes on NULL. Just return the first UTF8
+		     * character
+		     */
+		    const char *endPtr = Tcl_UtfNext(tutf8Ptr);
+		    len = endPtr - tutf8Ptr;
+		}
+	    }
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewStringObj(tutf8Ptr, len));
+	}
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewWideIntObj(grWidthPtr ? *grWidthPtr : 0));
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewWideIntObj(numBytesPtr ? *numBytesPtr : 0));
+	break;
+    case UNIINDEX:
+	uniPtr = Tcl_GraphemeUniIndex((Tcl_UniChar *)bytes, lengthArg, first,
+		grWidthPtr, numBytesPtr);
+	resultObj = Tcl_NewListObj(3, NULL);
+	if (uniPtr == NULL) {
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
+	} else {
+	    Tcl_Size len;
+	    if (grWidthPtr) {
+		len = *grWidthPtr;
+	    } else if (numBytesPtr) {
+		len = *numBytesPtr / sizeof(Tcl_UniChar);
+	    } else {
+		/* Just return the first character */
+		len = lengthArg ? 1 : 0;
+	    }
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewUnicodeObj(uniPtr, len));
+	}
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewWideIntObj(grWidthPtr ? *grWidthPtr : 0));
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		Tcl_NewWideIntObj(numBytesPtr ? *numBytesPtr : 0));
+	break;
+    case RANGE:
+	tutf8Ptr = Tcl_GraphemeRange(bytes, lengthArg, first, last,
+		noEndPtr ? NULL : &tutf8EndPtr);
+	if (noEndPtr) {
+	    /*
+	     * We did not ask for the end so only return the first */
+	    if (!Tcl_UtfCharComplete(tutf8Ptr, numBytes - (tutf8Ptr-bytes))) {
+		Tcl_SetResult(interp, "Incomplete UTF-8 sequence.", TCL_STATIC);
+		return TCL_ERROR;
+	    }
+	    tutf8EndPtr = Tcl_UtfNext(tutf8Ptr);
+	}
+	resultObj = Tcl_NewStringObj(tutf8Ptr, tutf8EndPtr - tutf8Ptr);
+	break;
+    case UNIRANGE:
+	uniPtr = Tcl_GraphemeRange((Tcl_UniChar *)bytes, lengthArg, first, last,
+		noEndPtr ? NULL : &uniEndPtr);
+	if (noEndPtr) {
+	    /* We did not ask for the end so only return the first */
+	    len = uniPtr < (uniLen + (Tcl_UniChar *)bytes) ? 1 : 0;
+	} else {
+	    len = uniEndPtr - uniPtr;
+	}
+	resultObj = Tcl_NewUnicodeObj(uniPtr, len);
+	break;
+    case REVERSE:
+	outBufPtr = Tcl_Alloc(capacity > 0 ? capacity : 1);
+	count = Tcl_GraphemeReverse(bytes, lengthArg, (char *)outBufPtr,
+		capacity);
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(count));
+	if (count >= 0) {
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewStringObj(outBufPtr, lengthArg));
+	}
+	Tcl_Free(outBufPtr);
+	break;
+    case UNIREVERSE:
+	outBufPtr = Tcl_Alloc(
+		(capacity > 0 ? capacity : 1) * sizeof(Tcl_UniChar));
+	count = Tcl_GraphemeUniReverse((Tcl_UniChar *)bytes, lengthArg,
+		(Tcl_UniChar *)outBufPtr, capacity);
+	resultObj = Tcl_NewListObj(2, NULL);
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(count));
+	if (count >= 0) {
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewUnicodeObj((Tcl_UniChar *)outBufPtr, lengthArg));
+	}
+	Tcl_Free(outBufPtr);
+	break;
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/******************* End of TIP 756 Test routines *********************/
 
 #ifdef _WIN32
 /*

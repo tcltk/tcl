@@ -615,7 +615,7 @@ Tcl_GraphemeRange(
 				 * nul terminated */
     Tcl_Size grFirst,		/* Starting index of grapheme range */
     Tcl_Size grLast,		/* Ending index of grapheme range */
-    char **endPtrPtr)		/* Location to store pointer beyond range */
+    char **endPtrPtr)		/* Output location for pointer beyond range */
 {
     if (numBytes < 0) {
 	numBytes = strlen(tutf8Ptr);
@@ -626,6 +626,11 @@ Tcl_GraphemeRange(
     /* Negative grLast -> end of string, for consistency with Tcl_GetRange */
     if (grLast < 0) {
 	grLast = TCL_SIZE_MAX;
+    }
+
+    char *endPtr;
+    if (endPtrPtr == NULL) {
+	endPtrPtr = &endPtr;
     }
 
     char *rangeFirstPtr;
@@ -675,6 +680,11 @@ Tcl_GraphemeUniRange(
     /* Negative grLast -> end of string, for consistency with Tcl_GetRange */
     if (grLast < 0) {
 	grLast = TCL_SIZE_MAX;
+    }
+
+    Tcl_UniChar *endPtr;
+    if (endPtrPtr == NULL) {
+	endPtrPtr = &endPtr;
     }
 
     Tcl_UniChar *rangeFirstPtr;
