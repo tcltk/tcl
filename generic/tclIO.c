@@ -1569,7 +1569,7 @@ TclGetChannelFromObj(
     *channelPtr = (Tcl_Channel) statePtr->bottomChanPtr;
 
     if (modePtr != NULL) {
-	*modePtr = GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
+	*modePtr = Tcl_GetChannelMode(*channelPtr);
     }
 
     return TCL_OK;
@@ -2363,8 +2363,17 @@ Tcl_GetChannelMode(
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of actual channel. */
+    int mode = GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
 
-    return GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
+    /*
+     * After a non-blocking [chan close $chan write] TCL_WRITABLE stays set
+     * until the queued output is flushed, but the write side is closed.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_CLOSEDWRITE)) {
+	mode &= ~TCL_WRITABLE;
+    }
+    return mode;
 }
 
 /*
