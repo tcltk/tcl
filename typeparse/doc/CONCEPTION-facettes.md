@@ -405,7 +405,12 @@ convolution réifiée.
 *(21/11 : première étape faite dans VolɷDuctus — `moteur/facets.tcl`, sortes `Being` et
 `Entity`, facettes `properties`, `references`, `convoluences` dérivées avec promesses et
 fermeture ; `vdmtypes.tcl` crée une classe `Entity` par entité ; essai
-`exemple/facettes_exemple.tcl`.)*
+`exemple/facettes_exemple.tcl`. Puis les sortes `Relation` (facette `beings`) et
+`Convolution` (`actants`, `situations`, `consequences`) : les relations et verbes du `.vdm`
+en deviennent des classes, et ce sont leurs facettes qui déclarent les participations ;
+objets : liens (signature, identité, cardinalité), `destroy ?-cascade?`, convolutions avec
+journal. Noms du code : `relative`, `active`, `circumstantial`, `consequences` pour les
+sortes de facettes ; `beings`, `actants`, `situations`, `consequences` pour les facettes.)*
 
 Un prototype en Tcl, dans le moteur de VolɷDuctus (premier client), avant toute modification
 du C ; il remplace `vdmtypes.tcl` sans changer le format `.vdm` (le *typage unique* : la
