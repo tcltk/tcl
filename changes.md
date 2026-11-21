@@ -101,6 +101,7 @@ to the userbase.
  - [time limit timer callback could re-run](https://core.tcl-lang.org/tcl/tktview/302782)
  - [writes accepted after non-blocking chan close write](https://core.tcl-lang.org/tcl/tktview/2b6b0a)
  - [gets with -translation auto merged lines after a "\r" at the end of a read](https://core.tcl-lang.org/tcl/tktview/4c5a98)
+ - [Windows: "open" failed with an empty error message after dup2()](https://core.tcl-lang.org/tcl/tktview/91c9bc)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
