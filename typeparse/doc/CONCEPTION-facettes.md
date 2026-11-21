@@ -28,29 +28,32 @@ ce sont les types de la TIP 764 qui portent la déclaration, pas une métaclasse
 
 | Étage | Exemple | Est une valeur de | Définit |
 |---|---|---|---|
-| sorte | `Entité` | `meta.class` | la liste des facettes (nom, sorte de facette, facultative ou non) |
-| classe | `Article` | `Entité` | la déclaration de chaque facette, et les méthodes |
+| sorte | `Entity` | `meta.class` | la liste des facettes (nom, sorte de facette, facultative ou non) |
+| classe | `Article` | `Entity` | la déclaration de chaque facette, et les méthodes |
 | instance | `visM12` | `Article` | l'état que chaque facette porte |
 
 Les annotations sont des métadonnées ; à chaque étage, une valeur se fige en type pour
-l'étage d'en dessous : la classe `Article` est une valeur du type `Entité`, et devient le type
+l'étage d'en dessous : la classe `Article` est une valeur du type `Entity`, et devient le type
 de ses instances. Un quatrième niveau, `meta.facet`, définit les sortes de facettes.
 
 ```tcl
-type def {meta.class}Être {
+type def {meta.class}Being {
     {propriétés}propriétés; {références}références ?= {}; {convoluences}convoluences ?= {}
 }
-type def {meta.class}Entité      Être
-type def {meta.class}Relation    {Être; {relatif}étants}
+type def {meta.class}Entity      Being
+type def {meta.class}Relation    {Being; {relatif}étants}
 type def {meta.class}Convolution {
-    Être; {actif}actants; {circonstanciel}situations ?= {date quand};
+    Being; {actif}actants; {circonstanciel}situations ?= {date quand};
     {conséquences}conséquences
 }
 
-set {Entité}Article propriétés $proto références {fournisseur {target Fournisseur}} def {
+set {Entity}Article propriétés $proto def {
     method {int}ajouter {{int}n} { incr quantité $n }
 }
-set {Article}visM12 propriétés {nom vis quantité 12} références {fournisseur $acme}
+set {Relation}fournit étants {fournisseur Fournisseur  article Article}
+set {Article}visM12 propriétés {nom vis quantité 12}
+set {fournit}f1 étants {fournisseur $acme  article $visM12}
+$visM12(références)            ;# dérivée : {fournit article f1}
 ```
 
 `meta.class` se lit comme une composition de la TIP 764 (`list.int`) : « méta de classe », un
@@ -105,10 +108,15 @@ Une sorte de facette est paramétrée par le type `D` de ce que la classe décla
 type def Facet({type}D) {
     {fn({D}d -> type)}carry;                ;# ce que porte l'instance (notation à fixer)
     {fn({D}sup; {D}sub -> D)}inherit ?= {}; ;# déclaration d'une sous-classe
+    {fn({class}cls; {model}m -> D)}derive ?= {}; ;# facette dérivée : la vue inverse
+                                            ;# des déclarations des autres classes
     {Lifecycle}life ?= {}                   ;# ce que la facette fait à chaque étape
 }
 ```
 
+* **Facettes dérivées.** Une facette qui a un `derive` ne fait pas foi : sa valeur se
+  calcule depuis les déclarations des *autres* classes (§ 7, « Qui déclare »). Si la classe
+  l'écrit quand même, c'est une **promesse**, confrontée à la dérivation (§ 7bis).
 * **Générique, pas dépendant.** Les signatures des points d'accroche ne dépendent que de `D` :
   elles sont vérifiées une fois, à la définition de la sorte de facette. Aucun champ de
   `Facet` ne dépend de la valeur d'un autre champ.
@@ -127,7 +135,7 @@ type def {meta.facet}propriétés {
 
 * **`carry` traverse un étage.** Le type d'une instance d'`Article` dépend de la *valeur* de
   sa déclaration (le prototype de ses propriétés). Il est calculé une fois, à la création de
-  la classe, et donne un type nommé (`Article` ; `Entité(Article)` dans les messages), comme
+  la classe, et donne un type nommé (`Article` ; `Entity(Article)` dans les messages), comme
   `deref(T)` ou le `record` de `type call`. Le type d'une instance est le produit, facette par
   facette, de `carry(déclaration)`.
 * **Produits dépendants.** Ils existent déjà dans les types binaires (`list($n).T`,
@@ -150,22 +158,26 @@ déclaration `dialect(oo::define)`, que `meta.class` fournit à toutes les sorte
 ## 5. Les sortes d'objets : `meta.class`
 
 ```tcl
-type def {meta.class}Être {
+type def {meta.class}Being {
     {propriétés}propriétés; {références}références ?= {}; {convoluences}convoluences ?= {}
 }
-type def {meta.class}Entité      Être
-type def {meta.class}Relation    {Être; {relatif}étants}
+type def {meta.class}Entity      Being
+type def {meta.class}Relation    {Being; {relatif}étants}
 type def {meta.class}Convolution {
-    Être; {actif}actants; {circonstanciel}situations ?= {date quand};
+    Being; {actif}actants; {circonstanciel}situations ?= {date quand};
     {conséquences}conséquences
 }
 ```
 
-* **Une sorte de base, `Être`.** Les trois sortes partagent propriétés, références et
-  convoluences ; une sorte hérite d'une autre par prolongement du produit (`{Être; …}`),
+* **Noms.** Les sortes portent des noms anglais dans le code (`Being`, `Entity`,
+  `Relation`, `Convolution`) ; les facettes du prototype aussi (`properties`, `references`,
+  `convoluences`), la spécification gardant les noms français pour les autres (`relatif`,
+  `actif`, `circonstanciel`, `conséquences`) jusqu'à leur implémentation.
+* **Une sorte de base, `Being`.** Les trois sortes partagent propriétés, références et
+  convoluences ; une sorte hérite d'une autre par prolongement du produit (`{Being; …}`),
   comme une sous-classe prolonge les propriétés de sa superclasse. Les noms accentués ne
-  posent pas de problème à Tcl ni aux types (`{c!}export` les rend valides en C : `Etre`).
-* **La liste des facettes est une signature de produit.** Une classe de la sorte `Entité`
+  posent pas de problème à Tcl ni aux types (`{c!}export` les rend valides en C).
+* **La liste des facettes est une signature de produit.** Une classe de la sorte `Entity`
   est une valeur de ce produit : une facette inconnue ou une facette obligatoire manquante est
   une erreur de construction, avec les messages ordinaires de la TIP 764. Le nombre de
   facettes est ainsi fixé par sorte.
@@ -178,7 +190,7 @@ type def {meta.class}Convolution {
 * **Construction.** Les mots de `set {Article}x …` sont étiquetés par facette
   (`propriétés {…} références {…}`) ; chaque facette prend les siens à `construct`, avant le
   constructeur, qui ne reçoit que ce qui reste.
-* **Effets de la construction d'une classe.** `set {Entité}Article …` crée la classe TclOO
+* **Effets de la construction d'une classe.** `set {Entity}Article …` crée la classe TclOO
   `Article` dans l'espace de la variable, et le type `Article` ; la variable contient le lien
   vers la classe.
 
@@ -193,7 +205,7 @@ incr visM12(propriétés.quantité)          ;# écriture : modifie l'objet
 set {Article}autre $visM12                ;# même objet, deux liens
 set autre $vis2                           ;# relie : autre désigne un autre objet (contrat Article)
 set {Article}copie [type deref $visM12]   ;# reproduction : un nouvel objet
-$visM12(références.fournisseur)(nom)      ;# un lien suivi jusqu'à un autre objet
+$f1(étants.fournisseur)(nom)              ;# un lien suivi jusqu'à un autre objet
 ```
 
 * **Relier ou modifier.** Écrire la variable relie le lien ; écrire par chemin modifie
@@ -212,14 +224,14 @@ $visM12(références.fournisseur)(nom)      ;# un lien suivi jusqu'à un autre o
 
 | Étape | `propriétés` | `références` | `convoluences` | `def` |
 |---|---|---|---|---|
-| déclare | un prototype (produit typé), avec ses clés | rôle → `{class}target`, `card` (`one`, `opt`, `many`) | les convolutions où l'être peut entrer, et son rôle (dialecte) | méthodes (`oo::define`) |
-| porte | une variable d'objet par champ, typée | des liens `{T}`, `{opt(T)}`, `{list.T}` | le journal : les convolutions subies, chaque entrée en mode *actant* (avec son rôle) ou *situationnel* (avec le nom de la situation) | — |
-| `alloc` | valeurs du prototype : chaque variable naît typée, son contrat est collant | liens vides | journal vide | méthodes installées |
-| `construct` | ses mots étiquetés | ses mots étiquetés ; rôles `one` remplis, sinon mort-né | — | — |
-| `clone` | reproduction des valeurs | copie des liens, pas des cibles | à surveiller (§ 10) ; journal vide dans le prototype | méthodes propres clonées |
-| `reclass` | prolonger ou réduire le produit | refus si un rôle `one` se perd | refus si une convolution du journal n'est plus déclarée | — |
-| `destroy` | — | retrait des liens inverses | — | — |
-| `inherit` | `type extend` (champ en double de type différent : erreur) | réunion des rôles | réunion | `superclass` |
+| déclare | un prototype (produit typé), avec ses clés | **dérivée** : les relations où l'être est étant, avec son rôle ; écrite = promesse | **dérivée** : les convolutions où l'être est actant ou situation, avec son rôle ; écrite = promesse | méthodes internes (`oo::define`) |
+| porte | une variable d'objet par champ, typée | les liens de relation où l'instance figure (vue inverse des instances de relation) | le journal : les convolutions subies, chaque entrée en mode *actant* (avec son rôle) ou *situationnel* (avec le nom de la situation) | — |
+| `alloc` | valeurs du prototype : chaque variable naît typée, son contrat est collant | aucun lien | journal vide | méthodes internes installées ; la facette `convoluences` installe les **méthodes publiques** (§ 7ter) |
+| `construct` | ses mots étiquetés | — (les liens naissent des relations) | — | — |
+| `clone` | reproduction des valeurs | aucun lien : une relation ne se copie pas avec un de ses étants | à surveiller (§ 10) ; journal vide dans le prototype | méthodes propres clonées |
+| `reclass` | prolonger ou réduire le produit | refus si l'instance figure dans une relation que la nouvelle classe ne permet pas | refus si une convolution du journal n'est plus déclarée | — |
+| `destroy` | — | l'alerte des relations dépendantes (§ 7, `relatif`) | — | — |
+| `inherit` | `type extend` (champ en double de type différent : erreur) | dérivée : une relation qui cite la superclasse vaut pour la sous-classe | idem | `superclass` |
 
 **Les propriétés vivent dans des variables d'objet**, une par champ, déclarées par la facette
 (`oo::define variable`) : dans les méthodes, `incr quantité` ; de l'extérieur,
@@ -235,17 +247,29 @@ variable est posé dès `alloc`. La question des variables typées sans valeur
 les conséquences `pré \conduit post` des convolutions déclarées donnent les états (les
 participes) et les transitions, comme l'état dérivé de VolɷDuctus.
 
-### `références`, `relatif`, `actif` : une déclaration, trois vies
+### Qui déclare
 
-Les trois déclarent la même chose (rôle → classe, cardinalité : `dict.string.Role`) ; ce qui
-les distingue est leur `Lifecycle`.
+Une relation déclare ses étants, une convolution ses actants et ses situations : c'est là que
+l'information fait foi (`CONCEPTION-etants.md` de VolɷDuctus). Les facettes `références` et
+`convoluences` d'une entité en sont la **vue inverse** : dérivées par défaut, une promesse si
+on les écrit. On voit l'être entier au même endroit, sans doublon.
 
-| | `références` | `relatif` (les étants d'une relation) | `actif` (les actants d'une convolution) |
-|---|---|---|---|
-| sens | l'être pointe vers d'autres | la relation **est faite de** ses étants | des participants à un procès |
-| identité | non | le n-uplet des étants est la clé : deux relations identiques sont un doublon | non |
-| `construct` | liens fournis | tous les étants requis, unicité vérifiée | actants saisis, précondition vérifiée |
-| `destroy` d'une cible | le lien est retiré | refus avec alerte, ou `destroy -cascade` (voir ci-dessous) | rien : un procès passé reste au journal |
+| Fait foi | Vue inverse, dans l'être cité |
+|---|---|
+| `relatif` (étants d'une relation) | `références` |
+| `actif`, `circonstanciel` (actants, situations d'une convolution) | `convoluences` |
+
+### `relatif`, `actif` : deux vies
+
+Les deux déclarent rôle → classe et cardinalité (`dict.string.Role`) ; ce qui les distingue
+est leur `Lifecycle`.
+
+| | `relatif` (les étants d'une relation) | `actif` (les actants d'une convolution) |
+|---|---|---|
+| sens | la relation **est faite de** ses étants | des participants à un procès |
+| identité | le n-uplet des étants est la clé : deux relations identiques sont un doublon | non |
+| `construct` | tous les étants requis, unicité vérifiée | actants saisis, précondition vérifiée |
+| `destroy` d'une cible | refus avec alerte, ou `destroy -cascade` (voir ci-dessous) | rien : un procès passé reste au journal |
 
 **Destruction d'un étant.** `destroy` sur un être qui est étant d'une ou plusieurs relations
 est refusé, avec une erreur qui renseigne (code `{VD DESTROY DEPENDENTS}`) et nomme la
@@ -260,6 +284,34 @@ info object dependents $palette ;# la liste, sans rien détruire
 
 L'interface pose l'alternative (« détruire tout » / « ne pas détruire ») à partir du code
 d'erreur ; un script choisit par l'option.
+
+### 7bis. Promesses et fermeture du modèle
+
+Une facette dérivée écrite par la classe est une **promesse**. Dans la phase d'essai, une
+promesse est **exhaustive** : une participation qui n'y figure pas est une contradiction. On
+pourra relâcher plus tard (demander confirmation sur une contradiction, permettre des
+reconfigurations).
+
+* **Au fil de l'eau** : à chaque définition (d'une relation, d'une convolution, d'une
+  promesse), on cherche les **contradictions** de la classe qui vient d'être définie et des
+  classes qu'elle cite. Erreur immédiate, à la ligne qui l'a causée. Coût : une recherche par
+  rôle déclaré (un index classe → promesses).
+* **À la fermeture** (`modèle clore`, ce que fait `/modele/verifier`) : tout est revérifié,
+  y compris les **promesses non tenues** (une participation promise qu'aucune définition ne
+  déclare), qu'on ne peut voir qu'une fois le modèle complet. C'est aussi le filet après une
+  redéfinition. La fermeture est la même vérification, appliquée à toutes les classes.
+
+Une étape de niveau **modèle** s'ajoute donc à `Lifecycle`, qui est de niveau objet : la
+fermeture. C'est elle qui calcule les facettes dérivées et les fige.
+
+### 7ter. Les méthodes publiques sont les convolutions
+
+Ce qui change le monde passe par une convolution : typée, en phases, journalisée. La facette
+`convoluences` installe sur l'être une **méthode publique par convolution où il entre**, selon
+son rôle : si une Personne est le prêteur de `prêter`, `$p prêter objet à x` crée la
+convolution. Les méthodes de `def` restent **internes** : elles ne modifient pas les
+propriétés directement. C'est la distinction entre état public et mécanique interne qui
+manque à TclOO.
 
 ### `circonstanciel` : les situations (convolutions)
 
@@ -312,9 +364,9 @@ convolution réifiée.
 
 ## 8. Introspection
 
-* `type get $visM12` → `Article` ; `type get $Article` → `Entité` ; `type get $Entité` →
+* `type get $visM12` → `Article` ; `type get $Article` → `Entity` ; `type get $Entity` →
   `meta.class`.
-* `type def Entité` → la liste des facettes ; `type def Article` → le type calculé des
+* `type def Entity` → la liste des facettes ; `type def Article` → le type calculé des
   instances (produit des `carry`).
 * `info class` et `info object` restent valables sur les classes et objets créés.
 
@@ -342,14 +394,26 @@ convolution réifiée.
   (un exemplaire) de l'être copié. L'étape `clone` recevra ce mode quand on saura le
   distinguer ; le prototype part d'un journal vide et on observe les cas réels.
 * **Points de vue.** Déclaration du modèle, ou attachés au rôle de l'observateur ?
+* **Relâcher les promesses.** Exhaustives dans la phase d'essai ; plus tard, confirmation
+  sur contradiction, reconfigurations.
+* **Écriture des promesses dans le `.vdm`.** Colonnes de la feuille Entités, ou section
+  propre ?
 * **Mixins.** Apportent-ils des facettes, ou seulement des méthodes ?
 
 ## 11. Prototype
 
-Un prototype en Tcl, comme `attentrel`, avant toute modification du C :
+*(21/11 : première étape faite dans VolɷDuctus — `moteur/facets.tcl`, sortes `Being` et
+`Entity`, facettes `properties`, `references`, `convoluences` dérivées avec promesses et
+fermeture ; `vdmtypes.tcl` crée une classe `Entity` par entité ; essai
+`exemple/facettes_exemple.tcl`.)*
+
+Un prototype en Tcl, dans le moteur de VolɷDuctus (premier client), avant toute modification
+du C ; il remplace `vdmtypes.tcl` sans changer le format `.vdm` (le *typage unique* : la
+classe de sorte `Entity` est le type), en commençant par les entités (propriétés et clés,
+références et convoluences dérivées, promesses, fermeture) :
 
 1. `Lifecycle`, `Facet(D)` en script ; `meta.class` comme une commande
-   (`sorte create Entité {…}`), les facettes comme des valeurs de `Facet` ;
+   (`sorte create Entity {…}`), les facettes comme des valeurs de `Facet` ;
 2. les facettes `propriétés`, `références`, `convoluences`, `relatif`, `actif`,
    `circonstanciel`, `conséquences`, `def`, au-dessus de TclOO (constructeur
    et destructeur engendrés, métadonnées en variables d'espace) ;
@@ -357,3 +421,37 @@ Un prototype en Tcl, comme `attentrel`, avant toute modification du C :
    phases, journal) ;
 4. puis, en C : `set {meta.class}…` / `set {Article}…`, les types `class`/`object`, les
    chemins à travers les liens, les facettes sur `Tcl_ObjectMetadataType`.
+
+## 12. Réserves (à vérifier dans le prototype)
+
+*Consignées le 21 novembre 2026, après la mise au point du modèle. Aucune ne le remet en
+cause ; elles disent où regarder en premier.*
+
+1. **La profondeur.** Quatre étages (`meta.facet`, `meta.class`, la classe, l'instance) : une
+   erreur peut naître à l'un et se manifester à l'autre. Chaque message doit dire à quel étage
+   et dans quelle facette elle se produit (par exemple `Entity Article, facette références,
+   construct : …`), sinon le modèle sera difficile à déboguer.
+2. **`set` qui crée une classe.** Faire d'une assignation un acte de création s'écarte de Tcl ;
+   c'est là que la relecture de la TIP résistera. La forme commande reste canonique
+   (`Entity create Article …`), `set {Entity}Article …` en est l'écriture équivalente.
+3. **L'intégrité des liens.** Sans ramasse-miettes, les liens inverses (`références`,
+   `relatif`, l'alerte de destruction et sa fermeture) seront la partie la plus délicate à
+   tenir juste, plus que les types. À tester d'abord : destruction, cascade, copie,
+   reclassement, sur des relations de relations.
+4. **Le générique et le spécifique.** La question de la copie du journal touche une
+   distinction plus profonde : l'article au catalogue et l'exemplaire en stock (le type et
+   l'occurrence ; les *powertypes* des ontologies). Elle reviendra ailleurs que dans la copie ;
+   il faudra peut-être qu'elle ait sa place dans le modèle (un être générique comme classe,
+   un être spécifique comme instance ?). Le `.vdm` la porte déjà (colonne Identité :
+   `spécifique`, `générique UNITÉ` — des exemplaires anonymes, comptés ou mesurés).
+5. **Le coût.** Chaque convolution devient une création d'objet, qui passe par les étapes de
+   chaque facette (des lambdas en Tcl dans le prototype). Pour les volumes de VolɷDuctus cela
+   devrait aller, mais il faut le mesurer : création, chemin à travers un lien, destruction
+   en cascade.
+
+**Points d'appui.** Le protocole des métaobjets de CLOS repose sur les mêmes idées
+(définitions de champs porteuses de comportement, création en étapes surchargeables :
+`allocate-instance`, `initialize-instance`, et `change-class`, notre `reclass`) et a trente
+ans d'usage ; on pourra s'y référer pour les cas délicats (reclassement, instances
+obsolètes quand une classe change).
+
