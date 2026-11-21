@@ -81,9 +81,24 @@ to the userbase.
  - [a child process created by fork() could deadlock on its first allocation](https://core.tcl-lang.org/tcl/tktview/be3854)
  - [use an acquire load for the unlocked check and a release store](https://core.tcl-lang.org/tcl/tktview/112af7)
  - [file cmd fails to copy to VFAT](https://core.tcl-lang.org/tcl/tktview/152304)
+ - [compiled code calling an imported command kept the old compiled form](https://core.tcl-lang.org/tcl/tktview/7b51db)
+ - [free-form clock scan silently wraps numbers that do not fit into an int](https://core.tcl-lang.org/tcl/tktview/f894a8)
+ - [MS-Win: fix exec+wish call of batch files with spaces in path or arguments](https://core.tcl-lang.org/tcl/tktview/f91ab7)
+ - [Tcl_ListObjReplace() and oo:define LIST_MAX overflow error handling](https://core.tcl-lang.org/tcl/tktview/40f628)
+ - [Document that chan push returns a channel ID](https://core.tcl-lang.org/tcl/tktview/7b0e69)
+ - [infinite recursion during 'file exists' if working directory has been removed](https://core.tcl-lang.org/tcl/tktview/4d3f21)
+ - [under Tk, runAllTests exited with status 0 before reporting errors](https://core.tcl-lang.org/tcl/tktview/7abc14)
+ - [New thread panics when stdin is closed](https://core.tcl-lang.org/tcl/tktview/f1a25e)
+ - [unexpected 'result' in trace execution leave](https://core.tcl-lang.org/tcl/tktview/281138)
+ - [Possible overread in Tcl_ZlibInflate()](https://core.tcl-lang.org/tcl/tktview/1b803e)
+ - [time limit timer callback could re-run](https://core.tcl-lang.org/tcl/tktview/302782)
+ - [writes accepted after non-blocking chan close write](https://core.tcl-lang.org/tcl/tktview/2b6b0a)
+ - [gets with -translation auto merged lines after a "\r" at the end of a read](https://core.tcl-lang.org/tcl/tktview/4c5a98)
+ - [Windows: "open" failed with an empty error message after dup2()](https://core.tcl-lang.org/tcl/tktview/91c9bc)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
+ - itcl 4.3.9
  - msgcat 1.7.2
  - sqlite3 3.54.1
  - tcltest 2.6.1

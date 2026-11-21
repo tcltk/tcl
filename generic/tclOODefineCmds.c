@@ -1165,7 +1165,7 @@ MagicDefinitionInvoke(
     Tcl_Obj *objPtr, *obj2Ptr, **objs;
     Tcl_Command cmd;
     int result, offset = cmdIndex + 1;
-    Tcl_Size dummy;
+    Tcl_Size length;
 
     /*
      * More than one argument: fire them through the ensemble processing
@@ -1196,11 +1196,17 @@ MagicDefinitionInvoke(
 	Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
     }
     Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
-    // TODO: overflow?
-    Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc - offset, objv + offset);
-    TclListObjGetElements(NULL, objPtr, &dummy, &objs);
+    if (Tcl_ListObjReplace(interp, objPtr, 1, 0, objc - offset,
+	    objv + offset) != TCL_OK) {
+	/*
+	 * The list would be too long. [40f628e8e3]
+	 */
 
-    result = Tcl_EvalObjv(interp, objc - cmdIndex, objs, TCL_EVAL_INVOKE);
+	result = TCL_ERROR;
+    } else {
+	TclListObjGetElements(NULL, objPtr, &length, &objs);
+	result = Tcl_EvalObjv(interp, length, objs, TCL_EVAL_INVOKE);
+    }
     if (isRoot) {
 	TclResetRewriteEnsemble(interp, 1);
     }

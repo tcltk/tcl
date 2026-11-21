@@ -571,7 +571,7 @@ LocatePreInitScript(
 		Tcl_GetString(searchedDirs)));
     } else {
 	Tcl_SetVar2Ex(interp, "tcl_library", NULL, dirPtr, TCL_GLOBAL_ONLY);
-        TclAddEncodingSubdir(dirPtr); /* Bug [75ecc0e6cb] */
+	TclAddEncodingSubdir(dirPtr); /* Bug [75ecc0e6cb] */
     }
     if (initNamePtr != NULL) {
 	Tcl_DecrRefCount(initNamePtr);
@@ -4522,6 +4522,19 @@ TimeLimitCallback(
      */
 
     iPtr->limit.granularityTicker = 0;
+
+    /*
+     * If the time limit is already marked as exceeded, its handlers are
+     * running right now (e.g. one of them entered the event loop) and the
+     * interpreter is in the middle of something. Leave the check to the
+     * Tcl_LimitCheck that runs them; a new limit re-arms this timer.
+     * [Bug 3027822] [Bug 3048170]
+     */
+
+    if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
+	Tcl_Release(interp);
+	return;
+    }
 
     code = Tcl_LimitCheck(interp);
     if (code != TCL_OK) {

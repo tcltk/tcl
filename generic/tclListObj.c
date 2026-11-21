@@ -2756,7 +2756,7 @@ TclLindexList(
     if (!TclListObjIsNative(argObj)
 	    && (TclObjTypeHasProc(argObj, indexProc) == NULL)
 	    && TclGetIntForIndexM(NULL, argObj, TCL_SIZE_MAX - 1, &index)
-		       == TCL_OK) {
+		    == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */

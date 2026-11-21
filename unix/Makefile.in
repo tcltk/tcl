@@ -803,7 +803,7 @@ ${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
 	@find ${TCL_VFS_ROOT} -depth -type d -exec rmdir {} + 2>/dev/null || :
 	@echo "creating ${TCL_ZIP_FILE} from ${TCL_VFS_PATH}"
 	@(zip=`(realpath '${NATIVE_ZIP}' || readlink -m '${NATIVE_ZIP}' || \
-	    echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?")  2>/dev/null`; \
+	    echo '${NATIVE_ZIP}' | sed "s?^\./?$$(pwd)/?") 2>/dev/null`; \
 	    echo 'cd ${TCL_VFS_ROOT} &&' $$zip '${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH}'; \
 	    cd ${TCL_VFS_ROOT} && \
 	    $$zip ${ZIP_PROG_OPTIONS} ../${TCL_ZIP_FILE} ${ZIP_PROG_VFSSEARCH} >/dev/null)
@@ -1051,39 +1051,34 @@ install-binaries: binaries
 	@$(INSTALL_DATA) tcl.pc "$(LIB_INSTALL_DIR)/pkgconfig/tcl.pc"
 
 install-libraries: libraries
-	@for i in "$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; \
-	    do \
+	@for i in "$(SCRIPT_INSTALL_DIR)" "$(MODULE_INSTALL_DIR)"; do \
 	    if [ ! -d "$$i" ] ; then \
 		echo "Making directory $$i"; \
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
-	    done;
-	@for i in opt0.4 cookiejar0.2 encoding; \
-	    do \
+	done
+	@for i in opt0.4 cookiejar0.2 encoding; do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)/$$i"; \
-		else true; \
-		fi; \
-	    done;
-	@for i in 9.0 9.0/platform; \
-	    do \
+	    fi; \
+	done
+	@for i in 9.0 9.0/platform; do \
 	    if [ ! -d "$(MODULE_INSTALL_DIR)/$$i" ] ; then \
 		echo "Making directory $(MODULE_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(MODULE_INSTALL_DIR)/$$i"; \
 	    fi; \
-	    done;
+	done
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex \
 		$(UNIX_DIR)/tclAppInit.c @LDAIX_SRC@ @DTRACE_SRC@ ; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"; \
-	done;
+	done
 	@echo "Installing package cookiejar 0.2 files to $(SCRIPT_INSTALL_DIR)/cookiejar0.2/"
 	@for i in $(TOP_DIR)/library/cookiejar/*.tcl \
-		  $(TOP_DIR)/library/cookiejar/*.gz; \
-	    do \
+		  $(TOP_DIR)/library/cookiejar/*.gz; do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/cookiejar0.2"; \
-	    done
+	done
 	@echo "Installing package http 2.10.3 as a Tcl Module"
 	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl \
 		"$(MODULE_INSTALL_DIR)/9.0/http-2.10.3.tm"
@@ -1105,7 +1100,7 @@ install-libraries: libraries
 		"$(MODULE_INSTALL_DIR)/9.0/platform/shell-1.1.4.tm"
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/"
 	@for i in $(TOP_DIR)/library/encoding/*.enc; do \
-		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/encoding"; \
+	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done
 	@if [ -n "$(TCL_MODULE_PATH)" -a -f $(TOP_DIR)/library/tm.tcl ] ; then \
 	    echo "Customizing tcl module path"; \
@@ -1182,7 +1177,7 @@ install-doc: doc
 	@for i in $(TOP_DIR)/doc/*.3; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MAN3_INSTALL_DIR)"; \
 	done
-	@echo "Installing and cross-linking command (.n) docs to $(MANN_INSTALL_DIR)/";
+	@echo "Installing and cross-linking command (.n) docs to $(MANN_INSTALL_DIR)/"
 	@for i in $(TOP_DIR)/doc/*.n; do \
 	    $(SHELL) $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i "$(MANN_INSTALL_DIR)"; \
 	done
@@ -1207,7 +1202,7 @@ install-headers:
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/";
+	@echo "Installing header files to $(INCLUDE_INSTALL_DIR)/"
 	@for i in $(TCL_PUBLIC_HEADERS); do \
 	    $(INSTALL_DATA) $$i "$(INCLUDE_INSTALL_DIR)"; \
 	done
@@ -1220,7 +1215,7 @@ install-private-headers:
 		$(INSTALL_DATA_DIR) "$$i"; \
 	    fi; \
 	done
-	@echo "Installing private header files to $(PRIVATE_INCLUDE_INSTALL_DIR)/";
+	@echo "Installing private header files to $(PRIVATE_INCLUDE_INSTALL_DIR)/"
 	@for i in $(TCL_PRIVATE_HEADERS); do \
 	    $(INSTALL_DATA) $$i "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
 	done
@@ -2079,18 +2074,18 @@ PKG_DIR			= ./pkgs
 
 configure-packages:
 	@for i in $(PKGS_DIR)/*; do \
-	    if [ -d $$i ] ; then \
-		if [ -x $$i/configure ] ; then \
-		    pkg=`basename $$i`; \
-		    echo "Configuring package '$$pkg'"; \
-		    mkdir -p $(PKG_DIR)/$$pkg; \
-		    if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
-			( cd $(PKG_DIR)/$$pkg; \
-			  $$i/configure --with-tcl=../.. \
-			      --with-tclinclude=$(GENERIC_DIR) \
-			      $(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
-			      --enable-shared; ) || exit $$?; \
-		    fi; \
+	    if [ -d $$i ] && [ -x $$i/configure ] ; then \
+		pkg=`basename $$i`; \
+		echo "Configuring package '$$pkg'"; \
+		mkdir -p $(PKG_DIR)/$$pkg; \
+		if [ ! -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$$i/configure --with-tcl=../.. \
+				--with-tclinclude=$(GENERIC_DIR) \
+				$(PKG_CFG_ARGS) --libdir=$(PACKAGE_DIR) \
+				--enable-shared; \
+		    ) || exit $$?; \
 		fi; \
 	    fi; \
 	done
@@ -2101,7 +2096,10 @@ packages: configure-packages ${STUB_LIB_FILE}
 		pkg=`basename $$i`; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Building package '$$pkg'"; \
-		    ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) || exit $$?; \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$(MAKE); \
+		    ) || exit $$?; \
 		fi; \
 	    fi; \
 	done
@@ -2112,8 +2110,10 @@ install-packages: packages
 		pkg=`basename $$i`; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Installing package '$$pkg'"; \
-		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) install \
-			  "DESTDIR=$(INSTALL_ROOT)"; ) || exit $$?; \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$(MAKE) install "DESTDIR=$(INSTALL_ROOT)"; \
+		    ) || exit $$?; \
 		fi; \
 	    fi; \
 	done
@@ -2124,11 +2124,14 @@ test-packages: ${TCLTEST_EXE} packages
 		pkg=`basename $$i`; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
 		    echo "Testing package '$$pkg'"; \
-		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) \
-			  "@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
-			  "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
-			  "TCLLIBPATH=../../pkgs" test \
-			  "TCLSH_PROG=../../${TCLTEST_EXE}"; ) \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$(MAKE) test \
+				"@LD_LIBRARY_PATH_VAR@=../..:$${@LD_LIBRARY_PATH_VAR@}" \
+				"TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" \
+				"TCLLIBPATH=../../pkgs" \
+				"TCLSH_PROG=../../${TCLTEST_EXE}"; \
+		    ) \
 		fi; \
 	    fi; \
 	done
@@ -2138,7 +2141,10 @@ clean-packages:
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
-		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) clean; ) \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$(MAKE) clean; \
+		    ) \
 		fi; \
 	    fi; \
 	done
@@ -2148,22 +2154,27 @@ distclean-packages:
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
-		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) distclean; ) \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$(MAKE) distclean; \
+		    ) \
 		fi; \
 		rm -rf $(PKG_DIR)/$$pkg; \
 	    fi; \
-	done; \
-	rm -rf $(PKG_DIR)
+	done
+	@rm -rf $(PKG_DIR)
 
 dist-packages: configure-packages
 	@rm -rf $(DISTROOT)/pkgs; \
-	mkdir -p $(DISTROOT)/pkgs; \
-	for i in $(PKGS_DIR)/*; do \
+	mkdir -p $(DISTROOT)/pkgs
+	@for i in $(PKGS_DIR)/*; do \
 	    if [ -d $$i ] ; then \
 		pkg=`basename $$i`; \
 		if [ -f $(PKG_DIR)/$$pkg/Makefile ] ; then \
-		    ( cd $(PKG_DIR)/$$pkg; $(MAKE) dist \
-			  "DIST_ROOT=$(DISTROOT)/pkgs"; ) || exit $$?; \
+		    ( \
+			cd $(PKG_DIR)/$$pkg; \
+			$(MAKE) dist "DIST_ROOT=$(DISTROOT)/pkgs"; \
+		    ) || exit $$?; \
 		fi; \
 	    fi; \
 	done
@@ -2312,8 +2323,9 @@ BUILTIN_PACKAGE_LIST = cookiejar http opt msgcat registry dde tcltest platform
 
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.ac $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
-	@cd $(UNIX_DIR); autoconf || \
-		echo "WARNING: Unable to rebuild $(UNIX_DIR)/configure. Please upgrade autoconf."
+	@cd $(UNIX_DIR); \
+	autoconf || \
+	echo "WARNING: Unable to rebuild $(UNIX_DIR)/configure. Please upgrade autoconf."
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure.ac
 	@cd $(MAC_OSX_DIR); autoheader || touch $@
 
@@ -2324,10 +2336,13 @@ tclUuid.h: $(TOP_DIR)/manifest.uuid
 
 $(TOP_DIR)/manifest.uuid:
 	printf "git-" >$(TOP_DIR)/manifest.uuid
-	(cd $(TOP_DIR); git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
-	    (printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
-	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid) || \
-	    printf "unknown" >$(TOP_DIR)/manifest.uuid)
+	cd $(TOP_DIR); \
+	git rev-parse HEAD >>$(TOP_DIR)/manifest.uuid || \
+	( \
+	    printf "svn-r" >$(TOP_DIR)/manifest.uuid ; \
+	    svn info --show-item last-changed-revision >>$(TOP_DIR)/manifest.uuid \
+	) || \
+	printf "unknown" >$(TOP_DIR)/manifest.uuid
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in genstubs \
 		$(TOP_DIR)/manifest.uuid dist-packages ${NATIVE_TCLSH}
@@ -2365,9 +2380,16 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(INSTALL_DATA_DIR) $(DISTDIR)/library/msgs
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/library/msgs/*.msg $(DISTDIR)/library/msgs
 	@echo cp -r $(TOP_DIR)/library/tzdata $(DISTDIR)/library/tzdata
-	@( cd $(TOP_DIR); find library/tzdata -type f -print ) \
-	    | ( cd $(TOP_DIR) ; xargs tar cf - ) \
-	    | ( cd $(DISTDIR) ; tar xfp - )
+	@( \
+	    cd $(TOP_DIR); \
+	    find library/tzdata -type f -print \
+	) | ( \
+	    cd $(TOP_DIR); \
+	    xargs tar cf - \
+	) | ( \
+	    cd $(DISTDIR); \
+	    tar xfp - \
+	)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/doc
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/man.macros $(DISTDIR)/doc
@@ -2376,22 +2398,35 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(COMPAT_DIR)/README $(DISTDIR)/compat
 	$(INSTALL_DATA_DIR) $(DISTDIR)/compat/zlib
 	@echo cp -r $(COMPAT_DIR)/zlib $(DISTDIR)/compat/zlib
-	@( cd $(COMPAT_DIR)/zlib; find . -type f -print ) \
-	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
-	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
+	@( \
+	    cd $(COMPAT_DIR)/zlib; \
+	    find . -type f -print \
+	) | ( \
+	    cd $(COMPAT_DIR)/zlib; \
+	    xargs tar cf - \
+	) | ( \
+	    cd $(DISTDIR)/compat/zlib; \
+	    tar xfp - \
+	)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/libtommath
 	@echo cp -r $(TOP_DIR)/libtommath $(DISTDIR)/libtommath
-	@( cd $(TOP_DIR)/libtommath; find . -type f -print ) \
-	    | ( cd $(TOP_DIR)/libtommath ; xargs tar cf - ) \
-	    | ( cd $(DISTDIR)/libtommath ; tar xfp - )
+	@( \
+	    cd $(TOP_DIR)/libtommath; \
+	    find . -type f -print \
+	) | ( \
+	    cd $(TOP_DIR)/libtommath; \
+	    xargs tar cf - \
+	) | ( \
+	    cd $(DISTDIR)/libtommath; \
+	    tar xfp - \
+	)
 	$(INSTALL_DATA_DIR) $(DISTDIR)/utf8proc
 	$(DIST_INSTALL_DATA) $(UTF8PROC_DIR)/*.[ch] $(DISTDIR)/utf8proc
-	for i in LICENSE.md README.md README-tcl.md; \
-	    do \
-		$(DIST_INSTALL_DATA) \
+	for i in LICENSE.md README.md README-tcl.md; do \
+	    $(DIST_INSTALL_DATA) \
 		    $(UTF8PROC_DIR)/$$i \
 		    $(DISTDIR)/utf8proc; \
-	    done;
+	done
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tests
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
@@ -2399,18 +2434,17 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
 		$(TOP_DIR)/tests/*.zip $(DISTDIR)/tests
 	@mkdir $(DISTDIR)/tests/auto0
-	for i in auto1 auto2 ; \
-	    do \
-		$(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
-		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/tclIndex $(TOP_DIR)/tests/auto0/$$i/*.tcl \
-			$(DISTDIR)/tests/auto0/$$i; \
-	    done;
-	for i in modules modules/mod1 modules/mod2 ; \
-	    do \
-		$(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
-		$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/*.tm \
-			$(DISTDIR)/tests/auto0/$$i; \
-	    done;
+	for i in auto1 auto2 ; do \
+	    $(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
+	    $(DIST_INSTALL_DATA) \
+		    $(TOP_DIR)/tests/auto0/$$i/tclIndex $(TOP_DIR)/tests/auto0/$$i/*.tcl \
+		    $(DISTDIR)/tests/auto0/$$i; \
+	done
+	for i in modules modules/mod1 modules/mod2 ; do \
+	    $(INSTALL_DATA_DIR) $(DISTDIR)/tests/auto0/$$i ;\
+	    $(DIST_INSTALL_DATA) $(TOP_DIR)/tests/auto0/$$i/*.tm \
+		    $(DISTDIR)/tests/auto0/$$i; \
+	done
 	@mkdir $(DISTDIR)/tests/zipfiles
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tests/zipfiles
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/tests/zipfiles/*.zip \
@@ -2424,12 +2458,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 	$(INSTALL_DATA_DIR) $(DISTDIR)/tests/unicodeTestVectors
 	for i in DerivedNormalizationProps.txt NormalizationTest.txt \
 		GraphemeBreakTest.txt \
-		license.txt README-tcl.md; \
-	    do \
-		$(DIST_INSTALL_DATA) \
+		license.txt README-tcl.md; do \
+	    $(DIST_INSTALL_DATA) \
 		    $(TOP_DIR)/tests/unicodeTestVectors/$$i \
 		    $(DISTDIR)/tests/unicodeTestVectors; \
-	    done;
+	done
 	$(INSTALL_DATA_DIR) $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
 	$(DIST_INSTALL_DATA) $(TOP_DIR)/win/configure.ac \
@@ -2477,10 +2510,12 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in gen
 
 alldist: dist
 	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
-	( cd $(DISTROOT); \
-		tar cf $(DISTNAME)-src.tar $(DISTNAME); \
-		gzip -9 $(DISTNAME)-src.tar; \
-		zip -qr8 $(ZIPNAME) $(DISTNAME) )
+	( \
+	    cd $(DISTROOT); \
+	    tar cf $(DISTNAME)-src.tar $(DISTNAME); \
+	    gzip -9 $(DISTNAME)-src.tar; \
+	    zip -qr8 $(ZIPNAME) $(DISTNAME) \
+	)
 
 #--------------------------------------------------------------------------
 # This target creates the HTML folder for Tcl & Tk and places it in

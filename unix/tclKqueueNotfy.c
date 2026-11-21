@@ -266,8 +266,8 @@ PlatformEventsControl(
  *
  * Side effects:
  *	While tsdPtr->notifierMutex is held:
- *	The per-thread pipe(2) fds are closed, if non-zero, and set to -1.
- *	The per-thread kqueue(2) fd is closed, if non-zero, and set to 0.
+ *	The per-thread pipe(2) fds are closed and set to -1.
+ *	The per-thread kqueue(2) fd is closed and set to -1.
  *	The per-thread kevent structs are freed, if any, and set to 0.
  *
  *	tsdPtr->notifierMutex is destroyed.
@@ -282,17 +282,17 @@ TclpFinalizeNotifier(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     pthread_mutex_lock(&tsdPtr->notifierMutex);
-    if (tsdPtr->triggerPipe[0]) {
+    if (tsdPtr->triggerPipe[0] >= 0) {
 	close(tsdPtr->triggerPipe[0]);
 	tsdPtr->triggerPipe[0] = -1;
     }
-    if (tsdPtr->triggerPipe[1]) {
+    if (tsdPtr->triggerPipe[1] >= 0) {
 	close(tsdPtr->triggerPipe[1]);
 	tsdPtr->triggerPipe[1] = -1;
     }
-    if (tsdPtr->eventsFd > 0) {
+    if (tsdPtr->eventsFd >= 0) {
 	close(tsdPtr->eventsFd);
-	tsdPtr->eventsFd = 0;
+	tsdPtr->eventsFd = -1;
     }
     if (tsdPtr->readyEvents) {
 	Tcl_Free(tsdPtr->readyEvents);

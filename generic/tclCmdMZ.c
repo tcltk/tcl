@@ -3446,8 +3446,11 @@ TclNRSubstObjCmd(
     int flags;
 
     if (objc < 2) {
+	Interp *iPtr = (Interp *) interp;
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-backslashes? ?-commands? ?-variables? "
+		"?-backslashes? ?-commands? ?-variables? string");
+	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
+	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }

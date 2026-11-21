@@ -496,6 +496,9 @@ namespace eval tcltest {
     # Verification commands for those options
     variable Verify; array set Verify {}
 
+    # Variables tied to options that need their own read traces
+    variable OptionControlledVariables {}
+
     # Initialize the default values of the configurable options that are
     # historically associated with an exported variable.  If that variable
     # is already set, support compatibility by accepting its preset value.
@@ -528,11 +531,13 @@ namespace eval tcltest {
 	    }
 	    namespace eval [namespace current] \
 		    [list upvar 0 Option($option) $varName]
-	    # Workaround for Bug (now Feature Request) 572889.  Grrrr....
-	    # Track all the variables tied to options
-	    lappend OptionControlledVariables $varName
-	    # Later, set auto-configure read traces on all
-	    # of them, since a single trace on Option does not work.
+	    # Before Tcl 9.0, a read trace on Option does not fire when an
+	    # element is read through this upvar link [572889ffff], so track
+	    # the variables tied to options to set auto-configure read traces
+	    # on each of them.
+	    if {![package vsatisfies [package provide Tcl] 9.0-]} {
+		lappend OptionControlledVariables $varName
+	    }
 	    proc $varName {{value {}}} [subst -nocommands {
 		if {[llength [info level 0]] == 2} {
 		    Configure $option [set value]
@@ -2685,13 +2690,11 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    set numTests($index) 0
 	}
 
-	# Exit only if running Tk in non-interactive mode with the test
-	# file as the main script (e.g. "wish foo.test"), which would
-	# otherwise wait in the event loop. An application that merely
-	# sources a test file must not be terminated [Bug 8413e79232].
-	if {[info exists ::tk_version] && ![testConstraint interactive]
-		&& [info exists ::argv0] && [info script] ne ""
-		&& [file normalize [info script]] eq [file normalize $::argv0]} {
+	# Exit if the test file is the main script of Tk (see
+	# ExitAtEnd). When called from runAllTests, let it report the
+	# test files with errors and exit itself with its result
+	# [Bug 7abc1460c0].
+	if {!$calledFromAllFile && [ExitAtEnd]} {
 	    exit
 	}
     } else {
@@ -2918,6 +2921,23 @@ proc tcltest::GetMatchingDirectories {rootdir} {
 # Side effects:
 #	None.
 
+# tcltest::ExitAtEnd --
+#
+#	Whether a test file or an all file should exit the application at
+#	the end instead of returning: when running Tk in non-interactive mode
+#	with the file as the main script (e.g. "wish foo.test"), which would
+#	otherwise wait in the event loop. An application that merely sources
+#	a test file must not be terminated [Bug 8413e79232].
+#
+# Results:
+#	1 if the application should exit, 0 otherwise.
+
+proc tcltest::ExitAtEnd {} {
+    return [expr {[info exists ::tk_version] && ![testConstraint interactive]
+	    && [info exists ::argv0] && [info script] ne ""
+	    && [file normalize [info script]] eq [file normalize $::argv0]}]
+}
+
 proc tcltest::runAllTests { {shell ""} } {
     variable testSingleFile
     variable numTestFiles
@@ -3060,6 +3080,14 @@ proc tcltest::runAllTests { {shell ""} } {
 	    puts [outputChannel] "  [file tail $file]\n"
 	}
     }
+    set result [expr {[info exists testFileFailures] || [info exists failFilesSet]}]
+
+    # Under Tk with the all file as the main script, exit here, with the
+    # result as the exit status, instead of waiting in the event loop
+    # [Bug 7abc1460c0].
+    if {[ExitAtEnd]} {
+	exit $result
+    }
 
     # Checking for subdirectories in which to run tests
     foreach directory [GetMatchingDirectories [testsDirectory]] {
@@ -3074,7 +3102,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return [expr {[info exists testFileFailures] || [info exists failFilesSet]}]
+    return $result
 }
 
 #####################################################################

@@ -6598,7 +6598,7 @@ TclZipfsInitEncodingDirs(void)
 
     /* Reinit system encoding after setting search path */
     if (result == TCL_OK) {
-        TclpSetInitialEncodings();
+	TclpSetInitialEncodings();
     }
 
     return result;
