@@ -15,6 +15,7 @@
 #include "tclInt.h"
 #include "tclOOInt.h"
 #include "tclCompile.h"
+#include "tclTypes.h"
 
 /*
  * Structure used to contain all the information needed about a call frame
@@ -435,13 +436,14 @@ TclOONewProcInstanceMethod(
 				 * structure's contents. NULL if caller is not
 				 * interested. */
 {
-    Tcl_Size argsLen;
     ProcedureMethod *pmPtr;
     Tcl_Method method;
 
-    if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
-	return NULL;
-    }
+    /*
+     * TIP 764 (v17k): the argument list is read by TclCreateTypedProc, as
+     * for [proc]; a typed signature ({{int}n; {int}k}) need not be a list.
+     */
+
     pmPtr = AllocProcedureMethodRecord(flags);
     method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
@@ -492,9 +494,9 @@ TclOONewProcMethod(
 	TclNewObj(argsObj);
 	Tcl_IncrRefCount(argsObj);
 	procName = "<destructor>";
-    } else if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
-	return NULL;
     } else {
+	/* TIP 764 (v17k): argsObj read by TclCreateTypedProc, not as a list */
+	argsLen = 0;
 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
     }
 
@@ -601,6 +603,40 @@ InitCmdFrame(
 /*
  * ----------------------------------------------------------------------
  *
+ * TypeNamespace --
+ *
+ *	TIP 764 (v17k): the namespace in which the types of a method signature
+ *	are looked up, as a procedure's are in the namespace of its name: the
+ *	namespace holding the object's command (a class's, for a class
+ *	method). An anonymous object (::oo::ObjN) uses its class's; failing
+ *	that, the global namespace. Never the definition namespace
+ *	(::oo::define), which holds no types.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static Tcl_Namespace *
+TypeNamespace(
+    Tcl_Interp *interp,
+    Object *oPtr)
+{
+    int step;
+
+    for (step = 0; step < 2 && oPtr != NULL; step++) {
+	Command *cmdPtr = (Command *) oPtr->command;
+
+	if (cmdPtr != NULL && cmdPtr->nsPtr != NULL
+		&& (Tcl_Namespace *) cmdPtr->nsPtr != oPtr->fPtr->ooNs) {
+	    return (Tcl_Namespace *) cmdPtr->nsPtr;
+	}
+	oPtr = (oPtr->selfCls != NULL) ? oPtr->selfCls->thisPtr : NULL;
+    }
+    return Tcl_GetGlobalNamespace(interp);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * TclOOMakeProcInstanceMethod --
  *
  *	The guts of the code to make a procedure-like method for an object.
@@ -637,8 +673,8 @@ TclOOMakeProcInstanceMethod(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"TclOOMakeProcInstanceMethod", "TCL_OO_METHOD_VERSION_1");
     }
-    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
-	    procPtrPtr) != TCL_OK) {
+    if (TclCreateTypedProc(interp, TypeNamespace(interp, oPtr), nameObj,
+	    TclGetString(nameObj), argsObj, bodyObj, procPtrPtr) != TCL_OK) {
 	return NULL;
     }
     procPtr = *procPtrPtr;
@@ -676,8 +712,8 @@ TclOOMakeProcInstanceMethod2(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"TclOOMakeProcInstanceMethod2", "TCL_OO_METHOD_VERSION_2");
     }
-    if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
-	    procPtrPtr) != TCL_OK) {
+    if (TclCreateTypedProc(interp, TypeNamespace(interp, oPtr), nameObj,
+	    TclGetString(nameObj), argsObj, bodyObj, procPtrPtr) != TCL_OK) {
 	return NULL;
     }
     procPtr = *procPtrPtr;
@@ -732,8 +768,8 @@ TclOOMakeProcMethod(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"TclOOMakeProcMethod", "TCL_OO_METHOD_VERSION_1");
     }
-    if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
-	    procPtrPtr) != TCL_OK) {
+    if (TclCreateTypedProc(interp, TypeNamespace(interp, clsPtr->thisPtr),
+	    nameObj, namePtr, argsObj, bodyObj, procPtrPtr) != TCL_OK) {
 	return NULL;
     }
     procPtr = *procPtrPtr;
@@ -775,8 +811,8 @@ TclOOMakeProcMethod2(
 	Tcl_Panic("%s: Wrong version in typePtr->version, should be %s",
 		"TclOOMakeProcMethod2", "TCL_OO_METHOD_VERSION_2");
     }
-    if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
-	    procPtrPtr) != TCL_OK) {
+    if (TclCreateTypedProc(interp, TypeNamespace(interp, clsPtr->thisPtr),
+	    nameObj, namePtr, argsObj, bodyObj, procPtrPtr) != TCL_OK) {
 	return NULL;
     }
     procPtr = *procPtrPtr;
@@ -1469,6 +1505,14 @@ CloneProcedureMethod(
     }
     Tcl_DecrRefCount(argsObj);
     Tcl_DecrRefCount(bodyObj);
+
+    /*
+     * TIP 764 (v17k): a typed signature is not in the compiled locals (the
+     * Proc only has "args"): share it with the copy.
+     */
+
+    pm2Ptr->procPtr->typedSig = pmPtr->procPtr->typedSig;
+    TclTypedSigRetain(pm2Ptr->procPtr->typedSig);
 
     if (pmPtr->cloneClientdataProc) {
 	pm2Ptr->clientData = pmPtr->cloneClientdataProc(pmPtr->clientData);

@@ -1,10 +1,11 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 20 novembre 2026, version **v17j**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 20 novembre 2026, version **v17k**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
+* **v17k** (20 novembre) : un seul point d'entrée pour créer une procédure, `TclCreateTypedProc` (`tclProc.c`), appelé par `proc`, `apply` et les quatre `TclOOMake*Method` de TclOO, à la place de trois copies du bloc de la v16p. Corrige deux défauts de la v17j : `oo::copy` perdait la signature des méthodes propres, et les types d'une méthode étaient lus dans `::oo::define` (ils le sont dans l'espace de la classe, comme ceux d'une procédure dans l'espace de son nom ; objet anonyme : celui de sa classe). Patch `procs-typees-createurs.patch`, t116 complété.
 * **v17j** (20 novembre) : les méthodes TclOO acceptent les signatures typées des procédures (`method ajouter {{int}n} {…}`, `constructor {{string}nom; {int}stock} {…}`, `method {double}moitié …`, `oo::objdefine`) ; `info class definition`/`constructor`, `info object definition` rendent noms et défauts. Patch noyau `oo-methodes-typees.patch` (`tclOOMethod.c`, `tclOOInfo.c`), test t116. Reste : `variable {int}n` dans `oo::define` (accepté, ignoré ; typer dans le constructeur).
 * **v17i** (15 novembre) : `T(chemin)`, le type d'une partie (`Emplacement(propriétés)`, `Liste(*.propriétés.max)`), comme `$v(chemin)` en est la valeur ; l'analogie list ↔ tableau, dict/produit ↔ struct. Pour VolɷDuctus : une instance est une valeur dont le type est le produit de ses blocs. Test t115.
 * **v17h** (15 novembre) : `note get` rend les notes en ensemble, triées, jointes par « , » (`mm,px`, `list<int>@hello,mm`), comme `type canonic` et `{T@notes}`. Suite : VolɷDuctus selon CONCEPTION.

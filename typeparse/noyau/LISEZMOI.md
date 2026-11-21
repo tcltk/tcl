@@ -2899,3 +2899,49 @@ Les méthodes TclOO acceptent désormais les signatures typées des procédures 
 constructeur (`set {int}n 0`), et le type reste ensuite. Un `variable` typé
 demanderait de garder le type dans la déclaration de classe et de l'appliquer
 à la création de chaque objet.
+
+## v17k — un seul point d'entrée pour créer une procédure (20 novembre 2026)
+
+Jusqu'en v17j, le typage des signatures (v16p) était branché dans `Tcl_ProcObjCmd`, juste
+avant `TclCreateProc` : seuls les créateurs qui recopiaient ce bloc l'avaient (`apply`,
+v16z ; TclOO, v17j, `MethodSig`). Trois copies du même code.
+
+### Le correctif (`procs-typees-createurs.patch`, après `oo-methodes-typees.patch`)
+
+* `tclProc.c` : `TclCreateTypedProc(interp, nsPtr, nameObj, procName, argsObj, bodyObj,
+  &procPtr)` lit la signature (`TclTypedProcSigNs`), met `args` à la place d'une liste
+  typée, appelle `TclCreateProc` et pose `procPtr->typedSig`. Une liste classique passe
+  par `TclCreateProc` comme avant. `nameObj` porte le type de retour (`{T}nom`) ;
+  `nsPtr` est l'espace des types (NULL : celui du nom, qualifié depuis l'espace courant).
+  Les objets de l'appelant peuvent être sans propriétaire (refCount 0) : lus en copie,
+  jamais libérés. Pas d'errorInfo : chaque appelant ajoute le sien.
+  `proc` et `apply` l'appellent à la place de leurs blocs.
+* `tclOOMethod.c` : `MethodSig` disparaît, `TclOONewProcMethod` /
+  `TclOONewProcInstanceMethod` reviennent au code d'origine, sans le contrôle préalable de
+  liste (une signature typée n'est pas une liste ; une liste mal formée donne l'erreur de
+  `proc`). Ce sont les quatre fonctions qui appellent `TclCreateProc`
+  (`TclOOMakeProcMethod{,2}`, `TclOOMakeProcInstanceMethod{,2}`, exportées par les stubs
+  internes de TclOO) qui passent par `TclCreateTypedProc` : une extension qui crée ses
+  méthodes par elles en hérite.
+* Sources de types : `TclTypedProcSigNs` (l'espace donné par l'appelant), déclarations
+  dans `tclTypes.h`.
+
+### Deux défauts de la v17j corrigés
+
+* **Copie d'objet** (`oo::copy`) : `CloneProcedureMethod` refait la liste d'arguments
+  depuis les locales compilées, qui ne contiennent que `args` ; la copie perdait la
+  signature (`$c seul x` accepté, `x` non lié). La signature est désormais partagée
+  (`TclTypedSigRetain`).
+* **Espace des types** : la v17j lisait les types dans l'espace courant, `::oo::define`
+  pendant une définition (`method nx {{point}p}` dans `namespace eval geom` : « unknown
+  type »). Comme pour une procédure (l'espace de son nom), les types d'une méthode se
+  lisent dans l'espace qui contient la commande de sa classe (de l'objet, pour
+  `oo::objdefine`) ; un objet anonyme (`::oo::ObjN`) prend celui de sa classe ; à défaut,
+  l'espace global.
+
+### Vérifié
+
+* t116 complété (copie, espace de la classe, objet anonyme, erreur de liste identique à
+  `proc`) ; les 78 tests de `tests_tclsh` ;
+* `oo*.test`, `proc*.test`, `apply.test`, `info.test`, `namespace.test` : 1311 tests,
+  0 échec.

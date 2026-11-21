@@ -11328,16 +11328,28 @@ int
 TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	void **sigPtr, int *typedArgsPtr)
 {
+    return TclTypedProcSigNs(interp, NULL, nameObj, argsObj, sigPtr,
+	    typedArgsPtr);
+}
+
+/* v17k : l'espace des types donné par l'appelant (une méthode TclOO : celui
+ * de sa classe), ou, si NULL, celui du nom (proc, apply). */
+int
+TclTypedProcSigNs(Tcl_Interp *interp, Tcl_Namespace *typeNsPtr,
+	Tcl_Obj *nameObj, Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr)
+{
     TypeData *d = GetData(interp);
-    Namespace *nsPtr = NULL, *altNsPtr, *cxtNsPtr, *save;
+    Namespace *nsPtr = (Namespace *) typeNsPtr, *altNsPtr, *cxtNsPtr, *save;
     const char *simple;
     int rc;
 
     if (d == NULL) {
 	return TypedProcSig(interp, nameObj, argsObj, sigPtr, typedArgsPtr);
     }
-    TclGetNamespaceForQualName(interp, TclGetString(nameObj), NULL, 0,
-	    &nsPtr, &altNsPtr, &cxtNsPtr, &simple);
+    if (nsPtr == NULL) {
+	TclGetNamespaceForQualName(interp, TclGetString(nameObj), NULL, 0,
+		&nsPtr, &altNsPtr, &cxtNsPtr, &simple);
+    }
     save = d->ctxNs;
     if (nsPtr != NULL) {
 	d->ctxNs = nsPtr;

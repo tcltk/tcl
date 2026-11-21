@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17i"
+#define TCL_TYPES_VERSION "v17k"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -542,6 +542,16 @@ MODULE_SCOPE int TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *
  * Proc.typedSig. */
 MODULE_SCOPE int TclTypedProcSig(Tcl_Interp *interp, Tcl_Obj *nameObj,
 			    Tcl_Obj *argsObj, void **sigPtr, int *typedArgsPtr);
+/* v17k : l'espace des types donné (NULL : celui du nom) ; et la création
+ * d'une procédure, typée ou non, pour tous ses créateurs (proc, apply,
+ * méthodes TclOO) : tclProc.c. */
+MODULE_SCOPE int TclTypedProcSigNs(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+			    Tcl_Obj *nameObj, Tcl_Obj *argsObj, void **sigPtr,
+			    int *typedArgsPtr);
+MODULE_SCOPE int TclCreateTypedProc(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+			    Tcl_Obj *nameObj, const char *procName,
+			    Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+			    Proc **procPtrPtr);
 MODULE_SCOPE int TclTypedProcBind(Tcl_Interp *interp, void *sig, Tcl_Size skip);
 /* v16z : apply {T}{args corps} : le type de retour d'une lambda. */
 MODULE_SCOPE Tcl_Obj *TclTypedLambdaFor(Tcl_Interp *interp, Tcl_Obj *lambdaObj);

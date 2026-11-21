@@ -15,3 +15,9 @@ info class definition P opt                                    {n {m 5}} { list 
 lindex [info class constructor P] 0                            nom stock
 lindex [info object definition $o seul] 0                      k
 oo::configurable create R {property y}; set r [R new]; $r configure -y 4; $r configure -y 4
+set c [oo::copy $o]; list [$c seul 4] [catch {$c seul x}]      40 1
+oo::copy P P3; [P3 new b 2] moitié 5                           2.5
+[geom::C new] nx {1 2}                                         1.0
+oo::define geom::C method ny {{point}p} { return $p(y) }; [geom::C new] ny {1 2} 2.0
+set a [geom::C new]; oo::objdefine $a method nz {{point}p} { expr {$p(x)+$p(y)} }; $a nz {1 2} 3.0
+list [catch {proc f {a "b"c} {}} e1] [catch {oo::class create E {method m {a "b"c} {}}} e2] [expr {$e1 eq $e2}] 1 1 1

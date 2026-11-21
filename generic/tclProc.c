@@ -205,38 +205,16 @@ Tcl_ProcObjCmd(
      */
 
     /*
-     * v16p : une liste d'arguments typée (un produit) ou un type de retour
-     * (proc {T}nom) : la procédure reçoit ses mots dans « args », la
-     * signature lie les champs à l'appel.
+     * v16p, v17k : une liste d'arguments typée (un produit) ou un type de
+     * retour (proc {T}nom) ; les types sont lus dans l'espace du nom.
      */
-    {
-	void *sig = NULL;
-	int typedArgs = 0;
-	Tcl_Obj *argsObj = objv[2];
 
-	if (TclTypedProcSig(interp, objv[1], objv[2], &sig, &typedArgs)
-		!= TCL_OK) {
-	    Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
-	    Tcl_AddErrorInfo(interp, simpleName);
-	    Tcl_AddErrorInfo(interp, "\")");
-	    return TCL_ERROR;
-	}
-	if (typedArgs) {
-	    argsObj = Tcl_NewStringObj("args", 4);
-	}
-	Tcl_IncrRefCount(argsObj);
-	if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, simpleName, argsObj,
-		objv[3], &procPtr) != TCL_OK) {
-	    Tcl_DecrRefCount(argsObj);
-	    TclTypedSigRelease(sig);
-	    Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
-	    Tcl_AddErrorInfo(interp, simpleName);
-	    Tcl_AddErrorInfo(interp, "\")");
-	    return TCL_ERROR;
-	}
-	Tcl_DecrRefCount(argsObj);
-	TclTypedSigRelease(procPtr->typedSig);
-	procPtr->typedSig = sig;
+    if (TclCreateTypedProc(interp, NULL, objv[1], simpleName, objv[2],
+	    objv[3], &procPtr) != TCL_OK) {
+	Tcl_AddErrorInfo(interp, "\n    (creating proc \"");
+	Tcl_AddErrorInfo(interp, simpleName);
+	Tcl_AddErrorInfo(interp, "\")");
+	return TCL_ERROR;
     }
 
     cmd = TclNRCreateCommandInNs(interp, simpleName, (Tcl_Namespace *) nsPtr,
@@ -450,6 +428,87 @@ AddTypedLocals(
 	}
 	procPtr->numCompiledLocals++;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCreateTypedProc --
+ *
+ *	TIP 764 (v17k): creates a procedure whose formal argument list may be
+ *	a typed signature (v16p: {int}n, a product, options, defaults "?=")
+ *	and whose name may carry a return type ({T}name). The one entry point
+ *	for every creator of procedures: [proc], [apply], TclOO methods. An
+ *	untyped list is handled by TclCreateProc exactly as before.
+ *
+ *	A typed signature is kept in procPtr->typedSig; the Proc itself takes
+ *	its words in "args", and the fields are bound at each call
+ *	(InitArgsAndLocals, TclTypedProcBind), the result checked on return
+ *	(TclTypedProcReturn).
+ *
+ *	nsPtr: the namespace in which the types are looked up; NULL means the
+ *	namespace of nameObj, qualified from the current one (proc, apply).
+ *	nameObj: the name as written, carrying the return type, or NULL
+ *	(procName is then used). The caller's objects may be unowned
+ *	(refCount 0, as TclOO passes them): they are never released here.
+ *
+ * Results:
+ *	As TclCreateProc. No error info is added: the caller does it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCreateTypedProc(
+    Tcl_Interp *interp,
+    Tcl_Namespace *nsPtr,	/* Where types are resolved, or NULL. */
+    Tcl_Obj *nameObj,		/* The name as written, or NULL. */
+    const char *procName,	/* The name, as TclCreateProc wants it. */
+    Tcl_Obj *argsObj,		/* The formal arguments, typed or not. */
+    Tcl_Obj *bodyObj,		/* The body. */
+    Proc **procPtrPtr)		/* Where to put the new Proc. */
+{
+    void *sig = NULL;
+    int typedArgs = 0, code;
+    Tcl_Obj *n, *a;
+
+    /*
+     * Reading the return type pops the annotation of the name: work on
+     * copies of unowned objects, and never drop the caller's last
+     * reference.
+     */
+
+    if (nameObj == NULL) {
+	n = Tcl_NewStringObj(procName, -1);
+    } else if (nameObj->refCount == 0) {
+	n = Tcl_DuplicateObj(nameObj);
+    } else {
+	n = nameObj;
+    }
+    a = (argsObj->refCount == 0) ? Tcl_DuplicateObj(argsObj) : argsObj;
+    Tcl_IncrRefCount(n);
+    Tcl_IncrRefCount(a);
+    code = TclTypedProcSigNs(interp, nsPtr, n, a, &sig, &typedArgs);
+    Tcl_DecrRefCount(n);
+    if (code != TCL_OK) {
+	Tcl_DecrRefCount(a);
+	return TCL_ERROR;
+    }
+    if (typedArgs) {
+	Tcl_DecrRefCount(a);
+	TclNewLiteralStringObj(a, "args");
+	Tcl_IncrRefCount(a);
+    }
+    code = TclCreateProc(interp, /*ignored nsPtr*/ NULL, procName, a,
+	    bodyObj, procPtrPtr);
+    Tcl_DecrRefCount(a);
+    if (code != TCL_OK) {
+	TclTypedSigRelease(sig);
+	return TCL_ERROR;
+    }
+    TclTypedSigRelease((*procPtrPtr)->typedSig);
+    (*procPtrPtr)->typedSig = sig;
+    return TCL_OK;
 }
 
 /*
@@ -2611,13 +2670,11 @@ SetLambdaFromAny(
     name = TclGetString(objPtr);
 
     /*
-     * v16z : une liste d'arguments typée, comme pour proc ; les types sont
-     * lus dans l'espace de noms de la lambda. Le type de retour (apply
+     * v16z, v17k : une liste d'arguments typée, comme pour proc ; les types
+     * sont lus dans l'espace de noms de la lambda. Le type de retour (apply
      * {T}{...}) est posé par TclNRApplyObjCmd.
      */
     {
-	void *sig = NULL;
-	int typedArgs = 0;
 	Tcl_Obj *ctxName;
 
 	if (objc == 3) {
@@ -2629,26 +2686,14 @@ SetLambdaFromAny(
 	    ctxName = Tcl_NewStringObj("::lambda", -1);
 	}
 	Tcl_IncrRefCount(ctxName);
-	result = TclTypedProcSig(interp, ctxName, argsPtr, &sig, &typedArgs);
+	result = TclCreateTypedProc(interp, NULL, ctxName, name, argsPtr,
+		bodyPtr, &procPtr);
 	Tcl_DecrRefCount(ctxName);
 	if (result != TCL_OK) {
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (parsing lambda expression \"%s\")", name));
 	    return TCL_ERROR;
 	}
-	argsPtr = typedArgs ? Tcl_NewStringObj("args", 4) : objv[0];
-	Tcl_IncrRefCount(argsPtr);
-	if (TclCreateProc(interp, /*ignored nsPtr*/ NULL, name, argsPtr,
-		bodyPtr, &procPtr) != TCL_OK) {
-	    Tcl_DecrRefCount(argsPtr);
-	    TclTypedSigRelease(sig);
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (parsing lambda expression \"%s\")", name));
-	    return TCL_ERROR;
-	}
-	Tcl_DecrRefCount(argsPtr);
-	TclTypedSigRelease(procPtr->typedSig);
-	procPtr->typedSig = sig;
     }
 
     /*

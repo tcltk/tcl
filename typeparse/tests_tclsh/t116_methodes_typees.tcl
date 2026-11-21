@@ -36,3 +36,18 @@ t {info class definition P opt}
 t {lindex [info class constructor P] 0}
 t {lindex [info object definition $o seul] 0}
 t {oo::configurable create R {property y}; set r [R new]; $r configure -y 4; $r configure -y}
+# v17k : TclCreateTypedProc, un seul point d'entrée pour proc, apply et TclOO
+# - la copie d'un objet (oo::copy) garde la signature de ses méthodes propres
+t {set c [oo::copy $o]; list [$c seul 4] [catch {$c seul x}]}
+t {oo::copy P P3; [P3 new b 2] moitié 5}
+# - les types d'une méthode se lisent dans l'espace de sa classe
+namespace eval geom {
+    type def point {{double}x; {double}y}
+    oo::class create C { method {double}nx {{point}p} { return $p(x) } }
+}
+t {[geom::C new] nx {1 2}}
+t {oo::define geom::C method ny {{point}p} { return $p(y) }; [geom::C new] ny {1 2}}
+# - un objet anonyme : l'espace de sa classe
+t {set a [geom::C new]; oo::objdefine $a method nz {{point}p} { expr {$p(x)+$p(y)} }; $a nz {1 2}}
+# - une liste classique mal formée : la même erreur que proc
+t {list [catch {proc f {a "b"c} {}} e1] [catch {oo::class create E {method m {a "b"c} {}}} e2] [expr {$e1 eq $e2}]}
