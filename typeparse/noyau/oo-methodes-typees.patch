@@ -1,0 +1,329 @@
+--- a/generic/tclOOMethod.c	2026-11-20 16:18:51.227587195 +0100
++++ b/generic/tclOOMethod.c	2026-11-20 16:18:51.230993393 +0100
+@@ -15,6 +15,7 @@
+ #include "tclInt.h"
+ #include "tclOOInt.h"
+ #include "tclCompile.h"
++#include "tclTypes.h"
+ 
+ /*
+  * Structure used to contain all the information needed about a call frame
+@@ -412,6 +413,75 @@
+ /*
+  * ----------------------------------------------------------------------
+  *
++ * MethodSig --
++ *
++ *	TIP 764 (v16p for methods): a method's formal argument list may be
++ *	typed, as a proc's is ({int}x, or a product). Reads the signature
++ *	the way [proc] does (TclTypedProcSig): *sigPtr receives it, or NULL
++ *	for a classic list; when the list is a product, *argsObjPtr is
++ *	replaced by "args" (the signature binds the fields at the call, in
++ *	InitArgsAndLocals, as for a proc). The types are read in the current
++ *	namespace (that of the definition), as a proc's are in its own. On
++ *	TCL_OK with a new "args", *ownedPtr is set: the caller releases it.
++ *
++ * ----------------------------------------------------------------------
++ */
++
++static int
++MethodSig(
++    Tcl_Interp *interp,
++    Tcl_Obj *nameObj,		/* Method name, or NULL (constructor...). */
++    const char *procName,
++    Tcl_Obj **argsObjPtr,
++    void **sigPtr,
++    int *ownedPtr)
++{
++    int typedArgs = 0, code;
++    Tcl_Obj *n, *a;
++    Tcl_Size argsLen;
++
++    /*
++     * The callers may pass unowned objects (refCount 0: the property
++     * methods, Tcl_ObjPrintf): never take and drop their last reference
++     * here, read copies of them instead.
++     */
++
++    *sigPtr = NULL;
++    *ownedPtr = 0;
++    if (nameObj == NULL) {
++	n = Tcl_NewStringObj(procName, -1);
++    } else if (nameObj->refCount == 0) {
++	n = Tcl_DuplicateObj(nameObj);
++    } else {
++	n = nameObj;
++    }
++    a = (*argsObjPtr)->refCount == 0 ? Tcl_DuplicateObj(*argsObjPtr)
++	    : *argsObjPtr;
++    Tcl_IncrRefCount(n);
++    Tcl_IncrRefCount(a);
++    code = TclTypedProcSig(interp, n, a, sigPtr, &typedArgs);
++    Tcl_DecrRefCount(n);
++    Tcl_DecrRefCount(a);
++    if (code != TCL_OK) {
++	return TCL_ERROR;
++    }
++    if (typedArgs) {
++	*argsObjPtr = Tcl_NewStringObj("args", 4);
++	Tcl_IncrRefCount(*argsObjPtr);
++	*ownedPtr = 1;
++	return TCL_OK;
++    }
++    if (TclListObjLength(interp, *argsObjPtr, &argsLen) != TCL_OK) {
++	TclTypedSigRelease(*sigPtr);
++	*sigPtr = NULL;
++	return TCL_ERROR;
++    }
++    return TCL_OK;
++}
++
++/*
++ * ----------------------------------------------------------------------
++ *
+  * TclOONewProcInstanceMethod --
+  *
+  *	Create a new procedure-like method for an object.
+@@ -435,19 +505,31 @@
+ 				 * structure's contents. NULL if caller is not
+ 				 * interested. */
+ {
+-    Tcl_Size argsLen;
+     ProcedureMethod *pmPtr;
+     Tcl_Method method;
++    void *sig;
++    int owned;
+ 
+-    if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
++    if (MethodSig(interp, nameObj, TclGetString(nameObj), &argsObj, &sig,
++	    &owned) != TCL_OK) {
+ 	return NULL;
+     }
+     pmPtr = AllocProcedureMethodRecord(flags);
+     method = TclOOMakeProcInstanceMethod(interp, oPtr, flags, nameObj,
+ 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
++    if (owned) {
++	Tcl_DecrRefCount(argsObj);
++    }
+     if (method == NULL) {
++	TclTypedSigRelease(sig);
+ 	Tcl_Free(pmPtr);
+-    } else if (pmPtrPtr != NULL) {
++	return NULL;
++    }
++    if (sig != NULL) {
++	TclTypedSigRelease(pmPtr->procPtr->typedSig);
++	pmPtr->procPtr->typedSig = sig;
++    }
++    if (pmPtrPtr != NULL) {
+ 	*pmPtrPtr = pmPtr;
+     }
+     return (Method *) method;
+@@ -482,32 +564,43 @@
+ 				 * structure's contents. NULL if caller is not
+ 				 * interested. */
+ {
+-    Tcl_Size argsLen;		/* TCL_INDEX_NONE => delete argsObj before exit */
++    Tcl_Size argsLen = 0;	/* TCL_INDEX_NONE => delete argsObj before exit */
+     ProcedureMethod *pmPtr;
+     const char *procName;
+     Tcl_Method method;
++    void *sig = NULL;
++    int owned = 0;
+ 
+     if (argsObj == NULL) {
+ 	argsLen = TCL_INDEX_NONE;
+ 	TclNewObj(argsObj);
+ 	Tcl_IncrRefCount(argsObj);
+ 	procName = "<destructor>";
+-    } else if (TclListObjLength(interp, argsObj, &argsLen) != TCL_OK) {
+-	return NULL;
+     } else {
+ 	procName = (nameObj==NULL ? "<constructor>" : TclGetString(nameObj));
++	if (MethodSig(interp, nameObj, procName, &argsObj, &sig,
++		&owned) != TCL_OK) {
++	    return NULL;
++	}
+     }
+ 
+     pmPtr = AllocProcedureMethodRecord(flags);
+     method = TclOOMakeProcMethod(interp, clsPtr, flags, nameObj, procName,
+ 	    argsObj, bodyObj, &procMethodType, pmPtr, &pmPtr->procPtr);
+ 
+-    if (argsLen == TCL_INDEX_NONE) {
++    if (argsLen == TCL_INDEX_NONE || owned) {
+ 	Tcl_DecrRefCount(argsObj);
+     }
+     if (method == NULL) {
++	TclTypedSigRelease(sig);
+ 	Tcl_Free(pmPtr);
+-    } else if (pmPtrPtr != NULL) {
++	return NULL;
++    }
++    if (sig != NULL) {
++	TclTypedSigRelease(pmPtr->procPtr->typedSig);
++	pmPtr->procPtr->typedSig = sig;
++    }
++    if (pmPtrPtr != NULL) {
+ 	*pmPtrPtr = pmPtr;
+     }
+ 
+--- a/generic/tclOOInfo.c	2026-11-20 16:18:51.229212800 +0100
++++ b/generic/tclOOInfo.c	2026-11-20 16:18:51.231040963 +0100
+@@ -15,6 +15,7 @@
+ #endif
+ #include "tclInt.h"
+ #include "tclOOInt.h"
++#include "tclTypes.h"
+ 
+ static Tcl_ObjCmdProc InfoObjectCallCmd;
+ static Tcl_ObjCmdProc InfoObjectClassCmd;
+@@ -105,6 +106,58 @@
+ {
+     return Tcl_NewStringObj(localPtr->name, TCL_AUTO_LENGTH);
+ }
++
++/*
++ * The formal arguments of a procedure-like method, as a list of {name
++ * ?default?}. A typed signature (TIP 764, v16p: {int}x, a product) gives
++ * its field names and defaults, as [info args] and [info default] do for a
++ * proc; the Proc itself then only has "args".
++ */
++
++static Tcl_Obj *
++MethodArgs(
++    Proc *procPtr)
++{
++    Tcl_Obj *resultObj, *namesObj;
++    CompiledLocal *localPtr;
++
++    TclNewObj(resultObj);
++    namesObj = TclTypedSigArgNames(procPtr->typedSig);
++    if (namesObj != NULL) {
++	Tcl_Size n, i;
++	Tcl_Obj **names;
++
++	Tcl_IncrRefCount(namesObj);
++	TclListObjGetElements(NULL, namesObj, &n, &names);
++	for (i = 0; i < n; i++) {
++	    Tcl_Obj *argObj, *defObj = NULL;
++
++	    TclNewObj(argObj);
++	    Tcl_ListObjAppendElement(NULL, argObj, names[i]);
++	    if (TclTypedSigDefault(procPtr->typedSig, TclGetString(names[i]),
++		    &defObj) == 1 && defObj != NULL) {
++		Tcl_ListObjAppendElement(NULL, argObj, defObj);
++	    }
++	    Tcl_ListObjAppendElement(NULL, resultObj, argObj);
++	}
++	Tcl_DecrRefCount(namesObj);
++	return resultObj;
++    }
++    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
++	    localPtr=localPtr->nextPtr) {
++	if (TclIsVarArgument(localPtr)) {
++	    Tcl_Obj *argObj;
++
++	    TclNewObj(argObj);
++	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
++	    if (localPtr->defValuePtr != NULL) {
++		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
++	    }
++	    Tcl_ListObjAppendElement(NULL, resultObj, argObj);
++	}
++    }
++    return resultObj;
++}
+ 
+ /*
+  * ----------------------------------------------------------------------
+@@ -252,7 +305,6 @@
+     Object *oPtr;
+     Tcl_HashEntry *hPtr;
+     Proc *procPtr;
+-    CompiledLocal *localPtr;
+     Tcl_Obj *resultObjs[2];
+ 
+     if (objc != 3) {
+@@ -281,20 +333,7 @@
+      * We now have the method to describe the definition of.
+      */
+ 
+-    TclNewObj(resultObjs[0]);
+-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+-	    localPtr=localPtr->nextPtr) {
+-	if (TclIsVarArgument(localPtr)) {
+-	    Tcl_Obj *argObj;
+-
+-	    TclNewObj(argObj);
+-	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
+-	    if (localPtr->defValuePtr != NULL) {
+-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+-	    }
+-	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
+-	}
+-    }
++    resultObjs[0] = MethodArgs(procPtr);
+     resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
+     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+     return TCL_OK;
+@@ -1001,7 +1040,6 @@
+     Tcl_Obj *const objv[])
+ {
+     Proc *procPtr;
+-    CompiledLocal *localPtr;
+     Tcl_Obj *resultObjs[2];
+     Class *clsPtr;
+ 
+@@ -1025,20 +1063,7 @@
+ 	return TCL_ERROR;
+     }
+ 
+-    TclNewObj(resultObjs[0]);
+-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+-	    localPtr=localPtr->nextPtr) {
+-	if (TclIsVarArgument(localPtr)) {
+-	    Tcl_Obj *argObj;
+-
+-	    TclNewObj(argObj);
+-	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
+-	    if (localPtr->defValuePtr != NULL) {
+-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+-	    }
+-	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
+-	}
+-    }
++    resultObjs[0] = MethodArgs(procPtr);
+     resultObjs[1] = TclOOGetMethodBody(clsPtr->constructorPtr);
+     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+     return TCL_OK;
+@@ -1063,7 +1088,6 @@
+ {
+     Tcl_HashEntry *hPtr;
+     Proc *procPtr;
+-    CompiledLocal *localPtr;
+     Tcl_Obj *resultObjs[2];
+     Class *clsPtr;
+ 
+@@ -1093,20 +1117,7 @@
+ 	return TCL_ERROR;
+     }
+ 
+-    TclNewObj(resultObjs[0]);
+-    for (localPtr=procPtr->firstLocalPtr; localPtr!=NULL;
+-	    localPtr=localPtr->nextPtr) {
+-	if (TclIsVarArgument(localPtr)) {
+-	    Tcl_Obj *argObj;
+-
+-	    TclNewObj(argObj);
+-	    Tcl_ListObjAppendElement(NULL, argObj, LocalVarName(localPtr));
+-	    if (localPtr->defValuePtr != NULL) {
+-		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+-	    }
+-	    Tcl_ListObjAppendElement(NULL, resultObjs[0], argObj);
+-	}
+-    }
++    resultObjs[0] = MethodArgs(procPtr);
+     resultObjs[1] = TclOOGetMethodBody((Method *) Tcl_GetHashValue(hPtr));
+     Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObjs));
+     return TCL_OK;

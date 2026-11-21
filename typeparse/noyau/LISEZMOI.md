@@ -2857,3 +2857,45 @@ struct, celle de l'arbre de ParseExpr écrit en Tcl).
   Les types nominaux scalaires sont traversés jusqu'à leur structure.
 * Une somme en tête garde `S(v)` (la variante choisie) et `S($champ)`.
   Pas de conflit avec les familles : elles sont cherchées avant.
+
+## v17j — méthodes TclOO typées (20 novembre 2026)
+
+Les méthodes TclOO acceptent désormais les signatures typées des procédures :
+`method ajouter {{int}n} {…}`, `constructor {{string}nom; {int}stock} {…}`,
+`method {double}moitié {{int}n} {…}` (type de retour), `oo::objdefine o method …`.
+
+### Le correctif (`oo-methodes-typees.patch`, sur `generic/`, `patch -p1`)
+
+* `tclOOMethod.c` : `MethodSig`, appelé par `TclOONewProcMethod` et
+  `TclOONewProcInstanceMethod` à la place de `TclListObjLength`, lit la
+  signature comme `proc` le fait (`TclTypedProcSig`). Une liste typée (un
+  produit) fait créer la méthode avec `args`, et la signature est posée sur la
+  Proc (`procPtr->typedSig`) : la liaison des champs à l'appel et le contrôle
+  du type de retour passent par le code des procédures (`InitArgsAndLocals`,
+  `TclTypedProcReturn`), que les méthodes empruntent déjà. Une liste classique
+  est vérifiée comme avant.
+  Les appelants peuvent passer des objets sans propriétaire (refCount 0 : les
+  méthodes des propriétés, `Tcl_ObjPrintf`) : `MethodSig` lit des copies, sans
+  jamais prendre ni lâcher leur dernière référence.
+* `tclOOInfo.c` : `MethodArgs` remplace les trois boucles de
+  `info class definition`, `info class constructor`, `info object definition` :
+  une signature typée rend ses noms et ses défauts (`{n {m 5}}`), comme
+  `info args` / `info default` pour une procédure.
+
+### Vérifié
+
+* `t116_methodes_typees.tcl` / `.out` (format de `tests_tclsh`) ;
+* `oo*.test`, `proc*.test`, `apply.test` : 710 tests, 0 échec (dont les
+  propriétés, `ooProp.test`, cassées par une première version qui lâchait la
+  dernière référence du nom de méthode) ;
+* la suite complète : 51095 tests, 8 échecs, tous dans `httpProxy.test`
+  (le réseau du bac à sable) ;
+* les 78 tests de `tests_tclsh` : identiques à leurs `.out`.
+
+### Ce qui reste
+
+`variable {int}n` dans `oo::define` : l'annotation est acceptée et ignorée
+(la variable s'appelle `n`, sans type). On type aujourd'hui dans le
+constructeur (`set {int}n 0`), et le type reste ensuite. Un `variable` typé
+demanderait de garder le type dans la déclaration de classe et de l'appliquer
+à la création de chaque objet.

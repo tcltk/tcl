@@ -49,3 +49,5 @@ annotation-avant-fermant.patch
 fonctions-conversion.patch
 parse-expr-tuples.patch
 tests-syntaxe.patch
+apply-type.patch
+oo-methodes-typees.patch

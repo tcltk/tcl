@@ -1,10 +1,11 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 14 novembre 2026, version **v17i**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 20 novembre 2026, version **v17j**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
+* **v17j** (20 novembre) : les méthodes TclOO acceptent les signatures typées des procédures (`method ajouter {{int}n} {…}`, `constructor {{string}nom; {int}stock} {…}`, `method {double}moitié …`, `oo::objdefine`) ; `info class definition`/`constructor`, `info object definition` rendent noms et défauts. Patch noyau `oo-methodes-typees.patch` (`tclOOMethod.c`, `tclOOInfo.c`), test t116. Reste : `variable {int}n` dans `oo::define` (accepté, ignoré ; typer dans le constructeur).
 * **v17i** (15 novembre) : `T(chemin)`, le type d'une partie (`Emplacement(propriétés)`, `Liste(*.propriétés.max)`), comme `$v(chemin)` en est la valeur ; l'analogie list ↔ tableau, dict/produit ↔ struct. Pour VolɷDuctus : une instance est une valeur dont le type est le produit de ses blocs. Test t115.
 * **v17h** (15 novembre) : `note get` rend les notes en ensemble, triées, jointes par « , » (`mm,px`, `list<int>@hello,mm`), comme `type canonic` et `{T@notes}`. Suite : VolɷDuctus selon CONCEPTION.
 * **v17g** (15 novembre) : `list(LO:HI).T`, `list(1:Inf).T` (le « : » des chemins ; `Inf` sans borne ; `list(N:N)` = `list(N)`) — la cardinalité `1..n` de VolɷDuctus. Vérifiée à la construction et à chaque écriture. Test t114. **Le plan de la TIP (étapes 1–6) est fait** ; suite : VolɷDuctus selon CONCEPTION (journal des convolutions du suivi, référence typée unique, carnet typé…).

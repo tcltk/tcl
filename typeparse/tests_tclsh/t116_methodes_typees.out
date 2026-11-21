@@ -1,0 +1,17 @@
+$o ajouter 2                                                   5
+$o ajouter deux                                                ERREUR argument "n": expected integer but got "deux"
+$o genre 7                                                     int
+list [$o opt 1] [$o opt 1 2]                                   {1 5} {1 2}
+$o moitié 3                                                    1.5
+$o rend                                                        ERREUR return value {int}: expected integer but got "pas un entier"
+P new vis trois                                                ERREUR argument "stock": expected integer but got "trois"
+$o pt {1 2}                                                    1.0 2.0 Point
+$o get stock                                                   5
+oo::objdefine $o method seul {{int}k} {expr {$k * 10}}; $o seul 4 40
+$o seul x                                                      ERREUR argument "k": expected integer but got "x"
+oo::class create Q {method m {a b} {list $a $b}}; [Q new] m 1 2 1 2
+oo::class create P2 {superclass P; method ajouter {{int}n} {next [expr {$n*2}]}}; [P2 new a 1] ajouter 5 11
+info class definition P opt                                    {n {m 5}} { list $n $m }
+lindex [info class constructor P] 0                            nom stock
+lindex [info object definition $o seul] 0                      k
+oo::configurable create R {property y}; set r [R new]; $r configure -y 4; $r configure -y 4
