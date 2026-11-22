@@ -99,6 +99,8 @@ static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
 static int		NativeIsComPort(const WCHAR *nativeName);
+static int		FindFileChannel(HANDLE handle, int permissions,
+			    Tcl_Channel *channelPtr);
 static Tcl_Channel OpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 
@@ -1076,6 +1078,47 @@ TclpOpenFileChannel(
 /*
  *----------------------------------------------------------------------
  *
+ * FindFileChannel --
+ *
+ *	Looks for an existing File channel of this thread for the handle.
+ *	Only useful for a handle from outside: a handle just returned by
+ *	CreateFile() cannot belong to a live channel, but it can have the
+ *	value of a handle that was closed behind Tcl's back (e.g. by dup2()
+ *	on a standard handle).
+ *
+ * Results:
+ *	1 if a channel was found; *channelPtr is set to it, or to NULL if its
+ *	permissions differ.  0 if there is no such channel.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FindFileChannel(
+    HANDLE handle,
+    int permissions,
+    Tcl_Channel *channelPtr)
+{
+    FileInfo *infoPtr;
+    ThreadSpecificData *tsdPtr = FileInit();
+
+    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
+	    infoPtr = infoPtr->nextPtr) {
+	if (infoPtr->handle == handle) {
+	    *channelPtr = ((permissions & (TCL_READABLE|TCL_WRITABLE|TCL_EXCEPTION))
+		    == infoPtr->validMask) ? infoPtr->channel : NULL;
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_MakeFileChannel --
  *
  *	Creates a Tcl_Channel from an existing platform specific file handle.
@@ -1128,7 +1171,9 @@ Tcl_MakeFileChannel(
 
     case FILE_TYPE_DISK:
     case FILE_TYPE_CHAR:
-	channel = OpenFileChannel(handle, channelName, mode, 0);
+	if (!FindFileChannel(handle, mode, &channel)) {
+	    channel = OpenFileChannel(handle, channelName, mode, 0);
+	}
 	break;
 
     case FILE_TYPE_UNKNOWN:
@@ -1262,7 +1307,9 @@ Tcl_MakeFileChannel(
 	 * is valid to something.
 	 */
 
-	channel = OpenFileChannel(handle, channelName, mode, 0);
+	if (!FindFileChannel(handle, mode, &channel)) {
+	    channel = OpenFileChannel(handle, channelName, mode, 0);
+	}
     }
 
     return channel;
@@ -1379,19 +1426,8 @@ OpenFileChannel(
 				 * present. */
 {
     FileInfo *infoPtr;
-    ThreadSpecificData *tsdPtr = FileInit();
 
-    /*
-     * See if a channel with this handle already exists.
-     */
-
-    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL;
-	    infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->handle == (HANDLE) handle) {
-	    return (permissions==infoPtr->validMask) ? infoPtr->channel : NULL;
-	}
-    }
-
+    FileInit();
     infoPtr = (FileInfo *)ckalloc(sizeof(FileInfo));
 
     /*

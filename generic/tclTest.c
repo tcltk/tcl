@@ -212,6 +212,7 @@ static Tcl_CmdProc	TestdelCmd;
 static Tcl_CmdProc	TestdelassocdataCmd;
 static Tcl_ObjCmdProc	TestdoubledigitsObjCmd;
 static Tcl_CmdProc	TestdstringCmd;
+static Tcl_ObjCmdProc	Testdup2Cmd;
 static Tcl_ObjCmdProc	TestencodingObjCmd;
 static Tcl_ObjCmdProc	TestevalexObjCmd;
 static Tcl_ObjCmdProc	TestevalobjvObjCmd;
@@ -498,6 +499,7 @@ Tcltest_Init(
     Tcl_DStringInit(&dstring);
     Tcl_CreateCommand(interp, "testdstring", TestdstringCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand(interp, "testdup2", Testdup2Cmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testencoding", TestencodingObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "testevalex", TestevalexObjCmd,
@@ -1853,6 +1855,65 @@ static void SpecialFree(
     ckfree((char *)blockPtr - 16);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Testdup2Cmd --
+ *
+ *	This procedure implements the "testdup2" command.  It opens a file
+ *	for writing and makes the file descriptor fd refer to it with dup2(),
+ *	behind Tcl's back, like "pytest --capture=fd" does.  The new file
+ *	stays open.
+ *
+ * Usage:
+ *	testdup2 path fd
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	dup2() closes what fd referred to before.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Testdup2Cmd(
+    void *unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int fd, newFd;
+    const void *native;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "path fd");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[2], &fd) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    native = Tcl_FSGetNativePath(objv[1]);
+    if (native == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("bad path", -1));
+	return TCL_ERROR;
+    }
+#ifdef _WIN32
+    newFd = _wopen((const WCHAR *)native, _O_WRONLY|_O_CREAT|_O_TRUNC,
+	    _S_IREAD|_S_IWRITE);
+    if (newFd < 0 || _dup2(newFd, fd) != 0) {
+#else
+    newFd = open((const char *)native, O_WRONLY|O_CREAT|O_TRUNC, 0666);
+    if (newFd < 0 || dup2(newFd, fd) < 0) {
+#endif
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("dup2 failed: %s",
+		Tcl_PosixError(interp)));
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
 /*
  *------------------------------------------------------------------------
  *
