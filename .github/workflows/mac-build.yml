@@ -1,0 +1,101 @@
+name: macOS
+on:
+  push:
+    branches:
+    - "main"
+    - "core-8-6-branch"
+    tags:
+    - "core-*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-26.04
+    outputs:
+      clang: ${{ steps.matrix.outputs.clang }}
+    steps:
+      - name: Select build matrix based on branch name
+        id: matrix
+        run: |
+          (
+            echo clang=$(jq -nc '{config: (if env.IsMatched == "true" then env.FULL else env.PARTIAL end) | fromjson }' )
+          ) | tee -a $GITHUB_OUTPUT
+        env:
+          IsMatched: ${{ github.ref_name == 'main' || github.ref_name == 'core-9-0-branch' }}
+          # DO NOT CHANGE THIS MATRIX SPEC; IT AFFECTS OUR COST CONTROLS
+          FULL: >
+            [
+              "",
+              "--disable-shared",
+              "--enable-symbols",
+              "--enable-symbols=mem",
+              "--enable-symbols=all"
+            ]
+          PARTIAL: >
+            [
+              "",
+              "--enable-symbols=all"
+            ]
+  xcode:
+    runs-on: macos-15-intel
+    defaults:
+      run:
+        shell: bash
+        working-directory: macosx
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        timeout-minutes: 5
+      - name: Prepare
+        run: |
+          touch tclStubInit.c tclOOStubInit.c
+        working-directory: generic
+      - name: Build
+        run: make -j4 all
+        timeout-minutes: 15
+      - name: Run Tests
+        run: make -j4 test styles=develop
+        env:
+          ERROR_ON_FAILURES: 1
+          MAC_CI: 1
+        timeout-minutes: 15
+  clang:
+    runs-on: macos-15-intel
+    needs: plan
+    strategy:
+      matrix: ${{ fromJson(needs.plan.outputs.clang) }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: unix
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        timeout-minutes: 5
+      - name: Prepare
+        run: |
+          touch tclStubInit.c tclOOStubInit.c
+          mkdir "$HOME/install dir"
+        working-directory: generic
+      - name: Configure ${{ matrix.config }}
+        # Note that macOS is always a 64 bit platform
+        run: ./configure --enable-64bit --enable-dtrace --enable-framework ${CFGOPT} "--prefix=$HOME/install" || (cat config.log && exit 1)
+        env:
+          CFGOPT: ${{ matrix.config }}
+        timeout-minutes: 5
+      - name: Build
+        run: |
+          make -j4 all tcltest
+        timeout-minutes: 15
+      - name: Info
+        run: |
+          ulimit -a || echo 'get limit failed'
+          make runtest SCRIPT=../.github/workflows/info.tcl || echo 'get info failed'
+      - name: Run Tests
+        run: |
+          make test
+        env:
+          ERROR_ON_FAILURES: 1
+          MAC_CI: 1
+        timeout-minutes: 20
