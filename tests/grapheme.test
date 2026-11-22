@@ -12,11 +12,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 tcltest::loadTestedCommands
 
 tcltest::testConstraint testintrep [expr {[info commands testintrep] ne {}}]
+tcltest::testConstraint testgrapheme [expr {[info commands testgrapheme] ne {}}]
 
 source [file join [file dirname [info script]] tcltests.tcl]
 source [file join [file dirname [info script]] ucdUtils.tcl]
 namespace eval grapheme::test {
-    namespace path ::tcltests::ucd
+    namespace path [list ::tcltests::ucd ::tcl::mathop]
     variable testCase
     variable comment
     variable testNum
@@ -41,8 +42,11 @@ namespace eval grapheme::test {
         variable intrepTypes [list none]
     }
 
-    proc cleanupVars {} {
-	unset -nocomplain {*}
+    proc tutf8 {s} {
+        return [teststringbytes $s]
+    }
+    proc unichars {s} {
+        return [encoding convertto utf-32 $s]
     }
 
     # The -ucd- tests all run off the test vectors from the Unicode Character
@@ -367,6 +371,129 @@ namespace eval grapheme::test {
         } -result [list [list A\u308 B] graphemeList]
     }
 
+    ############################ C API tests ################################
+
+    proc testCAPI script {
+        upvar 1 testCase testCase
+        uplevel 1 [format {
+            foreach testCase [getGraphemeData] {
+                lassign $testCase testNum comment graphemes
+                set text [join $graphemes ""]
+                set graphemeWidths [lmap grapheme $graphemes {
+                    string length $grapheme
+                }]
+                set tutf8 [tutf8 $text]
+                set unichars [unichars $text]
+                %s
+            }
+        } $script]
+    }
+
+    # Tcl_GraphemeNext
+    testCAPI {
+        test Tcl_GraphemeNext-ucd-$testNum.0 $comment -body {
+            set l {}
+            set w {}
+            set s $tutf8
+            while {[string length $s]} {
+                lassign [testgrapheme Tcl_GraphemeNext $s [string length $s]] \
+                    grapheme width consumed
+                lappend l $grapheme
+                lappend w $width
+                set s [string range $s $consumed end]
+            }
+            list $l $w
+        } -result [list $graphemes $graphemeWidths]
+    }
+
+    test Tcl_GraphemeNext-empty-0 {GraphemeNext empty string} -body {
+        lassign [testgrapheme Tcl_GraphemeNext "" 0] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemeNext-empty-1 {GraphemeNext empty string, null grWidthPtr} -body {
+        lassign [testgrapheme Tcl_GraphemeNext "" 0 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemeNext-negative-length-0 {GraphemeNext negative lengths} -body {
+        set s [tutf8 A\u0301\0]
+        lassign [testgrapheme Tcl_GraphemeNext $s -1] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 2 3]
+
+    test Tcl_GraphemeNext-null-pointer-0 {GraphemeNext null grWidthPtr} -body {
+        set s [tutf8 A\u0301B]
+        lassign [testgrapheme Tcl_GraphemeNext $s [string length $s] -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 0 3]
+
+    test Tcl_GraphemeNext-null-pointer-1 {GraphemeNext null grWidthPtr, nul terminated} -body {
+        set s [tutf8 A\u0301\0]
+        lassign [testgrapheme Tcl_GraphemeNext $s -2 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 0 3]
+
+    test Tcl_GraphemeNext-invalid-encoding-0 {GraphemeNext truncated encoding} -body {
+        set s [tutf8 A\u0301]
+        set slen [string length $s]
+        lassign [testgrapheme Tcl_GraphemeNext $s [- $slen 1]] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A 1 1]
+
+    test Tcl_GraphemeNext-invalid-encoding-1 {GraphemeNext truncated nul terminated encoding} -body {
+        set s [string replace [tutf8 A\u0301] end end \0]
+        lassign [testgrapheme Tcl_GraphemeNext $s -1] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A 1 1]
+
+    # Tcl_GraphemeUniNext
+    testCAPI {
+        test Tcl_GraphemeUniNext-ucd-$testNum.0 $comment -body {
+            set l {}
+            set w {}
+            set s $unichars
+            while {[string length $s]} {
+                lassign [testgrapheme Tcl_GraphemeUniNext $s \
+                             [/ [string length $s] 4]] \
+                    grapheme width consumed
+                lappend l $grapheme
+                lappend w $width
+                set s [string range $s $consumed end]
+            }
+            list $l $w
+        } -result [list $graphemes $graphemeWidths]
+    }
+
+    test Tcl_GraphemeUniNext-empty-0 {GraphemeUniNext empty string} -body {
+        lassign [testgrapheme Tcl_GraphemeUniNext "" 0] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemeUniNext-empty-1 {GraphemeUniNext empty string, null grWidthPtr} -body {
+        lassign [testgrapheme Tcl_GraphemeUniNext "" 0 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemeUniNext-negative-length-0 {GraphemeUniNext negative lengths} -body {
+        set s [unichars A\u0301\0]
+        lassign [testgrapheme Tcl_GraphemeUniNext $s -1] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 2 8]
+
+    test Tcl_GraphemeUniNext-null-pointer-0 {GraphemeUniNext null grWidthPtr} -body {
+        set s [unichars A\u0301B]
+        lassign [testgrapheme Tcl_GraphemeUniNext $s 3 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 0 8]
+
+    test Tcl_GraphemeUniNext-null-pointer-1 {
+        GraphemeUniNext null grWidthPtr, nul terminated
+    } -body {
+        set s [unichars A\u0301\0]
+        lassign [testgrapheme Tcl_GraphemeUniNext $s -2 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 0 8]
 }
 
 ::tcltest::cleanupTests
