@@ -9571,4 +9571,6 @@ Many code fixes to avoid overflow or undefined behavior.  Thanks chrstphrchvz.
 
 2026-11-22 Windows: "open" failed with an empty error message after dup2() (storchaka)
 
+2026-11-23 Tcl_FSChdir crash on macos/macports after seteuid
+
 - Released 8.6.19, Dec ??, 2026 - details at https://core.tcl-lang.org/tcl/ -
