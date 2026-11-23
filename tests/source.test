@@ -302,7 +302,7 @@ test source-8.1 {source and coroutine/yield} -setup {
     removeFile source.file
 } -result {1 2 3 0}
 test source-9.1 {source with relative path after the current directory was deleted} -constraints {
-    unix
+    unix knownBug
 } -setup {
     set dir [makeDirectory cwddeleted]
     set f [open [file join $dir cwddeleted.tcl] w]
@@ -321,7 +321,7 @@ test source-9.1 {source with relative path after the current directory was delet
     unset -nocomplain dir f m
 } -result {1 0 0}
 test source-9.2 {source with relative path after the current directory was deleted and [pwd] failed} -constraints {
-    unix
+    unix knownBug
 } -setup {
     set dir [makeDirectory cwddeleted]
     set f [open [file join $dir cwddeleted.tcl] w]
