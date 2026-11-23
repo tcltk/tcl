@@ -389,7 +389,7 @@ namespace eval grapheme::test {
         } $script]
     }
 
-    # Tcl_GraphemeNext
+    ### Tcl_GraphemeNext
     testCAPI {
         test Tcl_GraphemeNext-ucd-$testNum.0 $comment -body {
             set l {}
@@ -417,7 +417,7 @@ namespace eval grapheme::test {
     } -result [list "" 0 0]
 
     test Tcl_GraphemeNext-negative-length-0 {GraphemeNext negative lengths} -body {
-        set s [tutf8 A\u0301\0]
+        set s [tutf8 A\u0301]\0
         lassign [testgrapheme Tcl_GraphemeNext $s -1] grapheme width consumed
         list $grapheme $width $consumed
     } -result [list A\u0301 2 3]
@@ -447,7 +447,7 @@ namespace eval grapheme::test {
         list $grapheme $width $consumed
     } -result [list A 1 1]
 
-    # Tcl_GraphemeUniNext
+    ### Tcl_GraphemeUniNext
     testCAPI {
         test Tcl_GraphemeUniNext-ucd-$testNum.0 $comment -body {
             set l {}
@@ -476,7 +476,7 @@ namespace eval grapheme::test {
     } -result [list "" 0 0]
 
     test Tcl_GraphemeUniNext-negative-length-0 {GraphemeUniNext negative lengths} -body {
-        set s [unichars A\u0301\0]
+        set s [unichars A\u0301]\0\0\0\0
         lassign [testgrapheme Tcl_GraphemeUniNext $s -1] grapheme width consumed
         list $grapheme $width $consumed
     } -result [list A\u0301 2 8]
@@ -490,10 +490,374 @@ namespace eval grapheme::test {
     test Tcl_GraphemeUniNext-null-pointer-1 {
         GraphemeUniNext null grWidthPtr, nul terminated
     } -body {
-        set s [unichars A\u0301\0]
+        set s [unichars A\u0301]\0\0\0\0
         lassign [testgrapheme Tcl_GraphemeUniNext $s -2 -nowidthptr] grapheme width consumed
         list $grapheme $width $consumed
     } -result [list A\u0301 0 8]
+
+    ### Tcl_GraphemePrev
+
+    testCAPI {
+        test Tcl_GraphemePrev-ucd-$testNum.0 $comment -body {
+            set l {}
+            set w {}
+            set s $tutf8
+            while {[string length $s]} {
+                lassign [testgrapheme Tcl_GraphemePrev $s [string length $s]] \
+                    grapheme width consumed
+                lappend l $grapheme
+                lappend w $width
+                set s [string range $s 0 end-$consumed]
+            }
+            list [lreverse $l] [lreverse $w]
+        } -result [list $graphemes $graphemeWidths]
+    }
+
+    test Tcl_GraphemePrev-empty-0 {GraphemePrev empty string} -body {
+        lassign [testgrapheme Tcl_GraphemePrev "" 0] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemePrev-empty-1 {GraphemePrev empty string, null grWidthPtr} -body {
+        lassign [testgrapheme Tcl_GraphemePrev "" 0 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemePrev-negative-length-0 {GraphemePrev negative lengths} -body {
+        set s [tutf8 A\u0301]
+        lassign [testgrapheme Tcl_GraphemePrev $s -1] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list {} 0 0]
+
+    test Tcl_GraphemePrev-null-pointer-0 {GraphemePrev null grWidthPtr} -body {
+        set s [tutf8 XA\u0301]
+        lassign [testgrapheme Tcl_GraphemePrev $s [string length $s] -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 0 3]
+
+    test Tcl_GraphemePrev-invalid-encoding-0 {GraphemePrev truncated encoding} -body {
+        set s [tutf8 A\u0301]
+        set slen [string length $s]
+        lassign [testgrapheme Tcl_GraphemePrev $s [- $slen 1]] grapheme width consumed
+        # Cannot check grapheme as a character as it will hold an invalid encoding
+        # Just check its byte value
+        list [binary encode hex $grapheme] $width $consumed
+    } -result [list cc 1 1]
+
+    ### Tcl_GraphemeUniPrev
+
+    testCAPI {
+        test Tcl_GraphemeUniPrev-ucd-$testNum.0 $comment -body {
+            set l {}
+            set w {}
+            set s $unichars
+            while {[string length $s]} {
+                lassign [testgrapheme Tcl_GraphemeUniPrev $s [/ [string length $s] 4]] \
+                    grapheme width consumed
+                lappend l $grapheme
+                lappend w $width
+                set s [string range $s 0 end-$consumed]
+            }
+            list [lreverse $l] [lreverse $w]
+        } -result [list $graphemes $graphemeWidths]
+    }
+
+    test Tcl_GraphemeUniPrev-empty-0 {GraphemeUniPrev empty string} -body {
+        lassign [testgrapheme Tcl_GraphemeUniPrev "" 0] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemeUniPrev-empty-1 {GraphemeUniPrev empty string, null grWidthPtr} -body {
+        lassign [testgrapheme Tcl_GraphemeUniPrev "" 0 -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list "" 0 0]
+
+    test Tcl_GraphemeUniPrev-negative-length-0 {GraphemeUniPrev negative lengths} -body {
+        set s [unichars A\u0301]
+        lassign [testgrapheme Tcl_GraphemeUniPrev $s -1] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list {} 0 0]
+
+    test Tcl_GraphemeUniPrev-null-pointer-0 {GraphemeUniPrev null grWidthPtr} -body {
+        set s [unichars XA\u0301]
+        lassign [testgrapheme Tcl_GraphemeUniPrev $s [/ [string length $s] 4] -nowidthptr] grapheme width consumed
+        list $grapheme $width $consumed
+    } -result [list A\u0301 0 8]
+
+    ### Tcl_GraphemeCount
+
+    testCAPI {
+        test Tcl_GraphemeCount-ucd-$testNum.0 $comment -body {
+            testgrapheme Tcl_GraphemeCount $tutf8 [string length $tutf8]
+        } -result [llength $graphemes]
+    }
+
+    test Tcl_GraphemeCount-empty-0 {GraphemeCount empty string} -body {
+        testgrapheme Tcl_GraphemeCount "" 0
+    } -result 0
+
+    test Tcl_GraphemeCount-negative-length-0 {GraphemeCount negative lengths} -body {
+        set s [tutf8 A\u0301B]\0
+        testgrapheme Tcl_GraphemeCount $s -1
+    } -result 2
+
+    ### Tcl_GraphemeUniCount
+
+    testCAPI {
+        test Tcl_GraphemeUniCount-ucd-$testNum.0 $comment -body {
+            testgrapheme Tcl_GraphemeUniCount $unichars [/ [string length $unichars] 4]
+        } -result [llength $graphemes]
+    }
+
+    test Tcl_GraphemeUniCount-empty-0 {GraphemeUniCount empty string} -body {
+        testgrapheme Tcl_GraphemeUniCount "" 0
+    } -result 0
+
+    test Tcl_GraphemeUniCount-negative-length-0 {GraphemeUniCount negative lengths} -body {
+        set s [unichars A\u0301B]\0\0\0\0
+        testgrapheme Tcl_GraphemeUniCount $s -1
+    } -result 2
+
+    ### Tcl_GraphemeIndex
+
+    testCAPI {
+        test Tcl_GraphemeIndex-ucd-$testNum.0 $comment -body {
+            set l {}
+            set w {}
+            set c {}
+            foreach index [lseq [llength $graphemes]] {
+                lassign [testgrapheme Tcl_GraphemeIndex $tutf8 [string length $tutf8] $index] grapheme width consumed
+                lappend l $grapheme
+                lappend w $width
+                lappend c $consumed
+            }
+            list $l $w $c
+        } -result [list $graphemes $graphemeWidths [lmap grapheme $graphemes {string length [tutf8 $grapheme]}]]
+    }
+
+    test Tcl_GraphemeIndex-negative-length-0 {GraphemeIndex negative lengths} -body {
+        set s [tutf8 A\u0301B]\0
+        list \
+            {*}[testgrapheme Tcl_GraphemeIndex $s -1 0] \
+            {*}[testgrapheme Tcl_GraphemeIndex $s -1 1]
+    } -result [list A\u0301 2 3 B 1 1]
+
+    test Tcl_GraphemeIndex-null-pointer-0 {GraphemeIndex null grWidthPtr} -body {
+        set s [tutf8 A\u0301B]
+        testgrapheme Tcl_GraphemeIndex $s [string length $s] 0 -nowidthptr
+    } -result [list A\u0301 0 3]
+
+    test Tcl_GraphemeIndex-null-pointer-1 {GraphemeIndex null grNumBytesPtr} -body {
+        set s [tutf8 A\u0301B]
+        testgrapheme Tcl_GraphemeIndex $s [string length $s] 0 -nonumbytesptr
+        # Note grapheme returned is empty with a NULL grNumBytesPtr because the test
+        # code does not know how many bytes to return in the string. A real application
+        # will not pass grNumBytesPtr as NULL or will do the necessary UTF-8 processing
+        # itself which the test code does not do.
+    } -result [list {} 2 0]
+
+    test Tcl_GraphemeIndex-null-pointer-2 {
+        GraphemeIndex null pointers with out of bounds indices
+    } -body {
+        set s [tutf8 A\u0301B]
+        testgrapheme Tcl_GraphemeIndex $s [string length $s] -1 -nonumbytesptr -nowidthptr
+        # Note grapheme returned is empty with a NULL grNumBytesPtr because the test
+        # code does not know how many bytes to return in the string. A real application
+        # will not pass grNumBytesPtr as NULL or will do the necessary UTF-8 processing
+        # itself which the test code does not do.
+    } -result [list {} 0 0]
+
+    test Tcl_GraphemeIndex-outofbound-0 {GraphemeIndex negative index} -body {
+        set s [tutf8 A\u0301B]
+        testgrapheme Tcl_GraphemeIndex $s [string length $s] -1
+    } -result [list {} 0 0]
+
+    test Tcl_GraphemeIndex-outofbound-1 {GraphemeIndex index too large} -body {
+        set s [tutf8 A\u0301B]
+        testgrapheme Tcl_GraphemeIndex $s [string length $s] [string length $s]
+    } -result [list {} 0 0]
+
+    ### Tcl_GraphemeUniIndex
+
+    testCAPI {
+        test Tcl_GraphemeUniIndex-ucd-$testNum.0 $comment -body {
+            set l {}
+            set w {}
+            set c {}
+            foreach index [lseq [llength $graphemes]] {
+                lassign [testgrapheme Tcl_GraphemeUniIndex $unichars \
+                             [/ [string length $unichars] 4] $index] grapheme width consumed
+                lappend l $grapheme
+                lappend w $width
+                lappend c $consumed
+            }
+            list $l $w $c
+        } -result [list $graphemes $graphemeWidths \
+                       [lmap grapheme $graphemes \
+                            {string length [unichars $grapheme]}]]
+    }
+
+    test Tcl_GraphemeUniIndex-negative-length-0 {GraphemeUniIndex negative lengths} -body {
+        set s [unichars A\u0301B]\0\0\0\0
+        list \
+            {*}[testgrapheme Tcl_GraphemeUniIndex $s -1 0] \
+            {*}[testgrapheme Tcl_GraphemeUniIndex $s -1 1]
+    } -result [list A\u0301 2 8 B 1 4]
+
+    test Tcl_GraphemeUniIndex-null-pointer-0 {GraphemeUniIndex null grWidthPtr} -body {
+        set s [unichars A\u0301B]
+        testgrapheme Tcl_GraphemeUniIndex $s [/ [string length $s] 4] 0 -nowidthptr
+    } -result [list A\u0301 0 8]
+
+    test Tcl_GraphemeUniIndex-null-pointer-1 {GraphemeUniIndex null grNumBytesPtr} -body {
+        set s [unichars A\u0301B]
+        testgrapheme Tcl_GraphemeUniIndex $s [/ [string length $s] 4] 0 -nonumbytesptr
+    } -result [list A\u0301 2 0]
+
+    test Tcl_GraphemeUniIndex-outofbound-0 {GraphemeUniIndex negative index} -body {
+        set s [unichars A\u0301B]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniIndex $s $ulen -1
+    } -result [list {} 0 0]
+
+    test Tcl_GraphemeUniIndex-outofbound-1 {GraphemeUniIndex index too large} -body {
+        set s [unichars A\u0301B]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniIndex $s $ulen $ulen
+    } -result [list {} 0 0]
+
+    test Tcl_GraphemeUniIndex-null-pointer-2 {
+        GraphemeUniIndex null pointers with out of bounds indices
+    } -body {
+        set s [unichars A\u0301B]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeIndex $s $ulen -1 -nonumbytesptr -nowidthptr
+    } -result [list {} 0 0]
+
+
+    ### Tcl_GraphemeRange
+
+    testCAPI {
+        foreach grLast [lseq [llength $graphemes]] {
+            foreach grFirst [lseq [expr {$grLast+1}]] {
+                test Tcl_GraphemeRange-ucd-$testNum.$grFirst-$grLast "$comment $grFirst:$grLast" -body {
+                    testgrapheme Tcl_GraphemeRange $tutf8 [string length $tutf8] $grFirst $grLast
+                } -result [join [lrange $graphemes $grFirst $grLast] ""]
+            }
+        }
+    }
+
+    test Tcl_GraphemeRange-bounds-0 {GraphemeRange first index negative} -body {
+        set s [tutf8 A\u0301BC]
+        testgrapheme Tcl_GraphemeRange $s [string length $s] -1 1
+    } -result "A\u0301B"
+
+    test Tcl_GraphemeRange-bounds-1 {GraphemeRange first index out of bounds} -body {
+        set s [tutf8 A\u0301BC]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeRange $s $slen $slen [incr slen]
+    } -result {}
+
+    test Tcl_GraphemeRange-bounds-2 {GraphemeRange last index out of bounds} -body {
+        set s [tutf8 A\u0301BC]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeRange $s $slen 0 [incr slen]
+    } -result "A\u0301BC"
+
+    test Tcl_GraphemeRange-bounds-3 {GraphemeRange last index negative} -body {
+        set s [tutf8 A\u0301BC]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeRange $s $slen 0 -1
+    } -result "A\u0301BC"
+
+    test Tcl_GraphemeRange-bounds-4 {GraphemeRange last index less than first} -body {
+        set s [tutf8 A\u0301BC]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeRange $s $slen 1 0
+    } -result {}
+
+    test Tcl_GraphemeRange-bounds-5 {GraphemeRange equal indices} -body {
+        set s [tutf8 XA\u0301Y]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeRange $s $slen 1 1
+    } -result "A\u0301"
+
+    test Tcl_GraphemeRange-negative-length-0 {GraphemeRange negative lengths} -body {
+        set s [tutf8 A\u0301B]\0
+        testgrapheme Tcl_GraphemeRange $s -1 0 10
+    } -result A\u0301B
+
+    test Tcl_GraphemeRange-null-pointer-0 {GraphemeRange NULL endPtrPtr} -body {
+        set s [tutf8 A\u0301BC]
+        testgrapheme Tcl_GraphemeRange $s [string length $s] 0 1 -noendptrptr
+        # Without an endptrptr, the test functions do not know the length of the sequence
+        # and only return the first char. In real life, everyone should be passing
+        # the endptrptr
+    } -result A
+
+    ### Tcl_GraphemeUniRange
+
+    testCAPI {
+        foreach grLast [lseq [llength $graphemes]] {
+            foreach grFirst [lseq [expr {$grLast+1}]] {
+                test Tcl_GraphemeUniRange-ucd-$testNum.$grFirst-$grLast "$comment $grFirst:$grLast" -body {
+                    set ulen [/ [string length $unichars] 4]
+                    testgrapheme Tcl_GraphemeUniRange $unichars $ulen $grFirst $grLast
+                } -result [join [lrange $graphemes $grFirst $grLast] ""]
+            }
+        }
+    }
+
+    test Tcl_GraphemeUniRange-bounds-0 {GraphemeUniRange first index negative} -body {
+        set s [unichars A\u0301BC]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen -1 1
+    } -result "A\u0301B"
+
+    test Tcl_GraphemeUniRange-bounds-1 {GraphemeUniRange first index out of bounds} -body {
+        set s [unichars A\u0301BC]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen $ulen [incr ulen]
+    } -result {}
+
+    test Tcl_GraphemeUniRange-bounds-2 {GraphemeUniRange last index out of bounds} -body {
+        set s [unichars A\u0301BC]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen 0 [incr ulen]
+    } -result "A\u0301BC"
+
+    test Tcl_GraphemeUniRange-bounds-3 {GraphemeUniRange last index negative} -body {
+        set s [unichars A\u0301BC]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen 0 -1
+    } -result "A\u0301BC"
+
+    test Tcl_GraphemeUniRange-bounds-4 {GraphemeUniRange last index less than first} -body {
+        set s [unichars A\u0301BC]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen 1 0
+    } -result {}
+
+    test Tcl_GraphemeUniRange-bounds-5 {GraphemeUniRange equal indices} -body {
+        set s [unichars XA\u0301Y]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen 1 1
+    } -result "A\u0301"
+
+    test Tcl_GraphemeUniRange-negative-length-0 {GraphemeUniRange negative lengths} -body {
+        set s [unichars A\u0301B]\0\0\0\0
+        testgrapheme Tcl_GraphemeUniRange $s -1 0 10
+    } -result A\u0301B
+
+    test Tcl_GraphemeUniRange-null-pointer-0 {GraphemeUniRange NULL endPtrPtr} -body {
+        set s [unichars A\u0301BC]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniRange $s $ulen 0 1 -noendptrptr
+        # Without an endptrptr, the test functions do not know the length of the sequence
+        # and only return the first char. In real life, everyone should be passing
+        # the endptrptr
+    } -result {}
+
 }
 
 ::tcltest::cleanupTests

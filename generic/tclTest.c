@@ -10742,7 +10742,7 @@ TestGraphemeCmd(
 	tutf8Ptr = Tcl_GraphemePrev(lengthArg + bytes, lengthArg, grWidthPtr);
 	resultObj = Tcl_NewListObj(3, NULL);
 	Tcl_ListObjAppendElement(NULL, resultObj,
-		tutf8Ptr ? Tcl_NewStringObj(tutf8Ptr, bytes - tutf8Ptr)
+		tutf8Ptr ? Tcl_NewStringObj(tutf8Ptr, (lengthArg + bytes) - tutf8Ptr)
 			 : Tcl_NewObj());
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		Tcl_NewWideIntObj(grWidthPtr ? *grWidthPtr : 0));
@@ -10754,13 +10754,24 @@ TestGraphemeCmd(
 	uniPtr = Tcl_GraphemeUniPrev(lengthArg + (Tcl_UniChar *)bytes,
 		lengthArg, grWidthPtr);
 	resultObj = Tcl_NewListObj(3, NULL);
-	Tcl_ListObjAppendElement(NULL, resultObj,
-		uniPtr ? Tcl_NewUnicodeObj(uniPtr, grWidth) : Tcl_NewObj());
+	if (uniPtr) {
+	    /* We could use grWidthPtr but that may have been passed as NULL */
+	    uniEndPtr = lengthArg + (Tcl_UniChar *)bytes;
+	    grWidth = uniEndPtr - uniPtr;
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewUnicodeObj(uniPtr, grWidth));
+	    numBytes = (uniEndPtr - uniPtr) * sizeof(Tcl_UniChar);
+	} else {
+	    Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
+	    numBytes = 0;
+	}
+	/*
+	 * Note: do not use grWidth here because if grWidthPtr is NULL, we
+	 * want to return 0 for testing purposes even though it could be
+	 * calculated
+	 */
 	Tcl_ListObjAppendElement(NULL, resultObj,
 		Tcl_NewWideIntObj(grWidthPtr ? *grWidthPtr : 0));
-	numBytes = uniPtr ? (char *)(lengthArg + (Tcl_UniChar *)bytes)
-				    - (char *)uniPtr
-			  : 0;
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(numBytes));
 	break;
     case INDEX:
