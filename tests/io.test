@@ -39,6 +39,7 @@ namespace eval ::tcl::test::io {
 
 testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
+testConstraint nodebug          [catch {::tcl::pkgconfig get debug}]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testdup2         [llength [info commands testdup2]]
@@ -8969,7 +8970,7 @@ test io-79.1 {open after dup2() replaced stdout behind Tcl's back [91c9bc1c45]} 
 	puts -nonewline $f [list $res $msg]
 	close $f
     } io79script]
-} -constraints {stdio testdup2} -body {
+} -constraints {stdio nodebug testdup2} -body {
     exec [interpreter] $script $redirected $result > $out
     set f [open $result]
     read $f
