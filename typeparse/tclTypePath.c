@@ -538,6 +538,20 @@ ParseIndex(
 	scanned = ParseIndexLexeme(start, numBytes, &lexeme, &literal, sp,
 		&atom);
 
+	/* 23/11 : une partie omise d'un intervalle (:b, a:, a::c) : un nom
+	 * vide, que l'évaluation remplace (0, end, pas 1) ; rien n'est lu */
+	if (IsOperator(lastParsed) && (lexeme == RANGE
+		|| (nodes[lastParsed].lexeme == RANGE && (lexeme == END
+		    || lexeme == CLOSE_PAREN || lexeme == COMMA)))) {
+	    if (literal != NULL) {
+		TclDiscard(literal);
+	    }
+	    lexeme = NAMEWORD;
+	    literal = Tcl_NewObj();
+	    atom = 0;
+	    scanned = 0;
+	}
+
 	if ((NODE_TYPE & lexeme) == 0) {
 	    switch (lexeme) {
 	    case INVALID:
@@ -757,6 +771,7 @@ typedef struct IndexStep {
     StepKind kind;
     Tcl_Obj *a;			/* nom, clé, début d'intervalle, étiquette */
     Tcl_Obj *b;			/* fin d'intervalle */
+    Tcl_Obj *c;			/* pas d'intervalle a:b:c (NULL : aucun) */
     int atom;			/* nom = une valeur substituée, seule */
 } IndexStep;
 
@@ -881,6 +896,9 @@ PathFree(IndexPath *p)
 	if (p->step[i].b != NULL) {
 	    Tcl_DecrRefCount(p->step[i].b);
 	}
+	if (p->step[i].c != NULL) {
+	    Tcl_DecrRefCount(p->step[i].c);
+	}
     }
     if (p->step != NULL) {
 	Tcl_Free(p->step);
@@ -925,6 +943,7 @@ OneStep(StepKind kind, Tcl_Obj *a, Tcl_Obj *b)
     p.step[0].kind = kind;
     p.step[0].a = a;
     p.step[0].b = b;
+    p.step[0].c = NULL;
     p.step[0].atom = 0;
     if (a != NULL) {
 	Tcl_IncrRefCount(a);
@@ -1017,6 +1036,9 @@ ApplyDot(IndexEnv *env)
 		if (p.step[k].b != NULL) {
 		    Tcl_IncrRefCount(p.step[k].b);
 		}
+		if (p.step[k].c != NULL) {
+		    Tcl_IncrRefCount(p.step[k].c);
+		}
 	    }
 	    SetAddPath(&out, p);
 	}
@@ -1053,7 +1075,11 @@ ApplyComma(IndexEnv *env)
     PushSet(env, l);
 }
 
-/* ":" : intervalle ; les deux bornes sont des index simples. */
+/*
+ * ":" : intervalle ; les deux bornes sont des index simples. 23/11 : un
+ * pas, a:b:c (à la Python, la fin restant incluse comme en Tcl), et des
+ * parties omises (texte vide : :b, a:, ::c) que l'évaluation résout.
+ */
 
 static int
 ApplyRange(IndexEnv *env)
@@ -1063,6 +1089,17 @@ ApplyRange(IndexEnv *env)
 	    && l.path[0].step[0].kind <= IS_KEY
 	    && r.path[0].step[0].kind <= IS_KEY);
 
+    if (!ok && l.n == 1 && r.n == 1 && l.path[0].n == 1 && r.path[0].n == 1
+	    && l.path[0].step[0].kind == IS_RANGE
+	    && l.path[0].step[0].c == NULL
+	    && r.path[0].step[0].kind <= IS_KEY) {
+	/* (a:b):c : le pas */
+	l.path[0].step[0].c = r.path[0].step[0].a;
+	Tcl_IncrRefCount(l.path[0].step[0].c);
+	SetFree(&r);
+	PushSet(env, l);
+	return TCL_OK;
+    }
     if (!ok) {
 	PathErr(env->interp, "the bounds of a range must be single indices%s%s",
 		"", "");
@@ -1461,6 +1498,9 @@ GetCompiledPath(Tcl_Interp *interp, const char *text, Tcl_Obj *pathObj)
 static void
 PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
 {
+    if (interp == NULL) {
+	return;
+    }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(fmt, a, b));
     Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
 }
@@ -2074,14 +2114,133 @@ ItemsInit(Items *it)
 
 
 
+/*
+ * 23/11 : intervalle a:b:c (parties omises : texte vide). RangeA, RangeB :
+ * les bornes d'un intervalle sans pas (0, end par défaut). RangeSpec : les
+ * indices first, first+stride, ... (count) parmi n, à la Python : bornes
+ * ramenées dans [0, n-1] en gardant l'alignement, la fin incluse.
+ */
+static const char *
+RangeA(const IndexStep *s)
+{
+    const char *t = Tcl_GetString(s->a);
+
+    return *t ? t : "0";
+}
+
+static const char *
+RangeB(const IndexStep *s)
+{
+    const char *t = Tcl_GetString(s->b);
+
+    return *t ? t : "end";
+}
+
 static int
-StepRange(Tcl_Interp *interp, Tcl_Obj *a, const char *from, const char *to,
-	Items *out)
+RangeStrided(const IndexStep *s)
+{
+    return s->kind == IS_RANGE && s->c != NULL;
+}
+
+static int
+RangeSpec(Tcl_Interp *interp, const IndexStep *s, Tcl_Size n,
+	Tcl_Size *firstPtr, Tcl_Size *countPtr, Tcl_Size *stridePtr)
+{
+    Tcl_WideInt st = 1;
+    const char *a = Tcl_GetString(s->a), *b = Tcl_GetString(s->b);
+    Tcl_Size first, last, count;
+
+    if (s->c != NULL && *Tcl_GetString(s->c) != '\0'
+	    && (Tcl_GetWideIntFromObj(NULL, s->c, &st) != TCL_OK || st == 0)) {
+	PathErr(interp, "the step of a range must be a non-zero integer, "
+		"not \"%s\"%s", Tcl_GetString(s->c), "");
+	return TCL_ERROR;
+    }
+    if (*a == '\0') {
+	first = (st > 0) ? 0 : n - 1;
+    } else if (ListIndex(interp, a, n, &first) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (*b == '\0') {
+	last = (st > 0) ? n - 1 : 0;
+    } else if (ListIndex(interp, b, n, &last) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (st > 0) {
+	if (first < 0) {
+	    first += ((-first + st - 1) / st) * st;
+	}
+	if (last >= n) {
+	    last = n - 1;
+	}
+	count = (first > last) ? 0 : (last - first) / st + 1;
+    } else {
+	if (first >= n) {
+	    first -= ((first - (n - 1) - st - 1) / -st) * -st;
+	}
+	if (last < 0) {
+	    last = 0;
+	}
+	count = (first < last) ? 0 : (first - last) / -st + 1;
+    }
+    *firstPtr = first;
+    *countPtr = count;
+    *stridePtr = (Tcl_Size) st;
+    return TCL_OK;
+}
+
+/* Le même, en positions de bits depuis le poids faible (lo, pas). */
+static int
+BitsStride(Tcl_Interp *interp, const TclType *tp, const IndexStep *s,
+	Tcl_Size *loPtr, Tcl_Size *countPtr, Tcl_Size *stepPtr)
+{
+    Tcl_Size first, stride;
+
+    if (RangeSpec(interp, s, tp->bitWidth, &first, countPtr, &stride)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    *loPtr = tp->bitMsb0 ? tp->bitWidth - 1 - first : first;
+    *stepPtr = tp->bitMsb0 ? -stride : stride;
+    return TCL_OK;
+}
+
+static int
+StepRange(Tcl_Interp *interp, Tcl_Obj *a, const IndexStep *st, Items *out)
 {
     Tcl_Obj *v, *elem;
     TclType *tp;
     int variant;
     Tcl_Size n, i, lo, hi;
+    const char *from = RangeA(st), *to = RangeB(st);
+
+    if (st->c != NULL && TclAnnotInfo(a, &v, &tp, &variant, NULL) == 1
+	    && tp->kind == TCLT_INT && tp->bitWidth > 0) {
+	/* b(a:b:c) : les bits choisis, en un bitarray de count bits */
+	Tcl_Obj *bits, *w;
+	Tcl_Size blo, count, bstep;
+
+	if (BitsStride(interp, tp, st, &blo, &count, &bstep) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (count == 0) {
+	    PathErr(interp, "bit range \"%s\" selects no bit%s",
+		    Tcl_GetString(st->a), "");
+	    return TCL_ERROR;
+	}
+	if (TclBitsGather(interp, v, blo, bstep, count, tp->bitMsb0, &bits)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	w = TclNewAnnotated(interp, BitsSliceType(interp, tp, count), -1, bits);
+	TclDiscard(bits);
+	if (w == NULL) {
+	    return TCL_ERROR;
+	}
+	TclVecAdd(&out->vec, w);
+	out->bitSlice = 1;
+	return TCL_OK;
+    }
 
     if (TclAnnotInfo(a, &v, &tp, &variant, NULL) == 1
 	    && tp->kind == TCLT_INT && tp->bitWidth > 0) {
@@ -2109,6 +2268,25 @@ StepRange(Tcl_Interp *interp, Tcl_Obj *a, const char *from, const char *to,
 		(TclAnnotInfo(a, NULL, &tp, NULL, NULL) == 1) ? tp->name
 		: "an untyped value", "");
 	return TCL_ERROR;
+    }
+    if (st->c != NULL) {
+	Tcl_Size count, stride, k;
+
+	if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
+		|| RangeSpec(interp, st, n, &lo, &count, &stride) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (k = 0, i = lo; k < count; k++, i += stride) {
+	    Tcl_Obj *w;
+
+	    Tcl_ListObjIndex(interp, v, i, &elem);
+	    w = WrapSlot(interp, tp->elem, elem);
+	    if (w == NULL) {
+		return TCL_ERROR;
+	    }
+	    TclVecAdd(&out->vec, w);
+	}
+	return TCL_OK;
     }
     if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
 	    || ListIndex(interp, from, n, &lo) != TCL_OK
@@ -2226,8 +2404,7 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
 	Tcl_Size k;
 
 	ItemsInit(&part);
-	if (StepRange(interp, a, Tcl_GetString(step->a),
-		Tcl_GetString(step->b), &part) != TCL_OK) {
+	if (StepRange(interp, a, step, &part) != TCL_OK) {
 	    TclVecFree(&part.vec);
 	    return TCL_ERROR;
 	}
@@ -2679,6 +2856,187 @@ FlattenValues(Tcl_Interp *interp, const PathSet *set, Tcl_Size nvals,
  * immuables), le reste est partagé.
  * -------------------------------------------------------------------- */
 
+/*
+ * 23/11 : b(a:b:c) = valeur. Un bitarray (valeur typée) donne un motif de
+ * count bits ; 0 ou 1 vaut pour tous les bits choisis ; sinon une liste de
+ * count bits.
+ */
+static Tcl_Obj *
+BitsStrideSet(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v,
+	const IndexStep *step, Tcl_Obj *val)
+{
+    Tcl_Size lo, count, bstep, wd = tp->bitWidth / 60 + 2, n, k;
+    Tcl_Obj *nv = NULL, *res, *vc, **elems;
+    TclType *vt;
+    int b;
+
+    if (BitsStride(interp, tp, step, &lo, &count, &bstep) != TCL_OK) {
+	return NULL;
+    }
+    if (TclAnnotInfo(val, &vc, &vt, NULL, NULL) == 1
+	    && vt->kind == TCLT_INT) {
+	if (vt->bitWidth > 0 && vt->bitWidth != count) {
+	    char num[64];
+
+	    snprintf(num, sizeof(num), "%lld bits, not %lld",
+		    (long long) count, (long long) vt->bitWidth);
+	    PathErr(interp, "the bit range selects %s%s", num, "");
+	    return NULL;
+	}
+	if (TclBitsPutStride(interp, v, lo, bstep, count,
+		vt->bitWidth > 0 ? vt->bitMsb0 : tp->bitMsb0, vc, 0,
+		wd, &nv) != TCL_OK) {
+	    return NULL;
+	}
+    } else if (Tcl_ListObjGetElements(NULL, val, &n, &elems) == TCL_OK
+	    && n == 1 && Tcl_GetBooleanFromObj(NULL, elems[0], &b) == TCL_OK
+	    && (strcmp(Tcl_GetString(elems[0]), "0") == 0
+		|| strcmp(Tcl_GetString(elems[0]), "1") == 0)) {
+	if (TclBitsPutStride(interp, v, lo, bstep, count, 0, NULL, b, wd,
+		&nv) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	if (Tcl_ListObjGetElements(NULL, val, &n, &elems) != TCL_OK
+		|| n != count) {
+	    char num[64];
+
+	    snprintf(num, sizeof(num), "%lld", (long long) count);
+	    PathErr(interp, "a strided bit range takes 0, 1, a bitarray or "
+		    "a list of %s bits, not \"%s\"", num, Tcl_GetString(val));
+	    return NULL;
+	}
+	for (k = 0; k < n; k++) {
+	    const char *t = Tcl_GetString(elems[k]);
+
+	    if ((t[0] != '0' && t[0] != '1') || t[1] != '\0') {
+		PathErr(interp, "expected a bit 0 or 1 but got \"%s\"%s", t,
+			"");
+		return NULL;
+	    }
+	}
+	if (TclBitsPutStride(interp, v, lo, bstep, 0, 0, NULL, 0, wd, &nv)
+		!= TCL_OK) {
+	    return NULL;
+	}
+	for (k = 0; k < n; k++) {
+	    TclBitsSetInPlace(nv, lo + k * bstep,
+		    Tcl_GetString(elems[k])[0] == '1', wd);
+	}
+    }
+    res = TclNewAnnotated(interp, tp, -1, nv);
+    TclDiscard(nv);
+    return res;
+}
+
+/*
+ * 23/11 : L(a:b:c) = valeurs, une par élément choisi, ou une seule pour
+ * tous (si elle est du type des éléments, ou s'il n'y a qu'un élément).
+ * La longueur ne change pas.
+ */
+static Tcl_Obj *
+ListRangeSet(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v,
+	const IndexStep *step, Tcl_Obj *val)
+{
+    Tcl_Size n, first, count, stride, nv, k, i;
+    Tcl_Obj **vals, *nl, *res, *one = NULL;
+
+    if (Tcl_ListObjLength(interp, v, &n) != TCL_OK) {
+	return NULL;
+    }
+    if (step->c != NULL) {
+	if (RangeSpec(interp, step, n, &first, &count, &stride) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	Tcl_Size hi;
+
+	if (ListIndex(interp, RangeA(step), n, &first) != TCL_OK
+		|| ListIndex(interp, RangeB(step), n, &hi) != TCL_OK) {
+	    return NULL;
+	}
+	if (first < 0) {
+	    first = 0;
+	}
+	if (hi >= n) {
+	    hi = n - 1;
+	}
+	count = (first > hi) ? 0 : hi - first + 1;
+	stride = 1;
+    }
+    if (count == 1) {
+	one = val;
+    } else if (TclAnnotInfo(val, NULL, NULL, NULL, NULL) != 1
+	    && tp->elem->kind != TCLT_LIST && tp->elem->kind != TCLT_PRODUCT
+	    && tp->elem->kind != TCLT_DICT
+	    && Tcl_ListObjLength(NULL, val, &nv) == TCL_OK && nv == 1) {
+	one = val;			/* un scalaire : pour tous */
+    } else if (TclAnnotInfo(val, NULL, NULL, NULL, NULL) == 1) {
+	Tcl_Obj *c = TclTypedConform(NULL, tp->elem, val);
+
+	if (c != NULL) {
+	    TclDiscard(c);
+	    one = val;			/* typé comme un élément : pour tous */
+	}
+    }
+    if (one == NULL) {
+	Tcl_Obj *lv = val;
+
+	if (TclAnnotInfo(val, &lv, NULL, NULL, NULL) != 1) {
+	    lv = val;
+	}
+	if (Tcl_ListObjGetElements(interp, lv, &nv, &vals) != TCL_OK) {
+	    return NULL;
+	}
+	if (nv != count) {
+	    char num[64];
+
+	    snprintf(num, sizeof(num), "%lld values (or one for all), not "
+		    "%lld", (long long) count, (long long) nv);
+	    PathErr(interp, "the range selects %s%s", num, "");
+	    return NULL;
+	}
+    }
+    if (one != NULL) {
+	one = TclTypedConform(interp, tp->elem, one);	/* une fois */
+	if (one == NULL) {
+	    return NULL;
+	}
+	Tcl_IncrRefCount(one);
+    }
+    nl = Tcl_DuplicateObj(v);
+    Tcl_IncrRefCount(nl);
+    for (k = 0, i = first; k < count; k++, i += stride) {
+	Tcl_Obj *c = one ? one : TclTypedConform(interp, tp->elem, vals[k]);
+
+	if (c == NULL) {
+	    Tcl_DecrRefCount(nl);
+	    return NULL;
+	}
+	if (TclIsCompact(nl) ? !TclCompactWriteScalar(nl, i, 0, NULL, c)
+		&& Tcl_ListObjReplace(interp, nl, i, 1, 1, &c) != TCL_OK
+		: Tcl_ListObjReplace(interp, nl, i, 1, 1, &c) != TCL_OK) {
+	    if (c != one) {
+		TclDiscard(c);
+	    } else {
+		Tcl_DecrRefCount(one);
+	    }
+	    Tcl_DecrRefCount(nl);
+	    return NULL;
+	}
+	if (c != one) {
+	    TclDiscard(c);
+	}
+    }
+    if (one != NULL) {
+	Tcl_DecrRefCount(one);
+    }
+    TclInvalidateStringRep(nl);
+    res = TclNewAnnotated(interp, tp, -1, nl);
+    Tcl_DecrRefCount(nl);
+    return res;
+}
+
 static Tcl_Obj *
 SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	Tcl_Obj *val, PendingWrites *pw)
@@ -2771,8 +3129,11 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 		    tp->name, name);
 	    return NULL;
 	}
+	if (RangeStrided(step)) {
+	    return BitsStrideSet(interp, tp, v, step, val);
+	}
 	if (step->kind == IS_RANGE) {
-	    if (BitsSlice(interp, tp, name, Tcl_GetString(step->b), &lo, &len)
+	    if (BitsSlice(interp, tp, RangeA(step), RangeB(step), &lo, &len)
 		    != TCL_OK) {
 		return NULL;
 	    }
@@ -2788,6 +3149,9 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	res = TclNewAnnotated(interp, tp, -1, nv);
 	TclDiscard(nv);
 	return res;
+    }
+    if (step->kind == IS_RANGE && last && tp->kind == TCLT_LIST) {
+	return ListRangeSet(interp, tp, v, step, val);
     }
     if (step->kind == IS_RANGE) {
 	PathErr(interp, "only simple names can be assigned, not ranges or "
@@ -3090,6 +3454,17 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     }
     set = &cp->set;
     memset(&pw, 0, sizeof(pw));
+    if (set->n == 1 && nvals > 1 && set->path[0].n > 0
+	    && set->path[0].step[set->path[0].n - 1].kind == IS_RANGE) {
+	/* 23/11 : set L(a:b:c) v1 v2 ... : les valeurs de la tranche */
+	Tcl_Obj *packed = Tcl_NewListObj(nvals, vals);
+
+	Tcl_IncrRefCount(packed);
+	rc = PathWrite(interp, containerPtr, path, pathObj, 1, &packed,
+		newPtr);
+	Tcl_DecrRefCount(packed);
+	return rc;
+    }
     if (FlattenValues(interp, set, nvals, vals, &flat) != TCL_OK) {
 	goto done;
     }
@@ -4011,6 +4386,140 @@ BitsPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
     return 1;
 }
 
+/*
+ * 23/11 : b(a:b:c) = 0|1 et L(a:b:c) = scalaire, sur place, pour une
+ * valeur que seule la variable tient (le crible : b(i*i::i) 1). Le chemin
+ * est fait de bornes simples (chiffres, end, end-n, vides). 1 si écrit.
+ */
+static int
+SimpleBound(const char *p, const char *e)
+{
+    if (p == e) {
+	return 1;
+    }
+    if (e - p >= 3 && strncmp(p, "end", 3) == 0) {
+	p += 3;
+	if (p == e) {
+	    return 1;
+	}
+	if (*p != '-' && *p != '+') {
+	    return 0;
+	}
+	p++;
+	if (p == e) {
+	    return 0;
+	}
+    } else if (*p == '-') {
+	p++;
+	if (p == e) {
+	    return 0;
+	}
+    }
+    for (; p < e; p++) {
+	if (*p < '0' || *p > '9') {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+static int
+RangePathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
+{
+    Tcl_Obj *v, *parts[3] = {NULL, NULL, NULL}, *c = NULL;
+    TclType *tp;
+    IndexStep st;
+    Tcl_Size len, first, count, stride, n, k, i;
+    const char *name, *p, *q, *end;
+    int np = 0, ok = 0;
+
+    if (Tcl_IsShared(a) || !TclAnnotIsSettled(a) || TclIsAnnotated(value)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1) {
+	return 0;
+    }
+    if (!((tp->kind == TCLT_INT && tp->bitWidth > 64)
+	    || (tp->kind == TCLT_LIST && TclIsCompact(v)))) {
+	return 0;
+    }
+    name = Tcl_GetStringFromObj(part2Ptr, &len);
+    end = name + len;
+    if (memchr(name, ':', len) == NULL || len > 64) {
+	return 0;
+    }
+    for (p = name; np < 3; p = q + 1) {
+	q = (const char *) memchr(p, ':', end - p);
+	if (q == NULL) {
+	    q = end;
+	}
+	if (!SimpleBound(p, q)) {
+	    return 0;
+	}
+	parts[np++] = Tcl_NewStringObj(p, q - p);
+	if (q == end) {
+	    break;
+	}
+    }
+    if (np < 2 || q != end) {
+	goto done;
+    }
+    st.kind = IS_RANGE;
+    st.a = parts[0];
+    st.b = parts[1];
+    st.c = (np == 3) ? parts[2] : NULL;
+    st.atom = 0;
+    if (tp->kind == TCLT_INT) {
+	Tcl_Size lo, bstep, wd = tp->bitWidth / 60 + 2;
+	const char *t = Tcl_GetString(value);
+
+	if ((t[0] != '0' && t[0] != '1') || t[1] != '\0'
+		|| BitsStride(NULL, tp, &st, &lo, &count, &bstep) != TCL_OK) {
+	    goto done;
+	}
+	if (!TclBitsFillStride(v, lo, bstep, count, t[0] == '1', wd)) {
+	    Tcl_Obj *nv = TclBitsNewWorkObj(a, wd);
+
+	    if (nv == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(nv);
+	    if (!TclAnnotSwapContent(a, nv)
+		    || !TclBitsFillStride(nv, lo, bstep, count, t[0] == '1',
+			wd)) {
+		Tcl_DecrRefCount(nv);
+		goto done;		/* rien d'écrit : le chemin ordinaire */
+	    }
+	    Tcl_DecrRefCount(nv);
+	}
+	ok = 1;
+    } else {
+	if (Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+		|| RangeSpec(NULL, &st, n, &first, &count, &stride) != TCL_OK
+		|| (c = TclTypedConform(NULL, tp->elem, value)) == NULL) {
+	    goto done;
+	}
+	Tcl_IncrRefCount(c);
+	if (count > 0 && !TclCompactWriteScalar(v, first, 0, NULL, c)) {
+	    goto done;
+	}
+	for (k = 1, i = first + stride; k < count; k++, i += stride) {
+	    TclCompactWriteScalar(v, i, 0, NULL, c);
+	}
+	TclInvalidateStringRep(v);
+	ok = 1;
+    }
+    if (ok) {
+	Tcl_InvalidateStringRep(a);
+    }
+  done:
+    for (k = 0; k < np; k++) {
+	TclDiscard(parts[k]);
+    }
+    if (c != NULL) {
+	Tcl_DecrRefCount(c);
+    }
+    return ok;
+}
+
 /* L(i.j...) = value sur place (TclCompactWriteScalar) ; 1 si écrit. */
 static int
 CompactPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
@@ -4262,7 +4771,8 @@ TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
 	return TCL_CONTINUE;
     }
     if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)
-	    || BitsPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
+	    || BitsPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)
+	    || RangePathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
 	/* écrit dans la case : la variable garde sa valeur (traces) */
 	newA = varPtr->value.objPtr;
 	Tcl_IncrRefCount(newA);

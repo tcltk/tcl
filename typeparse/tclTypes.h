@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17l"
+#define TCL_TYPES_VERSION "v17m"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -469,6 +469,13 @@ int	TclValueDeref(Tcl_Interp *interp, Tcl_Obj *value,
 int	TclBitsSetInPlace(Tcl_Obj *v, Tcl_Size lo, int bit,
 	    Tcl_Size widthDigits);
 Tcl_Obj *	TclBitsNewWorkObj(Tcl_Obj *value, Tcl_Size widthDigits);
+int	TclBitsGather(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
+	    Tcl_Size step, Tcl_Size count, int reverse, Tcl_Obj **resultPtr);
+int	TclBitsPutStride(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
+	    Tcl_Size step, Tcl_Size count, int reverse, Tcl_Obj *pattern,
+	    int fill, Tcl_Size widthDigits, Tcl_Obj **resultPtr);
+int	TclBitsFillStride(Tcl_Obj *v, Tcl_Size lo, Tcl_Size step,
+	    Tcl_Size count, int bit, Tcl_Size widthDigits);
 int	TclAnnotSwapContent(Tcl_Obj *a, Tcl_Obj *v);
 int	TclBitsGet(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
 	    Tcl_Size len, Tcl_Obj **resultPtr);

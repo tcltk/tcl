@@ -107,6 +107,24 @@ s'écrit entre guillemets, car le `:` appartient à l'analyseur de `expr` :
 `expr {"b(1:2)" = 3}`. Une valeur qui ne tient pas dans les bits visés est
 refusée.
 
+**Tranches à pas.** `début:fin:pas`, à la Python, la fin restant incluse
+comme partout en Tcl ; chaque partie peut manquer (`:fin`, `début:`,
+`::pas` ; début 0, fin `end`, pas 1). Avec un pas, la tranche est une
+sélection de bits : `$b(0:6:2)` rend les bits 0, 2, 4, 6 en un
+`bitarray(4, ordre)` ; `set b(1::3) 1` met à 1 tous les bits choisis (0 ou
+1 vaut pour tous), une liste `{1 0 1 1}` les donne un par un, un
+`bitarray` de la bonne largeur sert de motif. Le crible d'Ératosthène :
+
+    for {set i 2} {$i*$i < $N} {incr i} {
+        if {!$b($i)} {set b([expr {$i*$i}]::$i) 1}
+    }
+
+Les listes ont les mêmes tranches : `$L(0:end:2)`, `$L(::-1)` (le pas
+négatif retourne, en lecture), `set L(1::2) 0` (une valeur pour tous),
+`set L(::4) 7 8` (une par élément ; la longueur ne change pas). Une liste
+compacte ou un grand bitarray tenu par la seule variable est écrit sur
+place.
+
 **Deux ordres, deux types.** `bitarray(8,lsb0)` et `bitarray(8,msb0)` ne se
 mélangent pas : affecter l'un à l'autre est un `type mismatch`. Le défaut
 `bitarray(8)` est `bitarray(8,lsb0)`.

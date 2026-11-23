@@ -1,0 +1,27 @@
+b(0:end:2) 1   -> 0101010101010101
+b(::4) 0       -> 0100010001000100
+b(1:7:2) liste -> 0100010001100110
+lu b(0:6:2)    -> 1010
+b(:3) 5        -> 0100010001100101
+b(12:) 9       -> 1001010001100101
+m(0::3) 1      -> 10010010
+p(0:4:2) motif -> 00010101
+erreur          -> the bit range selects 4 bits, not 3
+erreur          -> the step of a range must be a non-zero integer, not "0"
+erreur          -> the bounds of a range must be single indices
+erreur          -> a strided bit range takes 0, 1, a bitarray or a list of 8 bits, not "2"
+erreur          -> a strided bit range takes 0, 1, a bitarray or a list of 8 bits, not "1 1"
+g(3::50) 1     -> popcount 4, copie 0
+lu g(3::50)    -> 15
+L(0:end:2)     -> 0 2 4 6
+L(::-1)        -> 7 6 5 4 3 2 1 0
+L(end:0:-3)    -> 7 4 1
+L(:2) L(5:)    -> 0 1 2 | 5 6 7
+L(1::2) 0      -> 0 0 2 0 4 0 6 0 (copie 0 1 2 3 4 5 6 7)
+L(::4) 7 8     -> 7 0 2 0 8 0 6 0
+L(0:1) {5 6}   -> 5 6 2 0 8 0 6 0
+erreur          -> the range selects 2 values (or one for all), not 3
+erreur          -> expected integer but got "x"
+o(4::2) 0      -> 1 1 1 1 0 1 0 1 0 1
+erreur          -> value "300" does not fit in int(u,8) / 1 1 1 1 0 1 0 1 0 1
+premiers < 1000 -> 168

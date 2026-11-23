@@ -1955,6 +1955,192 @@ TclBitsSetInPlace(
 }
 
 /*
+ * 23/11 : les bits lo, lo+step, ... (count bits ; step peut être négatif,
+ * pour msb0) mis à BIT, sur place, comme TclBitsSetInPlace. 0 si ce n'est
+ * pas possible (rien n'a alors été écrit).
+ */
+int
+TclBitsFillStride(
+    Tcl_Obj *v,
+    Tcl_Size lo,
+    Tcl_Size step,
+    Tcl_Size count,
+    int bit,
+    Tcl_Size widthDigits)
+{
+    mp_int big, *bp;
+    int payload;
+    Tcl_Size k, pos, top, bot, d;
+
+    if (v->typePtr != &tclBignumType || Tcl_IsShared(v) || count <= 0) {
+	return count == 0 && v->typePtr == &tclBignumType;
+    }
+    top = (step >= 0) ? lo + (count - 1) * step : lo;
+    bot = (step >= 0) ? lo : lo + (count - 1) * step;
+    if (bot < 0) {
+	return 0;
+    }
+    payload = (int) PTR2INT(v->internalRep.twoPtrValue.ptr2);
+    if (payload == -1) {
+	bp = (mp_int *) v->internalRep.twoPtrValue.ptr1;
+    } else {
+	TclUnpackBignum(v, big);
+	bp = &big;
+    }
+    if (mp_isneg(bp)) {
+	return 0;
+    }
+    if (bit) {
+	d = top / MP_DIGIT_BIT;
+	if (d >= bp->alloc) {
+	    Tcl_Size want = d + 1;
+
+	    if (widthDigits > want) {
+		want = widthDigits;
+	    }
+	    if (want > INT_MAX || mp_grow(bp, (int) want) != MP_OKAY) {
+		return 0;
+	    }
+	}
+	for (k = bp->used; k <= d; k++) {
+	    bp->dp[k] = 0;
+	}
+	if (d >= bp->used) {
+	    bp->used = (int) d + 1;
+	}
+	for (k = 0, pos = lo; k < count; k++, pos += step) {
+	    bp->dp[pos / MP_DIGIT_BIT] |= (mp_digit) 1 << (pos % MP_DIGIT_BIT);
+	}
+	bp->sign = MP_ZPOS;
+    } else {
+	for (k = 0, pos = lo; k < count; k++, pos += step) {
+	    if (pos / MP_DIGIT_BIT < bp->used) {
+		bp->dp[pos / MP_DIGIT_BIT]
+			&= ~((mp_digit) 1 << (pos % MP_DIGIT_BIT));
+	    }
+	}
+	while (bp->used > 0 && bp->dp[bp->used - 1] == 0) {
+	    bp->used--;
+	}
+	if (bp->used == 0) {
+	    bp->sign = MP_ZPOS;
+	}
+    }
+    if (payload != -1) {
+	TclSetBignumInternalRep(v, bp);
+    }
+    TclInvalidateStringRep(v);
+    return 1;
+}
+
+/*
+ * 23/11 : les bits lo, lo+step, ... (count bits) recueillis en un entier :
+ * le k-ième va en position k, ou count-1-k si REVERSE (msb0).
+ */
+int
+TclBitsGather(
+    Tcl_Interp *interp,
+    Tcl_Obj *value,
+    Tcl_Size lo,
+    Tcl_Size step,
+    Tcl_Size count,
+    int reverse,
+    Tcl_Obj **resultPtr)
+{
+    mp_int big, res;
+    Tcl_Size k, pos, q;
+
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(value), &big)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (mp_isneg(&big) || count > (Tcl_Size) INT_MAX - MP_DIGIT_BIT
+	    || mp_init_size(&res, (int) (count / MP_DIGIT_BIT + 1))
+	    != MP_OKAY) {
+	mp_clear(&big);
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bits of a negative or too large value", -1));
+	}
+	return TCL_ERROR;
+    }
+    res.used = (int) (count / MP_DIGIT_BIT + 1);
+    for (k = 0; k < res.used; k++) {
+	res.dp[k] = 0;
+    }
+    for (k = 0, pos = lo; k < count; k++, pos += step) {
+	if (pos >= 0 && pos / MP_DIGIT_BIT < big.used
+		&& (big.dp[pos / MP_DIGIT_BIT] >> (pos % MP_DIGIT_BIT)) & 1) {
+	    q = reverse ? count - 1 - k : k;
+	    res.dp[q / MP_DIGIT_BIT] |= (mp_digit) 1 << (q % MP_DIGIT_BIT);
+	}
+    }
+    mp_clamp(&res);
+    mp_clear(&big);
+    *resultPtr = Tcl_NewBignumObj(&res);
+    return TCL_OK;
+}
+
+/*
+ * 23/11 : écrire les bits lo, lo+step, ... (count) de VALUE : tous à FILL
+ * (PATTERN NULL), ou le k-ième au bit k de PATTERN (count-1-k si REVERSE).
+ * *resultPtr : un entier neuf.
+ */
+int
+TclBitsPutStride(
+    Tcl_Interp *interp,
+    Tcl_Obj *value,
+    Tcl_Size lo,
+    Tcl_Size step,
+    Tcl_Size count,
+    int reverse,
+    Tcl_Obj *pattern,
+    int fill,
+    Tcl_Size widthDigits,
+    Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *nv = TclBitsNewWorkObj(value, widthDigits);
+    mp_int pat;
+    Tcl_Size k, q;
+
+    if (nv == NULL) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bits of a negative or too large value", -1));
+	}
+	return TCL_ERROR;
+    }
+    if (pattern == NULL) {
+	TclBitsFillStride(nv, lo, step, count, fill, widthDigits);
+	*resultPtr = nv;
+	return TCL_OK;
+    }
+    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(pattern), &pat)
+	    != TCL_OK) {
+	Tcl_DecrRefCount(nv);
+	return TCL_ERROR;
+    }
+    if (mp_isneg(&pat)) {
+	mp_clear(&pat);
+	Tcl_DecrRefCount(nv);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bits of a negative value", -1));
+	return TCL_ERROR;
+    }
+    for (k = 0; k < count; k++) {
+	int bit;
+
+	q = reverse ? count - 1 - k : k;
+	bit = q / MP_DIGIT_BIT < pat.used
+		&& ((pat.dp[q / MP_DIGIT_BIT] >> (q % MP_DIGIT_BIT)) & 1);
+	TclBitsSetInPlace(nv, lo + k * step, bit, widthDigits);
+    }
+    mp_clear(&pat);
+    *resultPtr = nv;
+    return TCL_OK;
+}
+
+/*
  * 23/11 : un contenu neuf pour l'écriture sur place : un grand entier (même
  * petit : il ne sera pas ramené à un entier machine), à la taille visée.
  * NULL si la valeur n'est pas un entier >= 0.
