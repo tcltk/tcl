@@ -1775,8 +1775,53 @@ TclBitsGet(
     Tcl_Obj **resultPtr)
 {
     mp_int big, q, r;
+    void *cd;
+    int nt;
+    Tcl_Obj *content = TCL_ANNOT_CONTENT(value);
 
-    if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(value), &big)
+    /*
+     * 23/11 : sans copie, quand on lit au plus 64 bits d'un entier >= 0 :
+     * la représentation est lue sur place (Tcl_GetNumberFromObj ne copie
+     * pas les chiffres). Avant : une copie du grand entier par lecture,
+     * O(n) pour un bit.
+     */
+    if (len <= 64 && lo >= 0
+	    && Tcl_GetNumberFromObj(NULL, content, &cd, &nt) == TCL_OK) {
+	if (nt == TCL_NUMBER_INT) {
+	    Tcl_WideInt w = *(Tcl_WideInt *) cd;
+
+	    if (w >= 0) {
+		Tcl_WideUInt u = (lo >= 64) ? 0 : ((Tcl_WideUInt) w >> lo);
+
+		if (len < 64) {
+		    u &= (((Tcl_WideUInt) 1 << len) - 1);
+		}
+		*resultPtr = (u > (Tcl_WideUInt) WIDE_MAX)
+			? NULL : Tcl_NewWideIntObj((Tcl_WideInt) u);
+		if (*resultPtr != NULL) {
+		    return TCL_OK;
+		}
+	    }
+	} else if (nt == TCL_NUMBER_BIG && !mp_isneg((mp_int *) cd)) {
+	    const mp_int *bp = (const mp_int *) cd;
+	    Tcl_WideUInt u = 0;
+	    Tcl_Size k;
+
+	    for (k = 0; k < len; k++) {
+		Tcl_Size pos = lo + k, d = pos / MP_DIGIT_BIT;
+
+		if (d < bp->used
+			&& ((bp->dp[d] >> (pos % MP_DIGIT_BIT)) & 1)) {
+		    u |= (Tcl_WideUInt) 1 << k;
+		}
+	    }
+	    if (u <= (Tcl_WideUInt) WIDE_MAX) {
+		*resultPtr = Tcl_NewWideIntObj((Tcl_WideInt) u);
+		return TCL_OK;
+	    }
+	}
+    }
+    if (Tcl_GetBignumFromObj(interp, content, &big)
 	    != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1838,6 +1883,106 @@ TclBitsPut(
     return TCL_OK;
 }
 
+/*
+ * 23/11 : écrire UN bit sur place, dans un grand entier que personne
+ * d'autre ne tient (la variable d'un bitarray). WIDTHDIGITS : la taille
+ * visée (les chiffres de la largeur du bitarray), pour ne pas réallouer à
+ * chaque bit plus haut. Rend 0 si ce n'est pas possible (l'appelant prend
+ * alors le chemin ordinaire, qui copie).
+ */
+int
+TclBitsSetInPlace(
+    Tcl_Obj *v,
+    Tcl_Size lo,
+    int bit,
+    Tcl_Size widthDigits)
+{
+    mp_int big, *bp;
+    int payload;
+    Tcl_Size d, k;
+
+    if (v->typePtr != &tclBignumType || Tcl_IsShared(v) || lo < 0) {
+	return 0;
+    }
+    payload = (int) PTR2INT(v->internalRep.twoPtrValue.ptr2);
+    if (payload == -1) {
+	bp = (mp_int *) v->internalRep.twoPtrValue.ptr1;
+    } else {
+	TclUnpackBignum(v, big);
+	bp = &big;
+    }
+    if (mp_isneg(bp)) {
+	return 0;
+    }
+    d = lo / MP_DIGIT_BIT;
+    if (bit) {
+	if (d >= bp->alloc) {
+	    Tcl_Size want = d + 1;
+
+	    if (want < 2 * (Tcl_Size) bp->alloc) {
+		want = 2 * (Tcl_Size) bp->alloc;
+	    }
+	    if (widthDigits > d && want > widthDigits) {
+		want = widthDigits;
+	    }
+	    if (want > INT_MAX || mp_grow(bp, (int) want) != MP_OKAY) {
+		return 0;
+	    }
+	}
+	for (k = bp->used; k <= d; k++) {
+	    bp->dp[k] = 0;
+	}
+	if (d >= bp->used) {
+	    bp->used = (int) d + 1;
+	}
+	bp->dp[d] |= (mp_digit) 1 << (lo % MP_DIGIT_BIT);
+	bp->sign = MP_ZPOS;
+    } else if (d < bp->used) {
+	bp->dp[d] &= ~((mp_digit) 1 << (lo % MP_DIGIT_BIT));
+	while (bp->used > 0 && bp->dp[bp->used - 1] == 0) {
+	    bp->used--;
+	}
+	if (bp->used == 0) {
+	    bp->sign = MP_ZPOS;
+	}
+    }
+    if (payload != -1) {
+	/* la forme rangée dans l'objet (chiffres, taille) a pu changer */
+	TclSetBignumInternalRep(v, bp);
+    }
+    TclInvalidateStringRep(v);
+    return 1;
+}
+
+/*
+ * 23/11 : un contenu neuf pour l'écriture sur place : un grand entier (même
+ * petit : il ne sera pas ramené à un entier machine), à la taille visée.
+ * NULL si la valeur n'est pas un entier >= 0.
+ */
+Tcl_Obj *
+TclBitsNewWorkObj(
+    Tcl_Obj *value,
+    Tcl_Size widthDigits)
+{
+    mp_int big;
+    Tcl_Obj *o;
+
+    if (Tcl_GetBignumFromObj(NULL, TCL_ANNOT_CONTENT(value), &big)
+	    != TCL_OK) {
+	return NULL;
+    }
+    if (mp_isneg(&big) || widthDigits > 0x7FFF
+	    || (widthDigits > big.alloc
+		&& mp_grow(&big, (int) widthDigits) != MP_OKAY)) {
+	mp_clear(&big);
+	return NULL;
+    }
+    o = Tcl_NewObj();
+    TclInvalidateStringRep(o);
+    TclSetBignumInternalRep(o, &big);
+    return o;
+}
+
 /* popcount(x) : nombre de bits à 1 d'un entier >= 0. */
 static int
 PopcountCmd(
@@ -1848,10 +1993,41 @@ PopcountCmd(
 {
     mp_int big, q;
     Tcl_WideInt count = 0;
+    void *cd;
+    int nt;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
+    }
+    /* 23/11 : sans copie ni divisions (avant : O(n²) pour n bits) */
+    if (Tcl_GetNumberFromObj(NULL, TCL_ANNOT_CONTENT(objv[1]), &cd, &nt)
+	    == TCL_OK && (nt == TCL_NUMBER_INT || nt == TCL_NUMBER_BIG)) {
+	if (nt == TCL_NUMBER_INT && *(Tcl_WideInt *) cd >= 0) {
+	    Tcl_WideUInt w = (Tcl_WideUInt) *(Tcl_WideInt *) cd;
+
+	    while (w != 0) {
+		w &= w - 1;
+		count++;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+	    return TCL_OK;
+	}
+	if (nt == TCL_NUMBER_BIG && !mp_isneg((mp_int *) cd)) {
+	    const mp_int *bp = (const mp_int *) cd;
+	    int k;
+
+	    for (k = 0; k < bp->used; k++) {
+		mp_digit w = bp->dp[k];
+
+		while (w != 0) {
+		    w &= w - 1;
+		    count++;
+		}
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(count));
+	    return TCL_OK;
+	}
     }
     if (Tcl_GetBignumFromObj(interp, TCL_ANNOT_CONTENT(objv[1]), &big)
 	    != TCL_OK) {

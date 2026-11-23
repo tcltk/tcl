@@ -3951,6 +3951,66 @@ CompactPathPart(Tcl_Obj *a, Tcl_Obj *part2Ptr, TclType **tpPtr)
     return TclCompactReadPath(v, idx, k - 1, names + 1, tpPtr);
 }
 
+/*
+ * 23/11 : b(i) = 0|1 sur place, pour un bitarray que seule la variable tient :
+ * un bit écrit dans les chiffres du grand entier (TclBitsSetInPlace), au
+ * lieu d'un grand entier neuf à chaque bit (O(n) par écriture). 1 si écrit.
+ */
+static int
+BitsPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
+{
+    Tcl_Obj *v, *nv;
+    TclType *tp;
+    const char *name, *p;
+    Tcl_WideInt i;
+    Tcl_Size lo, widthDigits;
+    int bit;
+
+    if (Tcl_IsShared(a) || !TclAnnotIsSettled(a) || TclIsAnnotated(value)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_INT || tp->bitWidth <= 64) {
+	return 0;
+    }
+    name = Tcl_GetString(part2Ptr);
+    for (p = name; *p; p++) {
+	if (*p < '0' || *p > '9') {
+	    return 0;
+	}
+    }
+    if (p == name || p - name > 15) {
+	return 0;
+    }
+    i = strtoll(name, NULL, 10);
+    /* seulement 0 ou 1 tels quels : le reste (2, true, 0x1) suit le
+     * chemin ordinaire, qui le vérifie ou le refuse */
+    p = Tcl_GetString(value);
+    if (i < 0 || i >= tp->bitWidth || (p[0] != '0' && p[0] != '1')
+	    || p[1] != '\0') {
+	return 0;
+    }
+    bit = (p[0] == '1');
+    lo = tp->bitMsb0 ? tp->bitWidth - 1 - (Tcl_Size) i : (Tcl_Size) i;
+    widthDigits = tp->bitWidth / 60 + 2;
+    if (!TclBitsSetInPlace(v, lo, bit, widthDigits)) {
+	/* le premier bit : un contenu de travail, à soi */
+	nv = TclBitsNewWorkObj(a, widthDigits);
+	if (nv == NULL) {
+	    return 0;
+	}
+	Tcl_IncrRefCount(nv);
+	if (!TclAnnotSwapContent(a, nv)) {
+	    Tcl_DecrRefCount(nv);
+	    return 0;
+	}
+	Tcl_DecrRefCount(nv);
+	if (!TclBitsSetInPlace(nv, lo, bit, widthDigits)) {
+	    return 0;
+	}
+    }
+    Tcl_InvalidateStringRep(a);
+    return 1;
+}
+
 /* L(i.j...) = value sur place (TclCompactWriteScalar) ; 1 si écrit. */
 static int
 CompactPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
@@ -4201,7 +4261,8 @@ TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
+    if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)
+	    || BitsPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
 	/* écrit dans la case : la variable garde sa valeur (traces) */
 	newA = varPtr->value.objPtr;
 	Tcl_IncrRefCount(newA);

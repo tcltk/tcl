@@ -362,6 +362,133 @@ Les cinq phases d'attentrel se placent sur `Lifecycle` :
 des convoluences (un achat approuvé ou rejeté) entre dans le même modèle : son actant est la
 convolution réifiée.
 
+### 7quater. Le type d'une procédure : la fiche par couches
+
+Une procédure conduit un être (la Commande) de convolution en convolution. Chaque
+convolution qui a lieu y ajoute une **couche** : les valeurs qu'elle a dites, signées de son
+rôle et de son jour. La fiche de VolɷDuctus (22/11) montre ces couches. L'image est celle de
+l'exemple « réseau » de la TIP 764, où les protocoles s'empilent pour construire la trame ;
+ici, les protocoles sont des processus.
+
+**Deux axes.**
+
+* **L'enveloppement** (vertical) : une étape est enveloppée dans sa procédure, qui peut
+  l'être dans une autre (Acheter > Préparer > Spécifier). La clé d'une question le dit déjà :
+  `Acheter/1>Préparer/1/verbe` est une pile d'en-têtes. Les sections de la fiche en sont le
+  décodage.
+* **La succession** (horizontal) : les étapes d'une même procédure se suivent ; leurs couches
+  forment un **produit**, ou une **somme de produits** quand une étape a plusieurs issues.
+
+Une différence avec le réseau : les couches ne s'ôtent pas à la réception. Elles restent, comme
+un journal ; la fiche est la trame entière, lisible à chaque étape.
+
+**La grammaire.** Chaque construction d'une procédure a son constructeur de type, et ce sont
+ceux de la TIP 764 :
+
+| Procédure | Type de la fiche | Dans la fiche |
+|---|---|---|
+| une étape (un verbe) | un produit : les champs que la convolution écrit (`Après : a := x`) | une couche |
+| la succession | un produit étiqueté par les étapes : `{1:}C1 {2:}C2 …` | les couches, dans l'ordre |
+| les issues (`validé`, `refusé`) | une somme : une variante par issue, chacune son produit | la couche porte son issue |
+| la boucle (`issue → n`, « une autre ligne ? ») | une liste | un tableau |
+| `pour chaque x dans D` | une liste indexée par D | un tableau, une ligne par élément |
+| le retour après un refus (`refusé → 1`) | une liste d'essais | les indices B, C… |
+| l'appel d'une procédure | un produit nommé contenu dans l'autre (l'enveloppement) | une sous-section |
+
+**Deux boucles, une liste.** La boucle par question (`issue → n`, « une autre ligne ? ») est
+un `while` : rien ne garantit qu'elle finisse, d'où la règle qui lui impose une étape qui
+attend. Le **verbe en tableau** est un `foreach` sur une collection finie, saisie dans la
+couche même : il finit par construction (récursion structurelle). Choix retenus (22/11) :
+
+* **Déclaration dans le verbe** : un actant produit de cardinalité plusieurs (Ligne,
+  `1..*`) fait de la couche un tableau, partout où le verbe est appelé.
+* **Une convolution par ligne**, chacune au journal avec ses conséquences (`montant :=
+  montant + qté * pu`) ; la saisie seule est groupée, et **tout ou rien** : une ligne refusée
+  est marquée, rien n'est fait. C'est un `lmap` de convolutions, atomique.
+* **La boucle par question reste** pour les passages étalés dans le temps ou entre rôles
+  (un inventaire sur plusieurs jours, un aller-retour validation/correction). Une boucle
+  dont le corps n'est qu'un verbe du même rôle, sans attente, pourra être signalée à la
+  vérification, avec le conseil du tableau.
+
+Les deux donnent le même type, `list.C_ajouter` ; seul le chemin diffère.
+
+**Propriétés dérivées et corrections (23/11).** Une propriété peut être **dérivée** :
+`montant = somme(comporte.ligne : quantité * prix)`. C'est un `expr` restreint, dont les
+noms sont les champs déclarés (lus sans `$`, comme le propose la piste des variables
+déclarées), plus des agrégats sur un chemin de relation. Sa valeur est un cache, recalculé
+après chaque convolution ; aucune convolution ne l'écrit. C'est ce qui rend une couche
+**corrigeable** : une correction s'ajoute à côté de la couche fautive (le journal garde
+les deux), sans rejouer d'effet cumulatif. La règle : seul l'émetteur corrige, tant
+qu'aucune couche suivante n'est d'un autre ; ensuite, la correction passe par la
+procédure (un refus qui y renvoie). Dans les termes du § 7quater, la fiche reste une valeur
+du même type : la projection prend la dernière couche qui écrit un attribut, correction
+comprise.
+
+Le type de la fiche **se déduit de l'automate** de la procédure (`procedure::automate`) :
+c'est l'expression rationnelle de ses chemins, lue comme un type. À l'étape n, la fiche est
+une valeur **partielle** de ce type : le préfixe du chemin parcouru. Les propriétés de l'être
+en sont une **projection** : chaque attribut prend la valeur de la dernière couche qui l'a
+écrit.
+
+**La couche 0 : le lancement.** Un attribut écrit par une convolution est **de son ressort** :
+il n'est demandé ni au lancement, ni par une autre convolution. Le lancement ne demande que ce
+qui n'est du ressort d'aucune convolution (ni écrit par un `Après`, ni pourvu d'un défaut).
+Une clé à motif (`clé numéro motif DA{aaaa}{mm}{jj}.{A}`) se génère dans cette couche. Le
+**libellé** (`; libellé objet`) est l'attribut qui nomme l'être pour les gens. Il vient d'une
+couche comme les autres : ici Spécifier.
+
+**Vérification statique : la couche exigée.** L'`Avant` d'un verbe (`contrat rempli`) exige
+une couche. La règle est celle de l'**affectation certaine** (comme `definite assignment` en
+Java) : tout chemin de l'automate du début jusqu'au verbe doit traverser une couche qui écrit
+l'attribut. C'est une analyse de flot « pour tous les chemins » :
+
+* l'ensemble des attributs **sûrement écrits** à l'entrée d'une étape est l'intersection de
+  ceux de ses prédécesseurs, plus ce qu'écrit l'étape ;
+* une écriture propre à une issue (`refusé : motif_refus := motif`) ne compte que sur sa
+  branche ;
+* une boucle se résout par point fixe, en partant de « tout écrit » ;
+* un appel se déplie : l'automate de la procédure appelée est inséré à sa place ;
+* une couche ne compte que si l'écriture ne peut pas être vide : le champ qui la nourrit
+  devient **exigé** (marqué `*`, refusé vide).
+
+Un chemin qui manque la couche est une **erreur du modèle**, signalée à la fermeture (§ 7bis)
+et non à la première commande. Par exemple : « Payer exige contrat ; le chemin Valider·refusé
+→ Archiver → Payer ne passe pas par Contracter ». Les promesses (§ 7bis) vérifiaient les
+participations ; ceci vérifie l'**ordre** des participations.
+
+Le prototype fait la partie dynamique (22/11) : un champ qu'un verbe plus loin exige est
+marqué `*` et refusé vide (`suivi::Requis`, qui relie `Après : a := x` à `Avant : a rempli`).
+Le cas qui l'a montré : Contracter passait avec un contrat vide, et Payer était ensuite
+refusé, sans retour possible. La partie statique est écrite (23/11, `suivi::verifier_exigences`)
+sur `procedure::automate` : « Payer exige « contrat rempli », mais un chemin y mène sans
+l'écrire (1. Préparer commande → 2. Valider (validé) → 4. Payer) ; contrat est écrit par
+Contracter ». Un appel est analysé avec l'entrée de l'appel ; un attribut qu'aucun verbe
+n'écrit (lancement, défaut) n'est pas de son ressort.
+
+**Dans les termes de la TIP.** Pour Acheter (en abrégeant les couches) :
+
+```tcl
+type def ::achat::Fiche_Acheter {
+    {::achat::Fiche_Préparer}préparer;                  # l'appel : enveloppé
+    {list.::achat::Essai_Valider}validations;           # refusé → 1 : les essais
+    {::achat::C_Contracter}contracter;
+    {::achat::C_Payer}payer;
+    {::achat::C_Archiver}archiver
+}
+type def ::achat::Fiche_Préparer {
+    {::achat::C_Spécifier}spécifier;                    # objet, justification
+    {list.::achat::C_ajouter}lignes;                    # la boucle
+    {::achat::C_Demander}demander
+}
+type def ::achat::Essai_Valider {
+    {{::achat::C_Valider_validé}validé, {::achat::C_Valider_refusé}refusé}
+}
+```
+
+Une fiche à moitié remplie n'est pas une valeur de ce type ; elle en est un **préfixe**. Il
+faudra soit des champs facultatifs (`?=`), soit une notion de valeur partielle reconnue par
+le type (§ 10).
+
 ## 8. Introspection
 
 * `type get $visM12` → `Article` ; `type get $Article` → `Entity` ; `type get $Entity` →
@@ -381,6 +508,9 @@ convolution réifiée.
 5. L'écriture par chemin à travers un lien d'objet.
 6. `type extend` (prolonger un produit) pour l'héritage des propriétés et des sortes.
 7. `destroy -cascade` et `info object dependents` (côté TclOO).
+8. (§ 7quater) Un type déduit d'un automate : produit pour la succession, variante pour les
+   issues, liste pour les boucles ; et ses **préfixes** (une valeur partielle, le chemin
+   parcouru), si les champs facultatifs ne suffisent pas.
 
 ## 10. Questions ouvertes
 
@@ -399,6 +529,15 @@ convolution réifiée.
 * **Écriture des promesses dans le `.vdm`.** Colonnes de la feuille Entités, ou section
   propre ?
 * **Mixins.** Apportent-ils des facettes, ou seulement des méthodes ?
+* **Fiche partielle (§ 7quater).** Champs facultatifs dans le type de la fiche, ou type
+  « préfixe d'un chemin » ? Le second dit mieux qu'une couche manque *encore* plutôt
+  qu'elle est absente.
+* **Reprendre une étape.** Corriger une couche déjà faite (un contrat mal saisi) : une
+  nouvelle couche à la même place (un indice, comme après un refus), ou un essai de plus dans
+  la liste ? La couche fautive reste au journal dans les deux cas.
+* **Écriture facultative.** Un champ écrit par une couche mais qu'aucun `Avant` n'exige (la
+  justification) peut rester vide. Faut-il pouvoir le déclarer exigé dans le modèle, sans
+  passer par un `Avant` ?
 
 ## 11. Prototype
 

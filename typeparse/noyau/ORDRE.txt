@@ -52,3 +52,4 @@ tests-syntaxe.patch
 apply-type.patch
 oo-methodes-typees.patch
 procs-typees-createurs.patch
+comparaison-annotee-grands-entiers.patch

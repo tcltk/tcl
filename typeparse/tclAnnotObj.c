@@ -1798,6 +1798,28 @@ AnnotListReplace(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size first,
     return rc;
 }
 
+/*
+ * 23/11 : remplacer sur place le contenu d'une valeur annotée que personne
+ * d'autre ne tient (l'écriture d'un bit, TclBitsSetInPlace). 1 si fait.
+ */
+int
+TclAnnotSwapContent(Tcl_Obj *a, Tcl_Obj *v)
+{
+    Tcl_Obj *old;
+
+    if (a->typePtr != &annotatedObjType || Tcl_IsShared(a)) {
+	return 0;
+    }
+    old = (Tcl_Obj *) a->internalRep.twoPtrValue.ptr1;
+    Tcl_IncrRefCount(v);
+    a->internalRep.twoPtrValue.ptr1 = v;
+    if (old != NULL) {
+	Tcl_DecrRefCount(old);
+    }
+    TclInvalidateStringRep(a);
+    return 1;
+}
+
 /* Convention des setElementProc (TclLsetList et [lset] ajoutent la
  * référence ; INST_LSET_FLAT et lpop aussi, avec chemins-modification ou
  * lset-reference.patch) : une copie SANS référence propre ; NULL en cas
@@ -1810,6 +1832,43 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     int rc;
     TclType *ltp = NULL;
 
+    /*
+     * 23/11 : lset L i v, d'une liste typée que seule la variable tient
+     * (INST_LSET_FLAT a rendu la référence de la pile), d'éléments simples
+     * (entiers, flottants) : l'élément est vérifié seul, puis écrit sur place
+     * (en cases, ou dans la liste). Le contrat ne peut pas refuser le
+     * résultat : il est du même type, élément vérifié. Avant : une copie de
+     * la liste, puis sa revalidation entière, à chaque lset (O(n²) pour une
+     * boucle).
+     */
+    if (valueObj != NULL && indexCount == 1 && !Tcl_IsShared(aPtr)
+	    && aPtr->typePtr == &annotatedObjType && !TclIsAnnotated(valueObj)
+	    && TclAnnotIsSettled(aPtr)
+	    && TclAnnotInfo(aPtr, &w, &ltp, NULL, NULL) == 1
+	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
+	    && (ltp->elem->kind == TCLT_INT || ltp->elem->kind == TCLT_DOUBLE)
+	    && !Tcl_IsShared(w)
+	    && TclTypeValidate(NULL, ltp->elem, valueObj, -1, NULL) == TCL_OK) {
+	Tcl_Size ne, ix;
+
+	if (Tcl_ListObjLength(NULL, w, &ne) == TCL_OK
+		&& Tcl_GetIntForIndex(NULL, indexArray[0], ne - 1, &ix)
+			== TCL_OK
+		&& ix >= 0 && ix < ne) {
+	    int done = 0;
+
+	    if (TclIsCompact(w)) {
+		done = TclCompactWriteScalar(w, ix, 0, NULL, valueObj);
+	    } else if (w->typePtr == &tclListType) {
+		done = (TclListObjSetElement(NULL, w, ix, valueObj) == TCL_OK);
+	    }
+	    if (done) {
+		TclInvalidateStringRep(w);
+		TclInvalidateStringRep(aPtr);
+		return aPtr;
+	    }
+	}
+    }
     settled = NULL;
     if (valueObj != NULL) {		/* lpop : NULL, un élément retiré */
 	settled = SettleElement(interp, aPtr, valueObj);	/* v16m */
@@ -2366,7 +2425,11 @@ TclAnnotNumericContent(Tcl_Obj *objPtr)
 	return NULL;
     }
     c = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
-    if (c->typePtr != &tclIntType && c->typePtr != &tclDoubleType) {
+    /* 23/11 : un grand entier aussi (un bitarray de plus de 64 bits) :
+     * sinon la comparaison relisait la valeur annotée, et deux grands
+     * entiers se confondaient ($d == 2**150 rendait 0) */
+    if (c->typePtr != &tclIntType && c->typePtr != &tclDoubleType
+	    && c->typePtr != &tclBignumType) {
 	return NULL;
     }
     return c;

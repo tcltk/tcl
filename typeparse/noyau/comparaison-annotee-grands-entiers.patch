@@ -1,0 +1,14 @@
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -6100,6 +6100,11 @@
+ 
+ 	value2Ptr = OBJ_AT_TOS;
+ 	valuePtr = OBJ_UNDER_TOS;
++	/* 23/11 : une valeur annotée (un bitarray typé) se compare par son
++	 * contenu numérique, comme pour + : sans cela, un grand entier annoté
++	 * n'était jamais égal à son nombre ($d == 2**150 rendait 0) */
++	valuePtr = NumObj(valuePtr);
++	value2Ptr = NumObj(value2Ptr);
+ 
+ 	/*
+ 	 * Try to determine, without triggering generation of a string

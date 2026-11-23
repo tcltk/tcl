@@ -1,11 +1,12 @@
 # REPRISE — état du prototype TIP 764 (valeurs annotées, variables typées)
 
-*Fiche de reprise, 20 novembre 2026, version **v17k**. À joindre (avec `typeparse.zip`) au
+*Fiche de reprise, 23 novembre 2026, version **v17l**. À joindre (avec `typeparse.zip`) au
 premier message d'une conversation qui reprend le travail.*
 
 ## 1. Où en est-on
 
 * **Conception (21 novembre)** : `doc/CONCEPTION-facettes.md`. Des sortes d'objets déclarées par les types : `meta.class` (une sorte = un produit de facettes : Entity, Relation, Convolution), `Facet(D)` générique (`carry`, `inherit`, `life`), `Lifecycle` (les six étapes de TclOO : name, alloc, construct, clone, reclass, destroy), liens vers les objets avec écriture par chemin, sortes Être, Entité, Relation (`relatif`), Convolution (`actif`, `conséquences`) ; facettes propriétés, références, convoluences, def (`dialect(oo::define)`) ; les états se déduisent des conséquences. Remplace le modèle de la TIP 558. Réserves consignées au § 12 (profondeur et messages, `set` créateur, intégrité des liens, générique/spécifique, coût). Premier prototype (21/11) dans VolɷDuctus : `moteur/facets.tcl` (sortes `Being`, `Entity` ; noms du code en anglais), références et convoluences dérivées, promesses exhaustives, fermeture. Puis `Relation` et `Convolution` (facettes `beings`, `actants`, `situations`, `consequences`) : relations et verbes du `.vdm` en deviennent des classes. Accès par chemin en Tcl (`facets::get/put`, `!m`, `!m|chemin`), le langage des futurs `$obj(chemin)`. À reporter dans la spécification quand le C viendra : `{*}Parent` pour l'héritage des produits (parenté seulement pour les `meta.`), chemins à travers les objets (`$l(beings.contenu.nom)`), `!m` qui rend un nom de commande, `|` qui appelle (chemins littéraux seulement), commentaires `#` dans les définitions. Ensuite : brancher le suivi sur ces objets, méthodes publiques tirées des convoluences.
+* **v17l** (23 novembre) : écritures sur place et lectures sans copie. `b(i) = 0|1` d'un bitarray que seule la variable tient écrit le bit dans les chiffres du grand entier (`TclBitsSetInPlace`, `BitsPathWrite` à côté de `CompactPathWrite`) ; un bit se lit sans copier le grand entier (`TclBitsGet`, au plus 64 bits) ; `popcount` parcourt les chiffres (avant : O(n²)). `lset L i v` d'une liste typée d'entiers ou de flottants, tenue par la seule variable : l'élément vérifié seul et écrit sur place, en cases ou non (`AnnotListSetElement` ; avant : copie et revalidation de toute la liste à chaque lset, O(n²) pour une boucle). Corrige aussi la comparaison d'un grand entier annoté (`$d == 2**150` rendait 0 : `TclAnnotNumericContent` ignorait les grands entiers, et `INST_EQ`… ne déballait pas ; patch `comparaison-annotee-grands-entiers.patch`). Crible d'Ératosthène, N = 1 000 000 : liste ordinaire 246 ms, bitarray 610 ms, octets en cases 1,1 s (avant, N = 100 000 : 1,5 s pour le bitarray, et quadratique en cases). Reste : `list.bitarray(64)` écrit par `L(mot.bit)` copie encore (1 s pour 100 000). t117.
 * **v17k** (20 novembre) : un seul point d'entrée pour créer une procédure, `TclCreateTypedProc` (`tclProc.c`), appelé par `proc`, `apply` et les quatre `TclOOMake*Method` de TclOO, à la place de trois copies du bloc de la v16p. Corrige deux défauts de la v17j : `oo::copy` perdait la signature des méthodes propres, et les types d'une méthode étaient lus dans `::oo::define` (ils le sont dans l'espace de la classe, comme ceux d'une procédure dans l'espace de son nom ; objet anonyme : celui de sa classe). Patch `procs-typees-createurs.patch`, t116 complété.
 * **v17j** (20 novembre) : les méthodes TclOO acceptent les signatures typées des procédures (`method ajouter {{int}n} {…}`, `constructor {{string}nom; {int}stock} {…}`, `method {double}moitié …`, `oo::objdefine`) ; `info class definition`/`constructor`, `info object definition` rendent noms et défauts. Patch noyau `oo-methodes-typees.patch` (`tclOOMethod.c`, `tclOOInfo.c`), test t116. Reste : `variable {int}n` dans `oo::define` (accepté, ignoré ; typer dans le constructeur).
 * **v17i** (15 novembre) : `T(chemin)`, le type d'une partie (`Emplacement(propriétés)`, `Liste(*.propriétés.max)`), comme `$v(chemin)` en est la valeur ; l'analogie list ↔ tableau, dict/produit ↔ struct. Pour VolɷDuctus : une instance est une valeur dont le type est le produit de ses blocs. Test t115.
@@ -239,3 +240,25 @@ opérateurs mixtes vecteur/scalaire, opérateurs `cproc` typés par la TIP 764.
 
 Joindre `typeparse.zip` (dernière version) et ce fichier. Dire ce qui a été fait depuis
 (résultat de `maj.sh`, modifications locales), puis le point du planning à traiter.
+
+## 22/11 — crible d'Ératosthène : performances (corrigé en v17l, 23/11 ; voir plus haut)
+
+Mesures (`/tmp/crible/b.tcl`, tclsh typeparse v17k), N = 100 000 :
+
+| variante | temps |
+|---|---|
+| liste ordinaire + `lset` | 19 ms |
+| `bitarray(1000000)` + `set b($j) 1` | 1 482 ms (×75) |
+| `list.bitarray(64)` + `set L(w.b) 1` | 1 034 ms (×50) |
+| `{-compact} list.int(u,8)` + `lset` | quadratique : 932 ms à N = 2 000, 13 s à N = 8 000 |
+
+* L'écriture d'un bit d'un grand `bitarray` coûte O(n) (le grand entier est
+  recopié à chaque écriture, même non partagé).
+* `lset` sur une liste compacte semble repasser par la forme ordinaire à chaque
+  écriture : O(n) par écriture, O(n²) en tout. Une écriture en place (valeur non
+  partagée) devrait être O(1).
+* `bitarray` n'est pas admis dans une liste compacte, et sa largeur est bornée à
+  1 000 000.
+* `set {list.T}v` prend les éléments en arguments (`{*}[lrepeat …]`), et
+  l'annotation d'un `set` n'est lue que littérale (`set "{bitarray($W)}b"` ne
+  type pas).

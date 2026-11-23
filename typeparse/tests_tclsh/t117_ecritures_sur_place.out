@@ -1,0 +1,15 @@
+partage : c=1 b=1 popcount=2
+effacé : 8 popcount=1 b(3)=1 b(150)=0
+msb0 : 1
+  (trace)
+trace : 1
+hors plage : bit index "300" out of range for bitarray(300,lsb0)
+deux : value "2" does not fit in 1 bit
+intact : 1
+partage lset : s=9 2 3 t=1 2 3
+refus : value "300" does not fit in int(u,8) | s=9 2 3
+en cases : u=1 2 7 w=1 2 3
+refus en cases : expected integer but got "x" | u=1 2 7
+crible (bits) : 1229 premiers sous 10000
+crible (octets en cases) : 1229 premiers sous 10000
+global : 1 1
