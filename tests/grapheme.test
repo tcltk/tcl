@@ -373,6 +373,8 @@ namespace eval grapheme::test {
 
     ############################ C API tests ################################
 
+    # Runs the script against every test case in the Unicode standard's
+    # grapheme break test suite.
     proc testCAPI script {
         upvar 1 testCase testCase
         uplevel 1 [format {
@@ -858,6 +860,79 @@ namespace eval grapheme::test {
         # the endptrptr
     } -result {}
 
+    ### Tcl_GraphemeReverse
+
+    testCAPI {
+        test Tcl_GraphemeReverse-ucd-$testNum.0 $comment -body {
+            set slen [string length $tutf8]
+            testgrapheme Tcl_GraphemeReverse $tutf8 $slen $slen
+        } -result [list [llength $graphemes] [join [lreverse $graphemes] ""]]
+    }
+
+    test Tcl_GraphemeReverse-empty-0 {GraphemeReverse empty string} -body {
+        testgrapheme Tcl_GraphemeReverse "" 0 0
+    } -result [list 0 ""]
+
+    test Tcl_GraphemeReverse-capacity-0 {GraphemeReverse 0 size buffer} -body {
+        set s [tutf8 XA\u0301Y]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeReverse $s $slen 0
+    } -result -1
+
+    test Tcl_GraphemeReverse-capacity-1 {GraphemeReverse negative size buffer} -body {
+        set s [tutf8 XA\u0301Y]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeReverse $s $slen -1
+    } -result -1
+
+    test Tcl_GraphemeReverse-capacity-2 {GraphemeReverse larger buffer} -body {
+        set s [tutf8 XA\u0301Y]
+        set slen [string length $s]
+        testgrapheme Tcl_GraphemeReverse $s $slen [incr slen]
+    } -result [list 3 YA\u0301X]
+
+    test Tcl_GraphemeReverse-negative-length-0 {GraphemeReverse nul terminated} -body {
+        set s [tutf8 XA\u0301Y]\0
+        testgrapheme Tcl_GraphemeReverse $s -1 $slen
+    } -result [list 3 YA\u0301X]
+
+    ### Tcl_GraphemeUniReverse
+
+    testCAPI {
+        test Tcl_GraphemeUniReverse-ucd-$testNum.0 $comment -body {
+            set slen [/ [string length $unichars] 4]
+            testgrapheme Tcl_GraphemeUniReverse $unichars $slen $slen
+        } -result [list [llength $graphemes] [join [lreverse $graphemes] ""]]
+    }
+
+    test Tcl_GraphemeUniReverse-empty-0 {GraphemeUniReverse empty string} -body {
+        testgrapheme Tcl_GraphemeUniReverse "" 0 0
+    } -result [list 0 ""]
+
+
+    test Tcl_GraphemeUniReverse-capacity-0 {GraphemeUniReverse 0 size buffer} -body {
+        set s [unichars XA\u0301Y]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniReverse $s $ulen 0
+    } -result -1
+
+    test Tcl_GraphemeUniReverse-capacity-1 {GraphemeUniReverse negative size buffer} -body {
+        set s [unichars XA\u0301Y]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniReverse $s $ulen -1
+    } -result -1
+
+    test Tcl_GraphemeUniReverse-capacity-2 {GraphemeUniReverse larger buffer} -body {
+        set s [unichars XA\u0301Y]
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniReverse $s $ulen [incr ulen]
+    } -result [list 3 YA\u0301X]
+
+    test Tcl_GraphemeUniReverse-negative-length-0 {GraphemeUniReverse nul terminated} -body {
+        set s [unichars XA\u0301Y]\0\0\0\0
+        set ulen [/ [string length $s] 4]
+        testgrapheme Tcl_GraphemeUniReverse $s -1 $ulen
+    } -result [list 3 YA\u0301X]
 }
 
 ::tcltest::cleanupTests
