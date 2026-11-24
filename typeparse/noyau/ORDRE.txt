@@ -56,3 +56,4 @@ comparaison-annotee-grands-entiers.patch
 foreach-cases-sur-place.patch
 champ-indexe-specialise.patch
 lappend-liste-typee.patch
+boucles-vectorisables.patch

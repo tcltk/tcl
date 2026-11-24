@@ -1,0 +1,20 @@
+--- a/generic/tclCmdAH.c
++++ b/generic/tclCmdAH.c
+@@ -2803,6 +2803,17 @@
+     }
+ 
+     /*
++     * typeparse (v17r) : une boucle que le registre des boucles
++     * vectorisables sait faire à l'identique (corps fait d'une expression
++     * pure) ; TCL_CONTINUE : la boucle ordinaire.
++     */
++
++    result = TclVecEachloop(interp, collect == TCL_EACH_COLLECT, objc, objv);
++    if (result != TCL_CONTINUE) {
++	return result;
++    }
++
++    /*
+      * Manage numList parallel value lists.
+      * statePtr->argvList[i] is a value list counted by statePtr->argcList[i];
+      * statePtr->varvList[i] is the list of variables associated with the

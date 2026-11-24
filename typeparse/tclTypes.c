@@ -13014,6 +13014,404 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
     return rc;
 }
 
+/*
+ * 24/11 (v17r) : les boucles vectorisables. foreach et lmap demandent au
+ * registre, à chaque appel, si une entrée sait faire cet appel-là ; une
+ * entrée rend TCL_CONTINUE si elle ne sait pas (la boucle ordinaire suit),
+ * sinon son résultat. Les entrées sont essayées par priorité décroissante.
+ * L'entrée intégrée s'appuie sur type map : elle n'accepte que ce qu'elle
+ * fait à l'identique de la boucle.
+ */
+typedef struct VecEntry {
+    const char *name;
+    TclVecEachloopProc *proc;
+    int priority;
+} VecEntry;
+
+static VecEntry vecReg[16];
+static int nVec = 0;
+TCL_DECLARE_MUTEX(vecMutex)
+
+int
+TclVecRegister(const char *name, TclVecEachloopProc *proc, int priority)
+{
+    int k, j;
+
+    Tcl_MutexLock(&vecMutex);
+    for (k = 0; k < nVec; k++) {
+	if (strcmp(vecReg[k].name, name) == 0) {
+	    vecReg[k].proc = proc;	/* (remplace) */
+	    vecReg[k].priority = priority;
+	    Tcl_MutexUnlock(&vecMutex);
+	    return TCL_OK;
+	}
+    }
+    if (nVec == 16) {
+	Tcl_MutexUnlock(&vecMutex);
+	return TCL_ERROR;
+    }
+    for (k = 0; k < nVec && vecReg[k].priority >= priority; k++) {
+    }
+    for (j = nVec; j > k; j--) {
+	vecReg[j] = vecReg[j - 1];
+    }
+    vecReg[k].name = name;
+    vecReg[k].proc = proc;
+    vecReg[k].priority = priority;
+    nVec++;
+    Tcl_MutexUnlock(&vecMutex);
+    return TCL_OK;
+}
+
+static TclVecEachloopProc VecTypeMap;
+
+int
+TclVecEachloop(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    int k, rc;
+    static int init = 0;
+
+    if (!init) {
+	TclVecRegister("typemap", VecTypeMap, 0);
+	init = 1;
+    }
+    for (k = 0; k < nVec; k++) {
+	rc = vecReg[k].proc(interp, isLmap, objc, objv);
+	if (rc != TCL_CONTINUE) {
+	    return rc;
+	}
+    }
+    return TCL_CONTINUE;
+}
+
+/* le noeud rend-il toujours une valeur neuve (un calcul), jamais un de
+ * ses opérandes tel quel ($x, ?:, min, max, abs, int, double, +x) ? */
+static int
+MFresh(const MProg *g, int i)
+{
+    const MNode *nd = &g->n[i];
+
+    switch (nd->kind) {
+    case MN_POS:
+	return MFresh(g, nd->a);	/* (des parenthèses, ou +x) */
+    case MN_VAR: case MN_CONST: case MN_COND:
+	return 0;
+    case MN_FUNC:
+	return !(nd->fn == MF_ABS || nd->fn == MF_DOUBLE || nd->fn == MF_INT
+		|| nd->fn == MF_MIN || nd->fn == MF_MAX || nd->fn == MF_ROUND);
+    default:
+	return 1;
+    }
+}
+
+/* le texte est-il une expression pure (le sous-ensemble compilé) ? Et rend-
+ * elle toujours une valeur neuve (*freshPtr) ? */
+static int
+MapExprPure(const char *text, int *freshPtr)
+{
+    MProg g;
+    int ok, root;
+
+    memset(&g, 0, sizeof(g));
+    g.p = text;
+    root = MExpr(&g);
+    MSkip(&g);
+    ok = !g.bad && *g.p == '\0';
+    if (freshPtr != NULL) {
+	*freshPtr = ok && root >= 0 && MFresh(&g, root);
+    }
+    MProgFree(&g);
+    return ok;
+}
+
+/* une commande du nom donné, telle qu'elle est résolue ici, est-elle la
+ * commande intégrée ? */
+static int
+VecBuiltin(Tcl_Interp *interp, const char *name, Tcl_ObjCmdProc *proc)
+{
+    Tcl_CmdInfo info;
+
+    return Tcl_GetCommandInfo(interp, name, &info) && info.objProc == proc;
+}
+
+/* le mot d'un jeton : son texte s'il est simple (un seul jeton texte, en
+ * accolades ou nu) ; NULL sinon */
+static Tcl_Obj *
+VecSimpleWord(Tcl_Token *t, int *braced)
+{
+    if (t->type != TCL_TOKEN_SIMPLE_WORD || t->numComponents != 1) {
+	return NULL;
+    }
+    *braced = (t->start[0] == '{');
+    return Tcl_NewStringObj(t[1].start, t[1].size);
+}
+
+/*
+ * Le corps : (E), ou expr {E} (lmap) ; (s = E), ou set s [expr {E}]
+ * (foreach). *exprPtr reçoit « (E) », *foldPtr le nom de s (foreach). 0 si
+ * le corps n'a pas une de ces formes.
+ */
+static int
+VecBodyForm(Tcl_Interp *interp, int isLmap, Tcl_Obj *body, Tcl_Obj **exprPtr,
+	Tcl_Obj **foldPtr, int *assignPtr)
+{
+    Tcl_Size len;
+    const char *b = Tcl_GetStringFromObj(body, &len), *e = b + len, *p;
+    Tcl_Parse parse;
+    int depth = 0, braced, ok = 0;
+
+    *exprPtr = *foldPtr = NULL;
+    *assignPtr = 0;
+    while (b < e && isspace(UCHAR(*b))) {
+	b++;
+    }
+    while (e > b && isspace(UCHAR(e[-1]))) {
+	e--;
+    }
+    if (e - b >= 2 && *b == '(' && e[-1] == ')') {
+	/* (E) ou (s = E) : la parenthèse ouvrante ferme à la fin, pas de ; */
+	const char *in = b + 1, *ie = e - 1, *eq = NULL;
+
+	for (p = b; p < e; p++) {
+	    if (*p == '(' || *p == '[' || *p == '{') {
+		depth++;
+	    } else if (*p == ')' || *p == ']' || *p == '}') {
+		if (--depth == 0 && p != e - 1) {
+		    return 0;
+		}
+	    } else if (depth == 1 && (*p == ';' || *p == '"' || *p == '\\')) {
+		return 0;
+	    } else if (depth == 1 && *p == '=' && eq == NULL
+		    && p[1] != '=' && p > in && p[-1] != '=' && p[-1] != '!'
+		    && p[-1] != '<' && p[-1] != '>') {
+		eq = p;
+	    }
+	}
+	if (eq == NULL) {
+	    if (!isLmap) {
+		return 0;
+	    }
+	    *exprPtr = Tcl_NewStringObj(b, e - b);
+	    return 1;
+	}
+	if (isLmap) {
+	    return 0;
+	}
+	{
+	    const char *n = in, *ne = eq;
+
+	    while (n < ne && isspace(UCHAR(*n))) {
+		n++;
+	    }
+	    while (ne > n && isspace(UCHAR(ne[-1]))) {
+		ne--;
+	    }
+	    for (p = n; p < ne; p++) {
+		if (!(isalnum(UCHAR(*p)) || *p == '_')) {
+		    return 0;
+		}
+	    }
+	    if (n == ne) {
+		return 0;
+	    }
+	    *foldPtr = Tcl_NewStringObj(n, ne - n);
+	    *exprPtr = Tcl_ObjPrintf("(%.*s)", (int) (ie - eq - 1), eq + 1);
+	    *assignPtr = 1;		/* (s = E) : E tel qu'il est rendu */
+	    return 1;
+	}
+    }
+    /* expr {E} ; set s [expr {E}] */
+    if (Tcl_ParseCommand(NULL, b, e - b, 0, &parse) != TCL_OK) {
+	return 0;
+    }
+    if (parse.term < e - 1 || parse.commentSize > 0) {
+	goto parsedone;		/* plus d'une commande */
+    }
+    if (isLmap && parse.numWords == 2) {
+	Tcl_Obj *w0 = VecSimpleWord(parse.tokenPtr, &braced), *w1;
+
+	if (w0 != NULL && strcmp(Tcl_GetString(w0), "expr") == 0
+		&& VecBuiltin(interp, "expr", Tcl_ExprObjCmd)) {
+	    Tcl_Token *t1 = parse.tokenPtr + 1 + parse.tokenPtr->numComponents;
+
+	    w1 = VecSimpleWord(t1, &braced);
+	    if (w1 != NULL && braced) {
+		*exprPtr = Tcl_ObjPrintf("(%s)", Tcl_GetString(w1));
+		ok = 1;
+	    }
+	    if (w1 != NULL) {
+		TclDiscard(w1);
+	    }
+	}
+	if (w0 != NULL) {
+	    TclDiscard(w0);
+	}
+    } else if (!isLmap && parse.numWords == 3) {
+	Tcl_Token *t0 = parse.tokenPtr, *t1, *t2;
+	Tcl_Obj *w0 = VecSimpleWord(t0, &braced), *w1 = NULL;
+
+	t1 = t0 + 1 + t0->numComponents;
+	t2 = t1 + 1 + t1->numComponents;
+	if (w0 != NULL && strcmp(Tcl_GetString(w0), "set") == 0
+		&& VecBuiltin(interp, "set", Tcl_SetObjCmd)
+		&& (w1 = VecSimpleWord(t1, &braced)) != NULL && !braced
+		&& t2->type == TCL_TOKEN_WORD && t2->numComponents == 1
+		&& t2[1].type == TCL_TOKEN_COMMAND) {
+	    /* [expr {E}] : le script entre crochets, une commande */
+	    Tcl_Obj *inner = Tcl_NewStringObj(t2[1].start + 1,
+		    t2[1].size - 2);
+	    Tcl_Obj *ie = NULL, *dummy = NULL;
+	    int da;
+
+	    Tcl_IncrRefCount(inner);
+	    if (VecBodyForm(interp, 1, inner, &ie, &dummy, &da) && ie != NULL
+		    && Tcl_GetString(inner)[0] != '(') {
+		*exprPtr = ie;
+		*foldPtr = w1;
+		w1 = NULL;
+		ok = 1;
+	    } else if (ie != NULL) {
+		TclDiscard(ie);
+	    }
+	    Tcl_DecrRefCount(inner);
+	}
+	if (w1 != NULL) {
+	    TclDiscard(w1);
+	}
+	if (w0 != NULL) {
+	    TclDiscard(w0);
+	}
+    }
+  parsedone:
+    Tcl_FreeParse(&parse);
+    return ok;
+}
+
+/* une variable que la boucle peut poser sans témoin : pas d'élément de
+ * tableau, pas un tableau, pas de trace, pas de type ni de contrat */
+static int
+VecPlainVar(Tcl_Interp *interp, Tcl_Obj *name)
+{
+    Var *varPtr, *arrayPtr = NULL;
+    const char *n = Tcl_GetString(name);
+
+    if (strchr(n, '(') != NULL || *n == '\0') {
+	return 0;
+    }
+    varPtr = TclObjLookupVarEx(interp, name, NULL, 0, NULL, 0, 0, &arrayPtr);
+    if (varPtr == NULL) {
+	return 1;			/* (pas encore là : créée sans trace) */
+    }
+    if (TclIsVarArray(varPtr) || TclIsVarTraced(varPtr)
+	    || (arrayPtr != NULL && TclIsVarTraced(arrayPtr))
+	    || (varPtr->flags & (VAR_TYPED | VAR_CONTRACT))) {
+	return 0;
+    }
+    return 1;
+}
+
+#define VEC_MIN 16		/* en dessous : la boucle ordinaire */
+
+static int
+VecTypeMap(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *ex = NULL, *fv = NULL, **av = NULL, *init = NULL;
+    Tcl_Size k, n = -1, len, ac = 0;
+    int rc = TCL_CONTINUE, assign = 0, fresh = 0;
+
+    if (TclTypeOpsMode() == TCL_TYPE_OPS_OFF
+	    || getenv("TCL_TYPE_NOVECLOOP") != NULL || objc < 4
+	    || (objc % 2) != 0) {
+	return TCL_CONTINUE;
+    }
+    if (!VecBodyForm(interp, isLmap, objv[objc - 1], &ex, &fv, &assign)) {
+	return TCL_CONTINUE;
+    }
+    Tcl_IncrRefCount(ex);
+    if (fv != NULL) {
+	Tcl_IncrRefCount(fv);
+    }
+    if (!MapExprPure(Tcl_GetString(ex), &fresh)
+	    || (assign && !fresh)) {
+	/* (s = E) garde un opérande tel quel ($u, ?:...), sans le
+	 * normaliser comme expr : la boucle ordinaire */
+	goto decline;
+    }
+    /* une variable par liste, des listes de même longueur, assez longues */
+    for (k = 1; k < objc - 1; k += 2) {
+	Tcl_Obj **vv;
+	Tcl_Size nv;
+
+	if (Tcl_ListObjGetElements(NULL, objv[k], &nv, &vv) != TCL_OK
+		|| nv != 1 || !VecPlainVar(interp, vv[0])
+		|| (fv != NULL && strcmp(Tcl_GetString(vv[0]),
+		    Tcl_GetString(fv)) == 0)
+		|| Tcl_ListObjLength(NULL, objv[k + 1], &len) != TCL_OK
+		|| (n >= 0 && len != n)) {
+	    goto decline;
+	}
+	n = len;
+    }
+    if (n < VEC_MIN) {
+	goto decline;
+    }
+    if (fv != NULL) {
+	/* le cumul : s doit exister (sa valeur de départ), sans témoin */
+	if (!VecPlainVar(interp, fv)
+		|| (init = Tcl_ObjGetVar2(interp, fv, NULL, 0)) == NULL) {
+	    goto decline;
+	}
+	Tcl_IncrRefCount(init);
+    }
+    /* type map ?-fold {s init}? {v} L ... (E) */
+    av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) (objc + 4));
+    av[ac++] = objv[0];
+    av[ac++] = objv[0];
+    for (k = 1; k < objc - 1; k++) {
+	av[ac++] = objv[k];
+    }
+    av[ac++] = ex;
+    if (fv != NULL) {
+	MapFold f;
+
+	f.name = fv;
+	f.init = init;
+	rc = TypeMapList(interp, ac, av, &f);
+    } else {
+	rc = TypeMapList(interp, ac, av, NULL);
+    }
+    if (rc != TCL_OK) {
+	/* l'erreur telle que la boucle la donne : la boucle ordinaire,
+	 * depuis le début (le corps est pur ; s remis à son départ) */
+	if (fv != NULL) {
+	    Tcl_ObjSetVar2(interp, fv, NULL, init, 0);
+	}
+	Tcl_ResetResult(interp);
+	rc = TCL_CONTINUE;
+    } else if (isLmap) {
+	/* la liste des résultats, sans annotation (comme lmap) */
+	Tcl_Obj *r = Tcl_GetObjResult(interp), *c = NULL;
+
+	if (TclAnnotInfo(r, &c, NULL, NULL, NULL) != 0 && c != NULL) {
+	    Tcl_SetObjResult(interp, c);
+	}
+    } else {
+	Tcl_ResetResult(interp);	/* foreach ne rend rien */
+    }
+    Tcl_Free(av);
+  decline:
+    if (init != NULL) {
+	Tcl_DecrRefCount(init);
+    }
+    if (fv != NULL) {
+	Tcl_DecrRefCount(fv);
+    }
+    Tcl_DecrRefCount(ex);
+    return rc;
+}
+
 static int
 TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])

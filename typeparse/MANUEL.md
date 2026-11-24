@@ -559,6 +559,29 @@ combinaison reste élément par élément, en boucle serrée pour `s ⊕ e` et
 Un million d'éléments : produit scalaire et lissage 2,5 à 3 ns par élément
 en cases, 8 à 13 en objets, contre 80 ns pour la boucle ; un `?:` 25 ns.
 
+**foreach et lmap vectorisés.** `foreach` et `lmap` demandent, à chaque
+appel, à un registre de boucles vectorisables si une entrée sait faire cet
+appel-là à l'identique ; sinon, la boucle ordinaire. L'entrée intégrée
+s'appuie sur `type map` et n'accepte que :
+
+    lmap u $U v $V {($u*2 + $v)}              ;# ou {expr {$u*2 + $v}}
+    foreach u $U v $V {(s = $s + $u*$v)}      ;# ou {set s [expr {...}]} : -fold
+
+avec une variable par liste (ni tracée, ni typée, ni tableau), des listes de
+même longueur (au moins 16 éléments), un corps fait d'une expression pure
+(le sous-ensemble compilé de `type map`), `expr` et `set` intégrés, et, pour
+le cumul, `s` existante. Le résultat, les erreurs (message et `errorInfo` :
+en cas d'erreur, la boucle ordinaire est refaite depuis le début, le corps
+étant pur) et les variables après la boucle sont ceux de la boucle
+ordinaire. `(s = E)` garde un opérande tel quel quand `E` en rend un (`$u`,
+`?:`, `min`, `max`...), sans le normaliser comme `expr` : ces corps-là
+restent à la boucle ordinaire. `TCL_TYPE_NOVECLOOP=1` désactive le registre.
+
+Aujourd'hui, le registre sert quand la boucle passe par la commande (corps
+venu d'une variable, appel dynamique) : 2 à 9 ns par élément au lieu de 1 à
+3 µs. Une boucle compilée en ligne (corps littéral dans une procédure, 70 à
+77 ns) ne change pas encore : c'est l'étape suivante.
+
 **Typé.** Les variables peuvent se déclarer comme les paramètres d'une
 procédure, et le corps peut dire ce qu'il rend :
 

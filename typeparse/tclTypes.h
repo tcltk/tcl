@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17q"
+#define TCL_TYPES_VERSION "v17r"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -475,6 +475,12 @@ int TclObjViewInfo(Tcl_Obj *v, Tcl_Obj **basePtr, Tcl_Obj *const **elemsPtr,
 	Tcl_Size *nPtr, Tcl_Size *stridePtr);
 int TclIsObjView(Tcl_Obj *v);
 int TclCompactScalarWritable(Tcl_Obj *v);
+/* 24/11 (v17r) : les boucles vectorisables (foreach, lmap) */
+typedef int (TclVecEachloopProc)(Tcl_Interp *interp, int isLmap,
+	Tcl_Size objc, Tcl_Obj *const objv[]);
+int TclVecRegister(const char *name, TclVecEachloopProc *proc, int priority);
+int TclVecEachloop(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
 int TclCompactScalarInfo(Tcl_Obj *v, Tcl_Size *nPtr,
 	const unsigned char **dataPtr, size_t *stridePtr, int *kindPtr,
 	int *sizePtr);
