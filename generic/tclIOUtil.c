@@ -527,6 +527,13 @@ TclFSCwdPointerEquals(
 
     if (tsdPtr->cwdPathPtr == *pathPtrPtr) {
 	return 1;
+    } else if (tsdPtr->cwdPathPtr == NULL) {
+	/*
+	 * The current directory could not be determined, e.g. because it
+	 * was deleted. [4d3f213029]
+	 */
+
+	return 0;
     } else {
 	Tcl_Size len1, len2;
 	const char *str1, *str2;
@@ -921,7 +928,7 @@ Tcl_FSUnregister(
     /*
      * Traverse filesystemList in search of the record whose
      * 'fsPtr' member matches 'fsPtr' and remove that record from the list.
-     * Do not revmoe the record for the native filesystem.
+     * Do not remove the record for the native filesystem.
      */
 
     fsRecPtr = filesystemList;
@@ -4651,6 +4658,8 @@ NativeFilesystemSeparator(
     case TCL_PLATFORM_WINDOWS:
 	separator = "\\";
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     return Tcl_NewStringObj(separator,1);
 }

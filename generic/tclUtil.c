@@ -2140,13 +2140,21 @@ Tcl_ConcatObj(
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_StringCaseMatch(
+/*
+ * The static helpers return 1 for a match, 0 for no match and -1 if the
+ * string ran out before the pattern: then no outer '*' can do better by
+ * consuming more characters, so retrying stops. This keeps the matching time
+ * polynomial instead of exponential. [Bug a4a7f2abd3]
+ */
+
+static int
+StringCaseMatch(
     const char *str,		/* String. */
     const char *pattern,	/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
+    int result;
     Tcl_Size charLen;
     int p, ch1 = 0, ch2 = 0;
 
@@ -2163,7 +2171,7 @@ Tcl_StringCaseMatch(
 	    return *str == '\0';
 	}
 	if ((*str == '\0') && (p != '*')) {
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -2232,11 +2240,12 @@ Tcl_StringCaseMatch(
 			}
 		    }
 		}
-		if (Tcl_StringCaseMatch(str, pattern, nocase)) {
-		    return 1;
+		result = StringCaseMatch(str, pattern, nocase);
+		if (result != 0) {
+		    return result;
 		}
 		if (*str == '\0') {
-		    return 0;
+		    return -1;
 		}
 		str += TclUtfToUniChar(str, &ch1);
 	    }
@@ -2356,6 +2365,16 @@ Tcl_StringCaseMatch(
 	}
     }
 }
+
+int
+Tcl_StringCaseMatch(
+    const char *str,		/* String. */
+    const char *pattern,	/* Pattern, which may contain special
+				 * characters. */
+    int nocase)			/* 0 for case sensitive, 1 for insensitive */
+{
+    return StringCaseMatch(str, pattern, nocase) == 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2367,7 +2386,8 @@ Tcl_StringCaseMatch(
  *	Parallels tclUtf.c:TclUniCharMatch, adjusted for char* and sans nocase.
  *
  * Results:
- *	The return value is true if string matches pattern, and false otherwise. The
+ *	The return value is 1 if string matches pattern, -1 if the string is
+ *	exhausted and the pattern is not fully matched, and 0 otherwise. The
  *	matching operation permits the following special characters in the
  *	pattern: *?\[] (see the manual entry for details on what these mean).
  *
@@ -2377,7 +2397,7 @@ Tcl_StringCaseMatch(
  *----------------------------------------------------------------------
  */
 
-bool
+int
 TclByteArrayMatch(
     const unsigned char *string,/* String. */
     Tcl_Size strLen,		/* Length of String */
@@ -2387,6 +2407,7 @@ TclByteArrayMatch(
     Tcl_Size ptnLen,		/* Length of Pattern */
     TCL_UNUSED(int) /*flags*/)
 {
+    int result;
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
 
@@ -2405,7 +2426,7 @@ TclByteArrayMatch(
 	}
 	p = *pattern;
 	if ((string == stringEnd) && (p != '*')) {
-	    return false;
+	    return -1;
 	}
 
 	/*
@@ -2425,7 +2446,7 @@ TclByteArrayMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return true;
+		return 1;
 	    }
 	    p = *pattern;
 	    while (1) {
@@ -2440,12 +2461,13 @@ TclByteArrayMatch(
 			string++;
 		    }
 		}
-		if (TclByteArrayMatch(string, stringEnd - string,
-			pattern, patternEnd - pattern, 0)) {
-		    return true;
+		result = TclByteArrayMatch(string, stringEnd - string,
+			pattern, patternEnd - pattern, 0);
+		if (result != 0) {
+		    return result;
 		}
 		if (string == stringEnd) {
-		    return false;
+		    return -1;
 		}
 		string++;
 	    }
@@ -2476,14 +2498,14 @@ TclByteArrayMatch(
 	    string++;
 	    while (1) {
 		if ((*pattern == ']') || (pattern == patternEnd)) {
-		    return false;
+		    return 0;
 		}
 		startChar = *pattern;
 		pattern++;
 		if (*pattern == '-') {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return false;
+			return 0;
 		    }
 		    endChar = *pattern;
 		    pattern++;
@@ -2517,7 +2539,7 @@ TclByteArrayMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return false;
+		return 0;
 	    }
 	}
 
@@ -2527,7 +2549,7 @@ TclByteArrayMatch(
 	 */
 
 	if (*string != *pattern) {
-	    return false;
+	    return 0;
 	}
 	string++;
 	pattern++;
@@ -2583,7 +2605,7 @@ TclStringMatchObj(
 
 	data = Tcl_GetBytesFromObj(NULL, strObj, &length);
 	ptn  = Tcl_GetBytesFromObj(NULL, ptnObj, &plen);
-	match = TclByteArrayMatch(data, length, ptn, plen, 0);
+	match = TclByteArrayMatch(data, length, ptn, plen, 0) > 0;
     } else {
 	match = Tcl_StringCaseMatch(TclGetString(strObj),
 		TclGetString(ptnObj), flags);

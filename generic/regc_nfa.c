@@ -34,7 +34,6 @@
 
 #define	NISERR()	VISERR(nfa->v)
 #define	NERR(e)		VERR(nfa->v, (e))
-#define STACK_TOO_DEEP(x) (0)
 #define CANCEL_REQUESTED(x) (0)
 #define REG_CANCEL 777
 
@@ -1251,6 +1250,12 @@ deltraverse(
     struct arc *a;
     struct state *to;
 
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
+
     if (s->nouts == 0) {
 	return;			/* nothing to do */
     }
@@ -1320,6 +1325,12 @@ duptraverse(
 {
     struct arc *a;
 
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
+
     if (s->tmp != NULL) {
 	return;			/* already done */
     }
@@ -1362,6 +1373,12 @@ cleartraverse(
     struct state *s)
 {
     struct arc *a;
+
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
 
     if (s->tmp == NULL) {
 	return;
@@ -2281,7 +2298,7 @@ findconstraintloop(struct nfa * nfa, struct state * s)
     struct arc *a;
 
     /* Since this is recursive, it could be driven to stack overflow */
-    if (STACK_TOO_DEEP(nfa->v->re)) {
+    if (STACK_TOO_DEEP(nfa->v)) {
 	NERR(REG_ETOOBIG);
 	return 1;		/* to exit as quickly as possible */
     }
@@ -2517,7 +2534,7 @@ clonesuccessorstates(
     struct arc *a;
 
     /* Since this is recursive, it could be driven to stack overflow */
-    if (STACK_TOO_DEEP(nfa->v->re)) {
+    if (STACK_TOO_DEEP(nfa->v)) {
 	NERR(REG_ETOOBIG);
 	return;
     }
@@ -2753,6 +2770,12 @@ markreachable(
 {
     struct arc *a;
 
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
+
     if (s->tmp != okay) {
 	return;
     }
@@ -2776,6 +2799,12 @@ markcanreach(
     struct state *mark)		/* the value to mark with */
 {
     struct arc *a;
+
+    /* Since this is recursive, it could be driven to stack overflow */
+    if (STACK_TOO_DEEP(nfa->v)) {
+	NERR(REG_ETOOBIG);
+	return;
+    }
 
     if (s->tmp != okay) {
 	return;

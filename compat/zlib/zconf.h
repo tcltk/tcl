@@ -1,5 +1,5 @@
 /* zconf.h -- configuration of the zlib compression library
- * Copyright (C) 1995-2025 Jean-loup Gailly, Mark Adler
+ * Copyright (C) 1995-2026 Jean-loup Gailly, Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -33,7 +33,10 @@
 #  ifndef Z_SOLO
 #    define compress              z_compress
 #    define compress2             z_compress2
+#    define compress_z            z_compress_z
+#    define compress2_z           z_compress2_z
 #    define compressBound         z_compressBound
+#    define compressBound_z       z_compressBound_z
 #  endif
 #  define crc32                 z_crc32
 #  define crc32_combine         z_crc32_combine
@@ -44,6 +47,7 @@
 #  define crc32_z               z_crc32_z
 #  define deflate               z_deflate
 #  define deflateBound          z_deflateBound
+#  define deflateBound_z        z_deflateBound_z
 #  define deflateCopy           z_deflateCopy
 #  define deflateEnd            z_deflateEnd
 #  define deflateGetDictionary  z_deflateGetDictionary
@@ -129,9 +133,12 @@
 #  define inflate_copyright     z_inflate_copyright
 #  define inflate_fast          z_inflate_fast
 #  define inflate_table         z_inflate_table
+#  define inflate_fixed         z_inflate_fixed
 #  ifndef Z_SOLO
 #    define uncompress            z_uncompress
 #    define uncompress2           z_uncompress2
+#    define uncompress_z          z_uncompress_z
+#    define uncompress2_z         z_uncompress2_z
 #  endif
 #  define zError                z_zError
 #  ifndef Z_SOLO
@@ -492,6 +499,10 @@ typedef uLong FAR uLongf;
 
 #if defined(_LFS64_LARGEFILE) && _LFS64_LARGEFILE-0
 #  define Z_LFS64
+#elif defined(_WIN32) && !defined(__CYGWIN__) && !defined(__BORLANDC__) && \
+      !defined(UNDER_CE) && (defined(__MINGW32__) || !defined(__GNUC__))
+#  define Z_LFS64       /* native Windows has 64-bit file offsets */
+#  define Z_WINLFS
 #endif
 
 #if defined(_LARGEFILE64_SOURCE) && defined(Z_LFS64)
@@ -509,7 +520,7 @@ typedef uLong FAR uLongf;
 #endif
 
 #ifndef z_off_t
-#  define z_off_t long long
+#  define z_off_t long
 #endif
 
 #if !defined(_WIN32) && defined(Z_LARGE64)
@@ -522,6 +533,11 @@ typedef uLong FAR uLongf;
 #  define z_off64_t offset_t
 #else
 #  define z_off64_t z_off_t
+#endif
+
+#if defined(Z_WINLFS) && defined(Z_WANT64) && !defined(Z_SOLO)
+#  undef z_off_t
+#  define z_off_t z_off64_t
 #endif
 
 /* MVS linker does not support external names larger than 8 bytes */

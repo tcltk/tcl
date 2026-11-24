@@ -1196,8 +1196,9 @@ IsSeparatorOrNull(
 	return (ch == '/');
     case TCL_PLATFORM_WINDOWS:
 	return (ch == '/') || (ch == '\\');
+    default:
+	TCL_UNREACHABLE();
     }
-    return false;
 }
 
 /*
@@ -1235,6 +1236,9 @@ FindSplitPos(
 	    count++;
 	}
 	break;
+
+    default:
+	TCL_UNREACHABLE();
     }
     return count;
 }
@@ -1472,6 +1476,8 @@ TclFSMakePathRelative(
 	    cwdLen++;
 	}
 	break;
+    default:
+	TCL_UNREACHABLE();
     }
     tempStr = TclGetStringFromObj(pathPtr, &len);
 

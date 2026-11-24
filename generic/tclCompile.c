@@ -2396,6 +2396,24 @@ CompileCommandTokens(
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
 	if (cmdPtr) {
 	    /*
+	     * An imported command is compiled as the command it refers to,
+	     * since that command can be redefined or reconfigured after the
+	     * import. [7b51dbf6ca] Keep the compileProc of the imported
+	     * command in sync, so that its deletion invalidates the bytecode.
+	     */
+	    Command *origPtr = (Command *)
+		    TclGetOriginalCommand((Tcl_Command) cmdPtr);
+
+	    if (origPtr) {
+		cmdPtr->compileProc = origPtr->compileProc;
+		if (cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
+		    origPtr = NULL;
+		}
+		cmdPtr = origPtr;
+	    }
+	}
+	if (cmdPtr) {
+	    /*
 	     * Found a command.  Test the ways we can be told not to attempt
 	     * to compile it.
 	     */

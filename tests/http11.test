@@ -1059,6 +1059,54 @@ test http11-4.3.$ThreadLevel "normal post request, check channel query length" -
     halt_httpd
 } -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 122880}
 
+test http11-5.1.$ThreadLevel "reuse persistent socket after server restart, bug 3764f4e81f" -setup {
+    proc restart_httpd {port {old {}}} {
+	if {$old ne ""} {
+	    # Wait until the old server has exited.
+	    fconfigure $old -blocking 1
+	    puts $old quit
+	    read $old
+	    close $old
+	}
+	if {$port eq ""} {
+	    return
+	}
+	set h [open |[list [interpreter] -encoding utf-8 \
+		[file join [pwd] [file dirname [info script]] httpd11.tcl] \
+		$port] r+]
+	fconfigure $h -buffering line
+	gets $h
+	return $h
+    }
+    set s [socket -server {} -myaddr localhost 0]
+    set port [lindex [fconfigure $s -sockname] 2]
+    close $s
+    set chan [open [makeFile {} testfile.tmp] wb+]
+    set res {}
+} -body {
+    set h [restart_httpd $port]
+    set tok [http::geturl http://localhost:$port/testdoc.html \
+		 -keepalive 1 -channel $chan -timeout 5000]
+    lappend res [http::status $tok]
+    http::cleanup $tok
+    # No event loop between the restart and the next request.
+    foreach i {1 2 3} {
+	set h [restart_httpd $port $h]
+	set tok [http::geturl http://localhost:$port/testdoc.html \
+		     -keepalive 1 -timeout 5000]
+	lappend res [http::status $tok] [check_crc $tok]
+	http::cleanup $tok
+    }
+    set res
+} -cleanup {
+    catch {http::cleanup $tok}
+    restart_httpd {} $h
+    close $chan
+    removeFile testfile.tmp
+    rename restart_httpd {}
+    unset -nocomplain h s port chan res tok i
+} -result {ok ok ok ok ok ok ok}
+
 # -------------------------------------------------------------------------
 
 # Eliminate valgrind "still reachable" reports on outstanding "Detached"

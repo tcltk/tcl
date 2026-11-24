@@ -1279,6 +1279,19 @@ test regexp-32.2 {regsub -command -all with more than 9 groups, bug 41bc9a8298} 
 	lindex $args end
     }}}
 } kK
+test regexp-33.1 {compile wide -nocase bracket range spanning title-case digraphs} {
+    # range() in regc_locale.c under-sized the cvec for case-insensitive
+    # ranges covering the Latin title-case digraphs U+01C4-U+01CC and
+    # U+01F1-U+01F3 (each contributes three case entries: self, upper and
+    # title), writing past the allocation while compiling a range wide enough
+    # to defeat the compile-time cvec seed, e.g. [\u01C4-\u01F4].
+    list [regexp -nocase {[\u01C4-\u01F4]} \u01C7] \
+	 [regexp -nocase {[\u01C4-\u01F4]} X] \
+	 [regexp -nocase {[\u01C4-\u01F4]} \u01F3]
+} {1 0 1}
+test regexp-33.2 {narrow -nocase bracket range over title-case digraphs} {
+    regexp -nocase {[\u01C4-\u01CC]} \u01C5
+} 1
 
 # cleanup
 ::tcltest::cleanupTests
