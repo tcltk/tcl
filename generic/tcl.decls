@@ -2495,7 +2495,7 @@ declare 707 {
 	    Tcl_Size uniLen)
 }
 declare 708 {
-    char *Tcl_GraphemeIndex(const char *uniPtr, Tcl_Size numBytes,
+    char *Tcl_GraphemeIndex(const char *tutf8Ptr, Tcl_Size numBytes,
 	    Tcl_Size grIndex, Tcl_Size *grWidthPtr, Tcl_Size *grNumBytesPtr)
 }
 declare 709 {
@@ -2504,13 +2504,13 @@ declare 709 {
 	    Tcl_Size *grNumBytesPtr)
 }
 declare 710 {
-    char *Tcl_GraphemeRange(const char *uniPtr,
-	    Tcl_Size numBytes, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
+    char *Tcl_GraphemeRange(const char *tutf8Ptr,
+	    Tcl_Size numBytes, Tcl_Size grFirst, Tcl_Size grLast,
 	    char **endPtrPtr)
 }
 declare 711 {
     Tcl_UniChar *Tcl_GraphemeUniRange(const Tcl_UniChar *uniPtr,
-	    Tcl_Size uniLen, Tcl_Size grStartIndex, Tcl_Size grEndIndex,
+	    Tcl_Size uniLen, Tcl_Size grFirst, Tcl_Size grLast,
 	    Tcl_UniChar **endPtrPtr)
 }
 declare 712 {
@@ -2519,7 +2519,7 @@ declare 712 {
 }
 declare 713 {
     Tcl_Size Tcl_GraphemeUniReverse(const Tcl_UniChar *uniPtr,
-	    Tcl_Size uniLen, Tcl_UniChar *outPtr, Tcl_Size outCapacity)
+	    Tcl_Size uniLen, Tcl_UniChar *uniOutPtr, Tcl_Size outCapacity)
 }
 
 # ----- BASELINE -- FOR -- 9.2.0 ----- #
