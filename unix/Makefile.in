@@ -787,9 +787,14 @@ libraries:
 
 doc:
 
+# The files and directories of the library, so that the zip file is rebuilt
+# when any of them changes, or a file is added or removed.
+TCL_LIBRARY_FILES = $(wildcard $(TOP_DIR)/library/* $(TOP_DIR)/library/*/* \
+	$(TOP_DIR)/library/*/*/* $(TOP_DIR)/library/*/*/*/*)
+
 tclzipfile: ${TCL_ZIP_FILE}
 
-${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS}
+${TCL_ZIP_FILE}: ${ZIP_INSTALL_OBJS} ${TCL_LIBRARY_FILES}
 	@rm -rf ${TCL_VFS_ROOT}
 	@mkdir -p ${TCL_VFS_PATH}
 	@echo "creating ${TCL_VFS_PATH} (prepare compression)"
