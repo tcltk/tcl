@@ -9452,7 +9452,17 @@ GenerateArithSeries(
 	switch (type) {
 	case TCL_NUMBER_DOUBLE: {
 	    double dCount = *((const double *) ptr);
-	    Tcl_WideInt wCount = (Tcl_WideInt) dCount;
+
+	    /*
+	     * Casting an out of range double (including Inf) to an integer
+	     * is undefined behavior, and compilers may fold the check below
+	     * into a plain "is integral" test, so do the range check first.
+	     */
+	    if (!(dCount > (double)WIDE_MIN && dCount < (double)WIDE_MAX)) {
+		break;
+	    }
+
+	    Tcl_WideInt wCount = (Tcl_WideInt)dCount;
 	    if (dCount - wCount == 0.0) {
 		Tcl_DecrRefCount(count);
 		// Switch to the object holding integer version of the count.

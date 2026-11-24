@@ -928,7 +928,7 @@ Tcl_FSUnregister(
     /*
      * Traverse filesystemList in search of the record whose
      * 'fsPtr' member matches 'fsPtr' and remove that record from the list.
-     * Do not revmoe the record for the native filesystem.
+     * Do not remove the record for the native filesystem.
      */
 
     fsRecPtr = filesystemList;
