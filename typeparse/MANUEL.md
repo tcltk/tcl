@@ -538,6 +538,27 @@ désactive les blocs, pour comparer. De 10 000 à 100 000 éléments : 3 à 5 ns
 par élément en cases, 9 à 10 ns en objets, contre 100 à 150 ns avec `lmap` ;
 un million : 7 à 8 ns en cases, 17 à 20 en objets.
 
+**Cumul.** `-fold {s init}` : `s` part de `init`, et le corps donne sa
+nouvelle valeur à chaque élément ; la commande rend la dernière (et la
+laisse dans `s`), comme
+
+    set s init; foreach u $U v $V { set s [expr {corps}] }
+
+mais sans repasser par l'interpréteur :
+
+    type map -fold {s 0.0} {u} $U {v} $V {($s + $u*$v)}     ;# produit scalaire
+    type map -fold {s 0.0} {u} $U {(0.9*$s + 0.1*$u)}       ;# lissage
+
+Le résultat est celui de la boucle, au bit près : les opérations se font
+dans le même ordre (pas de sommes partielles parallèles). Quand le sommet du
+corps est une opération binaire dont un côté ne lit que `s` (et des valeurs
+fixes) et l'autre pas `s`, cet autre côté est calculé par blocs, et seule la
+combinaison reste élément par élément, en boucle serrée pour `s ⊕ e` et
+`c*s ⊕ e` (⊕ : `+ - *`). Sinon (un `?:`, une fonction de `s` mêlée aux
+éléments), le corps est évalué élément par élément en C, ou par `expr`.
+Un million d'éléments : produit scalaire et lissage 2,5 à 3 ns par élément
+en cases, 8 à 13 en objets, contre 80 ns pour la boucle ; un `?:` 25 ns.
+
 **Typé.** Les variables peuvent se déclarer comme les paramètres d'une
 procédure, et le corps peut dire ce qu'il rend :
 

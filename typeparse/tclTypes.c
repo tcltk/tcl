@@ -11039,10 +11039,16 @@ MListContent(Tcl_Obj *o)
     return o;
 }
 
+/* 24/11 : -fold {s init} : le corps donne la nouvelle valeur de s */
+typedef struct MapFold {
+    Tcl_Obj *name;
+    Tcl_Obj *init;
+} MapFold;
+
 static int TypeMapCore(Tcl_Interp *interp, Tcl_Size objc,
-	Tcl_Obj *const objv[]);
+	Tcl_Obj *const objv[], const MapFold *fold);
 static int TypeMapList(Tcl_Interp *interp, Tcl_Size objc,
-	Tcl_Obj *const objv[]);
+	Tcl_Obj *const objv[], const MapFold *fold);
 
 /*
  * {x y z} $P(*.(a,b,c)) : à une liste de K variables répond une liste de K
@@ -11552,8 +11558,8 @@ TypeMapTyped(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
     av[0] = objv[0];
     av[1] = objv[1];
     ac = 2;
-    if (optc) {
-	av[ac++] = objv[2];
+    for (k = 0; k < optc; k++) {
+	av[ac++] = objv[2 + k];
     }
     /* les entrées */
     for (k = 2 + optc; k < objc - 1; k += 2) {
@@ -11870,7 +11876,8 @@ TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     const char *opt = (objc > 2) ? Tcl_GetString(objv[2]) : "";
     int optc = (strcmp(opt, "-sum") == 0 || strcmp(opt, "-min") == 0
-	    || strcmp(opt, "-max") == 0);
+	    || strcmp(opt, "-max") == 0) ? 1 : (strcmp(opt, "-fold") == 0
+	    && objc > 3) ? 2 : 0;
     Tcl_Size k;
 
     if (objc >= 4 + optc) {
@@ -11901,7 +11908,7 @@ TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	av[0] = objv[0];
 	av[1] = objv[1];
 	memcpy(av + 2, objv + 3, sizeof(Tcl_Obj *) * (size_t) (objc - 3));
-	rc = TypeMapList(interp, objc - 1, av);
+	rc = TypeMapList(interp, objc - 1, av, NULL);
 	Tcl_Free(av);
 	if (rc != TCL_OK) {
 	    return rc;
@@ -11914,11 +11921,43 @@ TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_DecrRefCount(r);
 	return rc;
     }
-    return TypeMapList(interp, objc, objv);
+    if (strcmp(opt, "-fold") == 0) {
+	/* -fold {s init} : un cumul ; le résultat est la dernière valeur */
+	Tcl_Obj **fv, **av;
+	Tcl_Size nf;
+	MapFold f;
+	int rc;
+
+	if (objc < 4 || Tcl_ListObjGetElements(interp, objv[3], &nf, &fv)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (nf != 2) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("type map: -fold needs "
+		    "{name initialValue}", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "MAP", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	f.name = fv[0];
+	f.init = fv[1];
+	Tcl_IncrRefCount(f.name);
+	Tcl_IncrRefCount(f.init);
+	av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) objc);
+	av[0] = objv[0];
+	av[1] = objv[1];
+	memcpy(av + 2, objv + 4, sizeof(Tcl_Obj *) * (size_t) (objc - 4));
+	rc = TypeMapList(interp, objc - 2, av, &f);
+	Tcl_Free(av);
+	Tcl_DecrRefCount(f.name);
+	Tcl_DecrRefCount(f.init);
+	return rc;
+    }
+    return TypeMapList(interp, objc, objv, NULL);
 }
 
 static int
-TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	const MapFold *fold)
 {
     Tcl_Obj **ev;
     Tcl_Size k, j, nv, nc, m = 2, cap;
@@ -11926,7 +11965,7 @@ TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     int rc, multi = 0;
 
     if (objc < 5 || (objc - 3) % 2 != 0) {
-	return TypeMapCore(interp, objc, objv);	/* (le message) */
+	return TypeMapCore(interp, objc, objv, fold);	/* (le message) */
     }
     for (k = 2; k < objc - 1; k += 2) {
 	if (Tcl_ListObjLength(NULL, objv[k], &nv) == TCL_OK && nv > 1) {
@@ -11934,7 +11973,7 @@ TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
     }
     if (!multi) {
-	return TypeMapCore(interp, objc, objv);
+	return TypeMapCore(interp, objc, objv, fold);
     }
     cap = 2 * objc + 64;
     ev = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) cap);
@@ -11983,7 +12022,7 @@ TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     if (rc == TCL_OK) {
 	ev[m] = objv[objc - 1];
-	rc = TypeMapCore(interp, m + 1, ev);
+	rc = TypeMapCore(interp, m + 1, ev, fold);
     }
     for (j = 2; j < m; j++) {
 	Tcl_DecrRefCount(ev[j]);
@@ -12128,8 +12167,71 @@ TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
     }
 }
 
+/* les variables qu'un sous-arbre lit */
+static void
+MMarkSlots(const MProg *g, int i, unsigned char *mark)
+{
+    const MNode *nd = &g->n[i];
+    int k;
+
+    switch (nd->kind) {
+    case MN_CONST:
+	return;
+    case MN_VAR:
+	mark[nd->slot] = 1;
+	return;
+    case MN_NEG: case MN_POS: case MN_NOT:
+	MMarkSlots(g, nd->a, mark);
+	return;
+    case MN_COND:
+	MMarkSlots(g, nd->a, mark);
+	MMarkSlots(g, nd->b, mark);
+	MMarkSlots(g, nd->c, mark);
+	return;
+    case MN_FUNC:
+	for (k = 0; k < nd->nargs; k++) {
+	    MMarkSlots(g, nd->args[k], mark);
+	}
+	return;
+    default:
+	MMarkSlots(g, nd->a, mark);
+	MMarkSlots(g, nd->b, mark);
+	return;
+    }
+}
+
+/* l'opération du sommet d'un cumul découpé, comme MDRun la ferait ; 0 si
+ * MDRun refuserait (résultat non fini) */
 static int
-TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+MDCombine(int op, int fn, double x, double y, double *out)
+{
+    double r;
+
+    switch (op) {
+    case MD_ADD: r = x + y; break;
+    case MD_SUB: r = x - y; break;
+    case MD_MUL: r = x * y; break;
+    case MD_DIV: if (y == 0.0) return 0; r = x / y; break;
+    case MD_POW: r = pow(x, y); break;
+    default:
+	switch (fn) {
+	case MF_POWF: r = pow(x, y); break;
+	case MF_ATAN2: r = atan2(x, y); break;
+	case MF_FMOD: if (y == 0.0) return 0; r = fmod(x, y); break;
+	default: r = hypot(x, y); break;
+	}
+	break;
+    }
+    if (isnan(r) || isinf(r)) {
+	return 0;
+    }
+    *out = r;
+    return 1;
+}
+
+static int
+TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	const MapFold *fold)
 {
     Tcl_Size npairs, k, j, n = -1, i, total = 0;
     Tcl_Obj *body, **res = NULL, *resList;
@@ -12150,10 +12252,22 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     unsigned char bbad[MD_BLK];
     Tcl_Size bStart = 0, bEnd = 0;
     int bAllGood = 0;
+    /* -fold : s, sa valeur (nombre fNum, ou objet fObj), et le découpage
+     * (fA : ce qui dépend de s, fE : le reste, calculé par blocs) */
+    int fSlot = -1, fIsNum = 0, fStale = 0, split = 0, fOp = 0, fFn = 0;
+    int fSLeft = 0, fAIsS = 0, fAMul = 0;	/* A = s, ou A = c * s */
+    double fC = 0.0;
+    MNum fNum;
+    Tcl_Obj *fObj = NULL;
+    MDProg dA, dE;
+
+    memset(&dA, 0, sizeof(dA));
+    memset(&dE, 0, sizeof(dE));
+    memset(&fNum, 0, sizeof(fNum));
 
     if (objc < 5 || (objc - 3) % 2 != 0) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?-sum|-min|-max? varList list ?varList list "
-		"...? {(expression)}");
+	Tcl_WrongNumArgs(interp, 2, objv, "?-sum|-min|-max|-fold {name init}? "
+		"varList list ?varList list ...? {(expression)}");
 	return TCL_ERROR;
     }
     body = objv[objc - 1];
@@ -12281,13 +12395,38 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		}
 	    }
 	}
+	if (fold != NULL) {
+	    const char *fn = Tcl_GetString(fold->name);
+
+	    for (k = 0; k < npairs; k++) {
+		for (j = 0; j < pairs[k].nvars; j++) {
+		    if (strcmp(Tcl_GetString(pairs[k].vars[j]), fn) == 0) {
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: "
+				"\"%s\" is both the -fold variable and a loop "
+				"variable", fn));
+			Tcl_SetErrorCode(interp, "TCL", "TYPE", "MAP",
+				(char *) NULL);
+			rc = TCL_ERROR;
+			n = 0;		/* (rien à parcourir) */
+		    }
+		}
+	    }
+	    for (i = 0; fast && i < g.nnames; i++) {
+		if (strcmp(Tcl_GetString(g.names[i]), fn) == 0) {
+		    fSlot = (int) i;
+		}
+	    }
+	    fObj = fold->init;
+	    Tcl_IncrRefCount(fObj);
+	    fIsNum = !TclIsAnnotated(fObj) && MNumOf(fObj, &fNum);
+	}
 	for (i = 0; fast && i < g.nnames; i++) {
 	    int loop = 0;
 
 	    for (v = 0; v < total; v++) {
 		loop |= (slotOf[v] == i);
 	    }
-	    if (!loop) {
+	    if (!loop && i != fSlot) {
 		Tcl_Obj *o = Tcl_ObjGetVar2(interp, g.names[i], NULL, 0);
 
 		if (o == NULL || !MNumOf(o, &vals[i])) {
@@ -12317,7 +12456,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    for (v = 0; v < total; v++) {
 		loop |= (slotOf[v] == i);
 	    }
-	    if (!loop && vals[i].isD != 1) {
+	    if (!loop && i != fSlot && vals[i].isD != 1) {
 		blk = 0;		/* un entier lu une fois : MEval */
 	    }
 	}
@@ -12327,6 +12466,84 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		blk = 0;		/* des entiers en cases : MEval */
 	    }
 	    v += pairs[k].nvars;
+	}
+    }
+    if (blk && fold != NULL) {
+	/* un cumul : par blocs seulement s'il se découpe. Le sommet est une
+	 * opération binaire ; un côté (A) ne lit que s et des valeurs fixes,
+	 * l'autre (E) ne lit pas s : E par blocs, puis s = A(s) op E, élément
+	 * par élément, dans l'ordre (le résultat est celui de la boucle) */
+	int r = root, L, R;
+	const MNode *nd;
+
+	blk = 0;
+	while (r >= 0 && g.n[r].kind == MN_POS) {
+	    r = g.n[r].a;
+	}
+	nd = (r >= 0) ? &g.n[r] : NULL;
+	if (fSlot >= 0 && nd != NULL && (nd->kind == MN_ADD
+		|| nd->kind == MN_SUB || nd->kind == MN_MUL
+		|| nd->kind == MN_DIV || nd->kind == MN_POW
+		|| (nd->kind == MN_FUNC && nd->nargs == 2
+		&& (nd->fn == MF_POWF || nd->fn == MF_ATAN2
+		|| nd->fn == MF_FMOD || nd->fn == MF_HYPOT)))) {
+	    unsigned char *mL = (unsigned char *) Tcl_Alloc(g.nnames + 1);
+	    unsigned char *mR = (unsigned char *) Tcl_Alloc(g.nnames + 1);
+	    int aSide = -1, okA = 1;
+
+	    L = (nd->kind == MN_FUNC) ? nd->args[0] : nd->a;
+	    R = (nd->kind == MN_FUNC) ? nd->args[1] : nd->b;
+	    memset(mL, 0, g.nnames + 1);
+	    memset(mR, 0, g.nnames + 1);
+	    MMarkSlots(&g, L, mL);
+	    MMarkSlots(&g, R, mR);
+	    if (mL[fSlot] && !mR[fSlot]) {
+		aSide = 0;
+	    } else if (mR[fSlot] && !mL[fSlot]) {
+		aSide = 1;
+	    }
+	    for (j = 0; aSide >= 0 && j < total; j++) {
+		if (slotOf[j] >= 0 && (aSide ? mR : mL)[slotOf[j]]) {
+		    okA = 0;		/* A lit une variable de boucle */
+		}
+	    }
+	    if (aSide >= 0 && okA
+		    && MDType(&g, aSide ? R : L) == 1
+		    && MDType(&g, aSide ? L : R) == 1) {
+		MDCompile(&g, aSide ? R : L, &dA);
+		MDCompile(&g, aSide ? L : R, &dE);
+		if (dA.maxDepth <= 32 && dE.maxDepth <= 32) {
+		    split = blk = 1;
+		    fSLeft = (aSide == 0);
+		    fOp = (nd->kind == MN_ADD) ? MD_ADD
+			    : (nd->kind == MN_SUB) ? MD_SUB
+			    : (nd->kind == MN_MUL) ? MD_MUL
+			    : (nd->kind == MN_DIV) ? MD_DIV
+			    : (nd->kind == MN_POW) ? MD_POW : MD_F2;
+		    fFn = nd->fn;
+		    fAIsS = (dA.nops == 1 && dA.ops[0].op == MD_VAR
+			    && dA.ops[0].arg == fSlot);
+		    /* A = c * s ou s * c, c constante ou valeur fixe : la
+		     * multiplication faite telle quelle, dans le même ordre */
+		    if (dA.nops == 3 && dA.ops[2].op == MD_MUL) {
+			const MDOp *o0 = &dA.ops[0], *o1 = &dA.ops[1];
+
+			if (o1->op == MD_VAR && o1->arg == fSlot
+				&& (o0->op == MD_CONST || (o0->op == MD_VAR
+				&& o0->arg != fSlot))) {
+			    fAMul = 1;		/* c * s */
+			    fC = (o0->op == MD_CONST) ? o0->k : vals[o0->arg].d;
+			} else if (o0->op == MD_VAR && o0->arg == fSlot
+				&& (o1->op == MD_CONST || (o1->op == MD_VAR
+				&& o1->arg != fSlot))) {
+			    fAMul = 2;		/* s * c */
+			    fC = (o1->op == MD_CONST) ? o1->k : vals[o1->arg].d;
+			}
+		    }
+		}
+	    }
+	    Tcl_Free(mL);
+	    Tcl_Free(mR);
 	}
     }
     if (blk) {
@@ -12364,11 +12581,11 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		int e, nb = (int) (bEnd - bStart);
 		MNum *dst = num + bStart;
 
-		MDRunBlock(&dp, bcols, vals, nb,
+		MDRunBlock(split ? &dE : &dp, bcols, vals, nb,
 			bmem + (size_t) g.nnames * MD_BLK, bbad,
 			(double *) bout);
 		/* tous rangés ; les marqués seront refaits un par un */
-		for (e = 0; e < nb; e++) {
+		for (e = 0; e < nb && !split; e++) {
 		    dst[e].isD = 1;
 		    dst[e].d = bout[e];
 		}
@@ -12377,11 +12594,66 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    allW = 0;		/* au moins un flottant */
 		}
 	    }
-	    if (bAllGood && bEnd != n) {
+	    if (split) {
+		/* le cumul : s = A(s) op E[i], dans l'ordre */
+		const double *bout = bmem
+			+ ((size_t) g.nnames + dp.maxDepth) * MD_BLK;
+		Tcl_Size i2 = i, lim = (bEnd < n - 1) ? bEnd : n - 1;
+
+		/* les formes courantes en boucle serrée : mêmes opérations, même
+		 * ordre, même refus d'un résultat non fini */
+		if (fIsNum && fNum.isD == 1 && fSLeft
+			&& (fOp == MD_ADD || fOp == MD_SUB || fOp == MD_MUL)
+			&& (fAIsS || fAMul)) {
+		    const double *eb = bout - bStart;
+		    double sd = fNum.d, a, r;
+
+		    for (; i2 < lim && !bbad[i2 - bStart]; i2++) {
+			a = fAIsS ? sd : (fAMul == 1) ? fC * sd : sd * fC;
+			r = (fOp == MD_ADD) ? a + eb[i2] : (fOp == MD_SUB)
+				? a - eb[i2] : a * eb[i2];
+			if (isnan(r) || isinf(r)
+				|| (!fAIsS && (isnan(a) || isinf(a)))) {
+			    break;
+			}
+			sd = r;
+		    }
+		    if (i2 > i) {
+			fNum.d = sd;
+			fStale = 1;
+		    }
+		}
+		for (; i2 < bEnd && i2 != n - 1; i2++) {
+		    double a, r;
+
+		    if (bbad[i2 - bStart] || !fIsNum || fNum.isD != 1) {
+			break;
+		    }
+		    if (fAIsS) {
+			a = fNum.d;
+		    } else {
+			vals[fSlot] = fNum;
+			if (!MDRun(&dA, vals, &a)) {
+			    break;
+			}
+		    }
+		    if (!(fSLeft ? MDCombine(fOp, fFn, a, bout[i2 - bStart], &r)
+			    : MDCombine(fOp, fFn, bout[i2 - bStart], a, &r))) {
+			break;
+		    }
+		    fNum.d = r;
+		    fStale = 1;
+		}
+		if (i2 > i) {
+		    i = i2 - 1;		/* faits ; le suivant reprend ici */
+		    continue;
+		}
+		/* l'élément i par le chemin général */
+	    } else if (bAllGood && bEnd != n) {
 		i = bEnd - 1;		/* le bloc entier est fait */
 		continue;
 	    }
-	    if (!bbad[i - bStart] && i != n - 1) {
+	    if (!split && !bbad[i - bStart] && i != n - 1) {
 		Tcl_Size i2 = i + 1;	/* les suivants bons : sautés */
 
 		while (i2 < bEnd && !bbad[i2 - bStart] && i2 != n - 1) {
@@ -12468,6 +12740,13 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		}
 	    }
 	}
+	if (ok && fSlot >= 0) {
+	    if (fIsNum) {
+		vals[fSlot] = fNum;
+	    } else {
+		ok = 0;			/* s n'est pas un nombre : expr */
+	    }
+	}
 	if (ok) {
 	    for (v = 0; v < total; v++) {
 		if (slotOf[v] < 0) {
@@ -12497,6 +12776,10 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		if (MDRun(&dp, vals, &out.d)) {
 		    num[i] = out;
 		    allW = 0;
+		    if (fold != NULL) {
+			fNum = out;
+			fIsNum = fStale = 1;
+		    }
 		    continue;
 		}
 		ok = 0;			/* expr pour cet élément */
@@ -12506,6 +12789,10 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    num[i] = out;		/* un nombre, gardé tel quel */
 	    allD &= out.isD;
 	    allW &= !out.isD;
+	    if (fold != NULL) {
+		fNum = out;
+		fIsNum = fStale = 1;
+	    }
 	} else {
 	    /* par expr, les variables posées dans le cadre de l'appelant */
 	    Tcl_Obj *r;
@@ -12525,12 +12812,41 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    }
 		}
 	    }
+	    if (fold != NULL) {
+		/* s, à jour, pour expr */
+		if (fStale) {
+		    Tcl_DecrRefCount(fObj);
+		    fObj = fNum.isD ? Tcl_NewDoubleObj(fNum.d)
+			    : Tcl_NewWideIntObj(fNum.w);
+		    Tcl_IncrRefCount(fObj);
+		    fStale = 0;
+		}
+		if (Tcl_ObjSetVar2(interp, fold->name, NULL, fObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    rc = TCL_ERROR;
+		    n = i;
+		    goto loopdone;
+		}
+	    }
 	    if (Tcl_ExprObj(interp, body, &r) != TCL_OK) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (type map element %" TCL_SIZE_MODIFIER "d)", i));
 		rc = TCL_ERROR;
 		n = i;
 		goto loopdone;
+	    }
+	    if (fold != NULL) {
+		/* la nouvelle valeur de s (l'objet d'expr, tel quel) */
+		MNum t;
+
+		Tcl_DecrRefCount(fObj);
+		fObj = r;		/* (la référence d'expr) */
+		fStale = 0;
+		fIsNum = !TclIsAnnotated(r) && MNumOf(r, &t);
+		if (fIsNum) {
+		    fNum = t;
+		}
+		continue;
 	    }
 	    {
 		MNum t;
@@ -12581,6 +12897,23 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		break;
 	    }
 	}
+    }
+    if (fold != NULL) {
+	if (rc == TCL_OK) {
+	    if (fStale) {
+		Tcl_DecrRefCount(fObj);
+		fObj = fNum.isD ? Tcl_NewDoubleObj(fNum.d)
+			: Tcl_NewWideIntObj(fNum.w);
+		Tcl_IncrRefCount(fObj);
+	    }
+	    if (Tcl_ObjSetVar2(interp, fold->name, NULL, fObj,
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		rc = TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, fObj);
+	    }
+	}
+	goto results;
     }
     if (rc == TCL_OK && n > 0 && (allD || allW)) {
 	/* que des nombres d'un genre : une liste en cases, sans objets */
@@ -12658,6 +12991,15 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     if (bcols != NULL) {
 	Tcl_Free(bcols);
 	Tcl_Free(bmem);
+    }
+    if (fObj != NULL) {
+	Tcl_DecrRefCount(fObj);
+    }
+    if (dA.ops) {
+	Tcl_Free(dA.ops);
+    }
+    if (dE.ops) {
+	Tcl_Free(dE.ops);
     }
     MProgFree(&g);
     if (dp.ops) {

@@ -1,0 +1,18 @@
+produit scalaire : -0.75
+même, boucle : -0.75
+s après : -0.75
+en cases : -0.75
+lissage : 0.42266500000000007
+lissage, boucle : 0.42266500000000007
+récurrence : -2.75
+entiers exacts : 243290200817664000000000000000000000000
+liste vide : 42
+texte : abc
+max par ?: : 4.0
+débordement : Inf
+division par zéro : ERR divide by zero
+s variable de boucle : ERR type map: "u" is both the -fold variable and a loop variable
+-fold incomplet : ERR type map: -fold needs {name initialValue}
+signature typée : -0.75
+valeur fixe : 2.625
+1000, blocs = boucle : 1
