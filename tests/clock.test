@@ -36317,6 +36317,60 @@ test clock-46.7 {regression test - switch day by large not-valid time, see bug [
 	 [clock scan 48:00:00 -base 0 -gmt 1 -format %H:%M:%S]
 } {86399 86400 172800}
 
+test clock-46.35 {relative months and years before the common era} {
+    set f {%Y-%m-%d %EE}
+    set res {}
+    foreach {b s} {
+	{0101-03-15 B.C.E.} {1 year}	{0101-03-15 B.C.E.} {13 months}
+	{0101-03-15 B.C.E.} {1 year ago}	{0101-03-15 B.C.E.} {next Feb}
+	{0101-03-15 B.C.E.} {100 years}	{0101-03-15 B.C.E.} {101 years}
+	{0001-03-15 C.E.} {-1 year}	{0005-02-29 B.C.E.} {1 year}
+	{0001-12-15 B.C.E.} {1 month}	{0001-01-15 C.E.} {-1 month}
+    } {
+	set base [clock scan $b -format $f -gmt 1]
+	lappend res [clock format [clock scan $s -base $base -gmt 1] \
+		-gmt 1 -format $f]
+    }
+    set base [clock scan {0101-03-15 B.C.E.} -format $f -gmt 1]
+    lappend res [clock format [clock add $base 1 year -gmt 1] -gmt 1 -format $f]
+} [list {0100-03-15 B.C.E.} {0100-04-15 B.C.E.} {0102-03-15 B.C.E.} \
+	{0100-02-15 B.C.E.} {0001-03-15 B.C.E.} {0001-03-15 C.E.} \
+	{0001-03-15 B.C.E.} {0004-02-28 B.C.E.} {0001-01-15 C.E.} \
+	{0001-12-15 B.C.E.} {0100-03-15 B.C.E.}]
+test clock-46.36 {clock add: date out of range} {
+    list {*}[lmap a {
+	{2147483647 years} {2147483647 months} {2147483647 days}
+	{-2147483647 days}
+    } {
+	list [catch {clock add 0 {*}$a -gmt 1} msg] $msg
+    }] [clock format [clock add 0 5000000 years -gmt 1] -gmt 1 \
+	    -format %Y-%m-%d]
+} [list {1 {integer value too large to represent}} \
+	{1 {integer value too large to represent}} \
+	{1 {integer value too large to represent}} \
+	{1 {integer value too large to represent}} 5001970-01-01]
+test clock-46.41 {julian day helpers out of range} {
+    set w {era CE iso8601Year 2026}
+    set m {era CE month 1 dayOfMonth 1}
+    lmap {cmd d} [list \
+	    GetJulianDayFromEraYearWeekDay \
+		[dict merge $w {iso8601Week 1 dayOfWeek 1}] \
+	    GetJulianDayFromEraYearWeekDay \
+		[dict merge $w {iso8601Week 2147483647 dayOfWeek 7}] \
+	    GetJulianDayFromEraYearMonthDay [dict merge $m {year 2026}] \
+	    GetJulianDayFromEraYearMonthDay [dict merge $m {year 3000000000}] \
+	    GetJulianDayFromEraYearMonthDay \
+		[dict merge $m {year 2147483647 month 2147483647}]] {
+	if {[catch {::tcl::clock::$cmd $d 2361222} r]} {
+	    list 1 $r
+	} else {
+	    list 0 [dict get $r julianDay]
+	}
+    }
+} [list {0 2461039} {1 {integer value too large to represent}} \
+	{0 2461042} {1 {integer value too large to represent}} \
+	{1 {integer value too large to represent}}]
+
 test clock-47.1 {regression test - four-digit time} {
     clock scan 0012
 } [clock scan 0012 -format %H%M]

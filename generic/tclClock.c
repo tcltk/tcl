@@ -29,6 +29,17 @@
 
 #define JULIAN_DAY_POSIX_EPOCH		2440588
 #define SECONDS_PER_DAY			86400
+
+/*
+ * The julian day is stored as a Tcl_WideInt, but the calendar calculations
+ * use int. Julian days computed from a date or from local seconds must be in
+ * this range (about 5.8 million years in each direction); out of range they
+ * raise an error instead of wrapping around. [clock format] of seconds out of
+ * this range keeps working for %s (see clock-61.3).
+ */
+
+#define JDAY_MIN			(-0x7F000000LL)
+#define JDAY_MAX			0x7F000000LL
 #define JULIAN_SEC_POSIX_EPOCH	      (((Tcl_WideInt)JULIAN_DAY_POSIX_EPOCH) \
 					* SECONDS_PER_DAY)
 #define FOUR_CENTURIES			146097	/* days */
@@ -108,7 +119,7 @@ typedef struct TclDateFields {
     int tzOffset;		/* Time zone offset in seconds east of
 				 * Greenwich */
     Tcl_Obj *tzName;		/* Time zone name */
-    int julianDay;		/* Julian Day Number in local time zone */
+    Tcl_WideInt julianDay;	/* Julian Day Number in local time zone */
     enum {BCE=1, CE=0} era;	/* Era */
     int gregorian;		/* Flag == 1 if the date is Gregorian */
     int year;			/* Year of the era */
@@ -159,7 +170,7 @@ static void		GetMonthDay(TclDateFields *);
 static void		GetJulianDayFromEraYearWeekDay(TclDateFields *, int);
 static void		GetJulianDayFromEraYearMonthDay(TclDateFields *, int);
 static int		IsGregorianLeapYear(TclDateFields *);
-static int		WeekdayOnOrBefore(int, int);
+static Tcl_WideInt	WeekdayOnOrBefore(int, Tcl_WideInt);
 static Tcl_ObjCmdProc	ClockClicksObjCmd;
 static Tcl_ObjCmdProc	ClockConvertlocaltoutcObjCmd;
 static Tcl_ObjCmdProc	ClockGetdatefieldsObjCmd;
@@ -344,8 +355,17 @@ ClockConvertlocaltoutcObjCmd(
     }
     if ((TclGetWideIntFromObj(interp, secondsObj,
 	    &fields.localSeconds) != TCL_OK)
-	|| (TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK)
-	|| ConvertLocalToUTC(interp, &fields, objv[2], changeover)) {
+	|| (TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK)) {
+	return TCL_ERROR;
+    }
+    if (fields.localSeconds < (JDAY_MIN - JULIAN_DAY_POSIX_EPOCH)
+	    * SECONDS_PER_DAY
+	    || fields.localSeconds >= (JDAY_MAX + 1 - JULIAN_DAY_POSIX_EPOCH)
+	    * SECONDS_PER_DAY) {
+	Tcl_SetObjResult(interp, lit[LIT_INTEGER_VALUE_TOO_LARGE]);
+	return TCL_ERROR;
+    }
+    if (ConvertLocalToUTC(interp, &fields, objv[2], changeover)) {
 	return TCL_ERROR;
     }
 
@@ -449,9 +469,9 @@ ClockGetdatefieldsObjCmd(
      * when the remainder is negative (i.e. if the quotient was rounded up).
      */
 
-    fields.julianDay = (int) ((fields.localSeconds / SECONDS_PER_DAY) -
+    fields.julianDay = (fields.localSeconds / SECONDS_PER_DAY) -
 	    ((fields.localSeconds % SECONDS_PER_DAY) < 0) +
-	    JULIAN_DAY_POSIX_EPOCH);
+	    JULIAN_DAY_POSIX_EPOCH;
 
     /*
      * Convert to Julian or Gregorian calendar.
@@ -471,7 +491,7 @@ ClockGetdatefieldsObjCmd(
     Tcl_DictObjPut(NULL, dict, lit[LIT_TZOFFSET],
 	    Tcl_NewIntObj(fields.tzOffset));
     Tcl_DictObjPut(NULL, dict, lit[LIT_JULIANDAY],
-	    Tcl_NewIntObj(fields.julianDay));
+	    Tcl_NewWideIntObj(fields.julianDay));
     Tcl_DictObjPut(NULL, dict, lit[LIT_GREGORIAN],
 	    Tcl_NewIntObj(fields.gregorian));
     Tcl_DictObjPut(NULL, dict, lit[LIT_ERA],
@@ -544,6 +564,7 @@ FetchIntField(
     int *storePtr)
 {
     Tcl_Obj *value = NULL;
+    Tcl_WideInt w;
 
     if (Tcl_DictObjGet(interp, dict, key, &value) != TCL_OK) {
 	return TCL_ERROR;
@@ -553,7 +574,22 @@ FetchIntField(
 		"expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
-    return TclGetIntFromObj(interp, value, storePtr);
+
+    /*
+     * TclGetIntFromObj() accepts values up to UINT_MAX and wraps them
+     * around, so check the range here.
+     */
+
+    if (TclGetWideIntFromObj(interp, value, &w) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (w < INT_MIN || w > INT_MAX) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"integer value too large to represent", -1));
+	return TCL_ERROR;
+    }
+    *storePtr = (int) w;
+    return TCL_OK;
 }
 
 static int
@@ -598,6 +634,10 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
      */
 
     GetJulianDayFromEraYearMonthDay(&fields, changeover);
+    if (fields.julianDay < JDAY_MIN || fields.julianDay > JDAY_MAX) {
+	Tcl_SetObjResult(interp, lit[LIT_INTEGER_VALUE_TOO_LARGE]);
+	return TCL_ERROR;
+    }
 
     /*
      * Store Julian day in the dictionary - copy on write.
@@ -609,7 +649,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	copied = 1;
     }
     result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
-	    Tcl_NewIntObj(fields.julianDay));
+	    Tcl_NewWideIntObj(fields.julianDay));
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
@@ -682,6 +722,10 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
      */
 
     GetJulianDayFromEraYearWeekDay(&fields, changeover);
+    if (fields.julianDay < JDAY_MIN || fields.julianDay > JDAY_MAX) {
+	Tcl_SetObjResult(interp, lit[LIT_INTEGER_VALUE_TOO_LARGE]);
+	return TCL_ERROR;
+    }
 
     /*
      * Store Julian day in the dictionary - copy on write.
@@ -693,7 +737,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	copied = 1;
     }
     result = Tcl_DictObjPut(interp, dict, lit[LIT_JULIANDAY],
-	    Tcl_NewIntObj(fields.julianDay));
+	    Tcl_NewWideIntObj(fields.julianDay));
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, dict);
     }
@@ -867,7 +911,7 @@ ConvertLocalToUTCUsingC(
      */
 
     jsec = fields->localSeconds + JULIAN_SEC_POSIX_EPOCH;
-    fields->julianDay = (int) (jsec / SECONDS_PER_DAY);
+    fields->julianDay = jsec / SECONDS_PER_DAY;
     secondOfDay = (int)(jsec % SECONDS_PER_DAY);
     if (secondOfDay < 0) {
 	secondOfDay += SECONDS_PER_DAY;
@@ -1246,7 +1290,7 @@ GetYearWeekDay(
     }
 
     fields->iso8601Year = temp.iso8601Year;
-    dayOfFiscalYear = fields->julianDay - temp.julianDay;
+    dayOfFiscalYear = (int) (fields->julianDay - temp.julianDay);
     fields->iso8601Week = (dayOfFiscalYear / 7) + 1;
     fields->dayOfWeek = (dayOfFiscalYear + 1) % 7;
     if (fields->dayOfWeek < 1) { /* Mon .. Sun == 1 .. 7 */
@@ -1277,7 +1321,7 @@ GetGregorianEraYearDay(
     TclDateFields *fields,	/* Date fields containing 'julianDay' */
     int changeover)		/* Gregorian transition date */
 {
-    int jday = fields->julianDay;
+    int jday = (int) fields->julianDay;
     int day;
     int year;
     int n;
@@ -1426,7 +1470,7 @@ GetJulianDayFromEraYearWeekDay(
     int changeover)		/* Julian Day Number of the Gregorian
 				 * transition */
 {
-    int firstMonday;		/* Julian day number of week 1, day 1 in the
+    Tcl_WideInt firstMonday;	/* Julian day number of week 1, day 1 in the
 				 * given year */
     TclDateFields firstWeek;
 
@@ -1450,7 +1494,8 @@ GetJulianDayFromEraYearWeekDay(
      * Advance to the given week and day.
      */
 
-    fields->julianDay = firstMonday + 7 * (fields->iso8601Week - 1)
+    fields->julianDay = firstMonday
+	    + 7 * ((Tcl_WideInt) fields->iso8601Week - 1)
 	    + fields->dayOfWeek - 1;
 }
 
@@ -1476,11 +1521,16 @@ GetJulianDayFromEraYearMonthDay(
     TclDateFields *fields,	/* Date to convert */
     int changeover)		/* Gregorian transition date as a Julian Day */
 {
-    int ym1, ym1o4, ym1o100, ym1o400;
-    int year, month, mm1, q, r;
+    /*
+     * The year and the month can be anywhere in the int range, so calculate
+     * in Tcl_WideInt. The caller checks that the julian day is in range.
+     */
+
+    Tcl_WideInt year, mm1, q, ym1, ym1o4, ym1o100, ym1o400;
+    int month, r;
 
     if (fields->era == BCE) {
-	year = 1 - fields->year;
+	year = 1 - (Tcl_WideInt) fields->year;
     } else {
 	year = fields->year;
     }
@@ -1489,10 +1539,9 @@ GetJulianDayFromEraYearMonthDay(
      * Reduce month modulo 12.
      */
 
-    month = fields->month;
-    mm1 = month - 1;
+    mm1 = (Tcl_WideInt) fields->month - 1;
     q = mm1 / 12;
-    r = (mm1 % 12);
+    r = (int) (mm1 % 12);
     if (r < 0) {
 	r += 12;
 	q -= 1;
@@ -1508,10 +1557,10 @@ GetJulianDayFromEraYearMonthDay(
     fields->gregorian = 1;
     if (year < 1) {
 	fields->era = BCE;
-	fields->year = 1-year;
+	fields->year = (1 - year > INT_MAX) ? INT_MAX : (int) (1 - year);
     } else {
 	fields->era = CE;
-	fields->year = year;
+	fields->year = (year > INT_MAX) ? INT_MAX : (int) year;
     }
 
     /*
@@ -1528,7 +1577,7 @@ GetJulianDayFromEraYearMonthDay(
     if (ym1 >= 0) {
 	ym1o4 = ym1 / 4;
     } else {
-	ym1o4 = - (int) (((unsigned int) -ym1) / 4);
+	ym1o4 = - (Tcl_WideInt) (((Tcl_WideUInt) -ym1) / 4);
     }
 #endif
     if (ym1 % 4 < 0) {
@@ -1543,8 +1592,9 @@ GetJulianDayFromEraYearMonthDay(
 	ym1o400--;
     }
     fields->julianDay = JDAY_1_JAN_1_CE_GREGORIAN - 1
-	    + fields->dayOfMonth
-	    + daysInPriorMonths[IsGregorianLeapYear(fields)][month - 1]
+	    + (Tcl_WideInt) fields->dayOfMonth
+	    + daysInPriorMonths[year % 4 == 0
+		    && (year % 100 != 0 || year % 400 == 0)][month - 1]
 	    + (ONE_YEAR * ym1)
 	    + ym1o4
 	    - ym1o100
@@ -1558,7 +1608,7 @@ GetJulianDayFromEraYearMonthDay(
     if (fields->julianDay < changeover) {
 	fields->gregorian = 0;
 	fields->julianDay = JDAY_1_JAN_1_CE_JULIAN - 1
-		+ fields->dayOfMonth
+		+ (Tcl_WideInt) fields->dayOfMonth
 		+ daysInPriorMonths[year%4 == 0][month - 1]
 		+ (365 * ym1)
 		+ ym1o4;
@@ -1583,7 +1633,7 @@ int
 IsGregorianLeapYear(
     TclDateFields *fields)	/* Date to test */
 {
-    int year = fields->year;
+    Tcl_WideInt year = fields->year;
 
     if (fields->era == BCE) {
 	year = 1 - year;
@@ -1615,10 +1665,10 @@ IsGregorianLeapYear(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 WeekdayOnOrBefore(
     int dayOfWeek,		/* Day of week; Sunday == 0 or 7 */
-    int julianDay)		/* Reference date */
+    Tcl_WideInt julianDay)	/* Reference date */
 {
     int k = (dayOfWeek + 6) % 7;
     if (k < 0) {
