@@ -53,3 +53,5 @@ apply-type.patch
 oo-methodes-typees.patch
 procs-typees-createurs.patch
 comparaison-annotee-grands-entiers.patch
+foreach-cases-sur-place.patch
+champ-indexe-specialise.patch

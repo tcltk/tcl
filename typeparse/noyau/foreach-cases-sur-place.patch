@@ -1,0 +1,26 @@
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -6931,6 +6931,23 @@
+ 
+ 		valIndex = (iterNum * numVars);
+ 		for (j = 0;  j < numVars;  j++) {
++		    if (hasAbstractList && valIndex < listLen) {
++			/* TIP 764 : l'élément d'une liste en cases écrit dans
++			 * la valeur que la variable est seule à tenir */
++			Var *vp = LOCAL(varListPtr->varIndexes[j]);
++
++			while (TclIsVarLink(vp)) {
++			    vp = vp->value.linkPtr;
++			}
++			if (TclIsVarScalar(vp) && !TclIsVarUndefined(vp)
++				&& !TclIsVarTricky(vp, VAR_TRACED_WRITE
++				    |VAR_DEAD_HASH|VAR_CONSTANT|VAR_CONTRACT)
++				&& TclCompactIndexInto(listPtr, valIndex,
++				    vp->value.objPtr)) {
++			    valIndex++;
++			    continue;
++			}
++		    }
+ 		    if (valIndex >= listLen) {
+ 			TclNewObj(valuePtr);
+ 		    } else {

@@ -375,7 +375,8 @@ ParseIndexLexeme(
 	case '*':
 	    /* "*" seul (suivi de la fin, de . , : ) ou d'un blanc) : toutes
 	     * les parties ; sinon le dépliage unaire. */
-	    if (start + 1 == limit || strchr(".,:) \t", start[1]) != NULL) {
+	    /* 23/11 : "*:" est le dépliage d'une tranche (*:2), pas « tout » */
+	    if (start + 1 == limit || strchr(".,) \t", start[1]) != NULL) {
 		*lexemePtr = ALLWORD;
 		*literalPtr = Tcl_NewStringObj("*", 1);
 		return 1;
@@ -4438,7 +4439,12 @@ RangePathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
 	return 0;
     }
     if (!((tp->kind == TCLT_INT && tp->bitWidth > 64)
-	    || (tp->kind == TCLT_LIST && TclIsCompact(v)))) {
+	    || (tp->kind == TCLT_LIST && TclIsCompact(v))
+	    || (tp->kind == TCLT_LIST && !Tcl_IsShared(v)
+		&& TclHasInternalRep(v, &tclListType)
+		&& tp->elem != NULL && (tp->elem->kind == TCLT_INT
+		    || tp->elem->kind == TCLT_DOUBLE)
+		&& !tp->elem->nominal && tp->elem->binLink == NULL))) {
 	return 0;
     }
     name = Tcl_GetStringFromObj(part2Ptr, &len);
@@ -4498,6 +4504,18 @@ RangePathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
 	    goto done;
 	}
 	Tcl_IncrRefCount(c);
+	if (!TclIsCompact(v)) {
+	    /* liste ordinaire de nombres, à la seule variable : la même
+	     * valeur (vérifiée une fois) partagée par les cases choisies */
+	    for (k = 0, i = first; k < count; k++, i += stride) {
+		if (TclListObjSetElement(NULL, v, i, c) != TCL_OK) {
+		    goto done;		/* (n'arrive pas : i est dans v) */
+		}
+	    }
+	    TclInvalidateStringRep(v);
+	    ok = 1;
+	    goto written;
+	}
 	if (count > 0 && !TclCompactWriteScalar(v, first, 0, NULL, c)) {
 	    goto done;
 	}
@@ -4507,6 +4525,7 @@ RangePathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
 	TclInvalidateStringRep(v);
 	ok = 1;
     }
+  written:
     if (ok) {
 	Tcl_InvalidateStringRep(a);
     }
@@ -4703,6 +4722,119 @@ FastAllParts(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
  * Variantes qui travaillent sur un Var déjà résolu (exécuteur : variables
  * locales compilées, résolues sans nom).
  */
+/*
+ * 23/11 : P(i.champ), i en chiffres, champ un nom simple, P une liste de
+ * produits dont le type a une opération elemField : le champ lu sans
+ * analyser le chemin (son texte change à chaque tour d'une boucle).
+ */
+static Tcl_Obj *
+OpsFieldNamed(TclType *lt, const TclTypeOps *ops, Tcl_Obj *v, Tcl_Size i,
+	const char *nm)
+{
+    Tcl_Size f;
+
+    for (f = 0; f < lt->elem->nfields; f++) {
+	if (lt->elem->fields[f].name != NULL
+		&& strcmp(Tcl_GetString(lt->elem->fields[f].name), nm) == 0) {
+	    return ops->elemField(lt, v, i, f);
+	}
+    }
+    return NULL;
+}
+
+static Tcl_Obj *
+OpsElemFieldRead(Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v;
+    TclType *lt;
+    const TclTypeOps *ops;
+    const char *s, *p, *nm;
+    Tcl_Size len, i = 0;
+
+    if (TclAnnotInfo(a, &v, &lt, NULL, NULL) != 1 || lt == NULL
+	    || lt->kind != TCLT_LIST || lt->elem == NULL
+	    || lt->elem->kind != TCLT_PRODUCT
+	    || (ops = TclTypeOpsOf(lt)) == NULL || ops->elemField == NULL) {
+	return NULL;
+    }
+    s = Tcl_GetStringFromObj(part2Ptr, &len);
+    for (p = s; *p >= '0' && *p <= '9'; p++) {
+	if (i > (TCL_SIZE_MAX - 9) / 10) {
+	    return NULL;
+	}
+	i = 10 * i + (*p - '0');
+    }
+    if (p == s || (p - s > 1 && s[0] == '0') || *p != '.') {
+	return NULL;
+    }
+    nm = ++p;
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '_')) {
+	return NULL;
+    }
+    for (; *p; p++) {
+	if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
+		|| (*p >= '0' && *p <= '9') || *p == '_')) {
+	    return NULL;
+	}
+    }
+    return OpsFieldNamed(lt, ops, v, i, nm);
+}
+
+/*
+ * 23/11 : la même lecture, pour le bytecode de $P($i.champ) (indexConcat
+ * suivi de loadArray) : IDX la valeur de $i, LIT le littéral ".champ".
+ * NULL : le chemin ordinaire.
+ */
+Tcl_Obj *
+TclTypedElemFieldFast(Tcl_Obj *a, Tcl_Obj *idx, Tcl_Obj *lit)
+{
+    Tcl_Obj *v;
+    TclType *lt;
+    const TclTypeOps *ops;
+    const char *p, *nm;
+    Tcl_WideInt w;
+
+    if (TclAnnotInfo(a, &v, &lt, NULL, NULL) != 1 || lt == NULL
+	    || lt->kind != TCLT_LIST || lt->elem == NULL
+	    || lt->elem->kind != TCLT_PRODUCT
+	    || (ops = TclTypeOpsOf(lt)) == NULL || ops->elemField == NULL) {
+	return NULL;
+    }
+    if (TclHasInternalRep(idx, &tclIntType)) {
+	w = idx->internalRep.wideValue;
+    } else {
+	const char *s = Tcl_GetString(idx);
+
+	for (w = 0, p = s; *p >= '0' && *p <= '9'; p++) {
+	    if (w > (WIDE_MAX - 9) / 10) {
+		return NULL;
+	    }
+	    w = 10 * w + (*p - '0');
+	}
+	if (p == s || *p != '\0' || (p - s > 1 && s[0] == '0')) {
+	    return NULL;
+	}
+    }
+    if (w < 0 || w > TCL_SIZE_MAX) {
+	return NULL;
+    }
+    p = Tcl_GetString(lit);
+    if (*p++ != '.') {
+	return NULL;
+    }
+    nm = p;
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '_')) {
+	return NULL;
+    }
+    for (; *p; p++) {
+	if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
+		|| (*p >= '0' && *p <= '9') || *p == '_')) {
+	    return NULL;
+	}
+    }
+    return OpsFieldNamed(lt, ops, v, (Tcl_Size) w, nm);
+}
+
 int
 TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	Tcl_Obj **resultPtr)
@@ -4716,7 +4848,25 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (part2Ptr->typePtr == &typePathType
+    if (part2Ptr->typePtr != &typePathType
+	    && (res = OpsElemFieldRead(varPtr->value.objPtr, part2Ptr))
+	    != NULL) {
+	/* 23/11 : P(i.champ) par la spécialisation du type */
+	if (TclTypeOpsMode() == TCL_TYPE_OPS_CHECK) {
+	    Tcl_Obj *g = NULL;
+
+	    Tcl_IncrRefCount(res);
+	    if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &g)
+		    != TCL_OK) {
+		Tcl_DecrRefCount(res);
+		return TCL_ERROR;
+	    }
+	    TclTypeOpsSame("elemField", res, g);
+	    Tcl_DecrRefCount(res);
+	    *resultPtr = g;
+	    return TCL_OK;
+	}
+    } else if (part2Ptr->typePtr == &typePathType
 	    && ((CompiledPath *) part2Ptr->internalRep.twoPtrValue.ptr1)->chain) {
 	/* a.b.c déjà compilé : la descente directe */
 	res = FastChain(interp, varPtr->value.objPtr, &((CompiledPath *)

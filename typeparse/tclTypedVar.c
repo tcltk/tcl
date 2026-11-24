@@ -218,7 +218,7 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	Tcl_Obj **valuePtrPtr, int *flagsPtr, Tcl_Obj **tmpPtrPtr)
 {
     Tcl_Interp *errInterp = (*flagsPtr & TCL_LEAVE_ERR_MSG) ? interp : NULL;
-    Tcl_Obj *value = *valuePtrPtr, *cur, *curContent = NULL, *res;
+    Tcl_Obj *value = *valuePtrPtr, *cur = NULL, *curContent = NULL, *res;
     Tcl_Obj *content;
     TclType *contract = NULL, *at;
     int variant = -1, status, avar;
@@ -236,6 +236,39 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 			!= 1) {
 	    varPtr->flags &= ~(VAR_TYPED|VAR_CONTRACT);	/* bit orphelin */
 	    contract = NULL;
+	}
+    }
+
+    /*
+     * 23/11 : {double}x ou {int}x (types simples) qui reçoit un nombre nu de
+     * son genre (le résultat d'expr) : si la variable est seule à tenir sa
+     * valeur et son contenu, le nombre est écrit dedans. Aucun objet neuf,
+     * aucune vérification à refaire (un double est un double).
+     */
+    if (contract != NULL && variant < 0 && !(*flagsPtr & TCL_APPEND_VALUE)
+	    && !contract->nominal && !contract->refine
+	    && contract->bitWidth == 0 && contract->binKind == 0
+	    && contract->metaMask == 0 && curContent != NULL
+	    && !Tcl_IsShared(cur) && !Tcl_IsShared(curContent)
+	    && TclAnnotIsSettled(cur) && !TclIsAnnotated(value)
+	    && ((contract->kind == TCLT_DOUBLE
+		&& TclHasInternalRep(value, &tclDoubleType)
+		&& TclHasInternalRep(curContent, &tclDoubleType))
+	    || (contract->kind == TCLT_INT
+		&& TclHasInternalRep(value, &tclIntType)
+		&& TclHasInternalRep(curContent, &tclIntType)))) {
+	if (TclAnnotIsPlainTyped(cur)) {
+	    if (contract->kind == TCLT_DOUBLE) {
+		curContent->internalRep.doubleValue
+			= value->internalRep.doubleValue;
+	    } else {
+		curContent->internalRep.wideValue
+			= value->internalRep.wideValue;
+	    }
+	    TclInvalidateStringRep(curContent);
+	    TclInvalidateStringRep(cur);
+	    *valuePtrPtr = cur;
+	    return TCL_OK;
 	}
     }
 
@@ -1713,6 +1746,47 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 	    valueA = TclNewAnnotatedOwn(fresh, TclTypeRefFor(interp, tp, -1));
 	    goto store;
+	}
+    }
+
+    /*
+     * 23/11 : voie rapide pour une liste de nombres ou de chaînes simples,
+     * set {list.int}L {*}$valeurs : des valeurs nues, sans règle de
+     * conversion pour les éléments : la liste entière est vérifiée d'un
+     * coup (comme type cast), au lieu d'un passage par valeur. Au moindre
+     * écart, la voie générale reprend tout et donne son message.
+     */
+    if (status == TCLA_RAW && ctorPath == NULL && tp->kind == TCLT_LIST
+	    && sumTp == NULL && forced < 0 && nargs > 1
+	    && tp->binLink == NULL && tp->elem != NULL
+	    && (tp->elem->kind == TCLT_INT || tp->elem->kind == TCLT_DOUBLE
+		|| tp->elem->kind == TCLT_STRING)
+	    && tp->elem->binLink == NULL
+	    && !TclTypeHasBareRule(interp, tp->elem)
+	    && !TclTypeHasBareRule(interp, tp)) {
+	for (i = 0; i < nargs; i++) {
+	    if (TclIsAnnotated(objv[2 + i])) {
+		break;
+	    }
+	}
+	if (i == nargs) {
+	    Tcl_Obj *fresh = Tcl_NewListObj(nargs, objv + 2), *cv;
+
+	    Tcl_IncrRefCount(fresh);
+	    cv = TclTypedConform(NULL, tp, fresh);
+	    Tcl_DecrRefCount(fresh);
+	    if (cv != NULL && !TclIsAnnotated(cv)) {
+		if (cv->refCount == 0) {
+		    valueA = TclNewAnnotatedOwn(cv, TclTypeRefFor(interp, tp,
+			    -1));
+		} else {
+		    valueA = TclNewAnnotated(interp, tp, -1, cv);
+		}
+		goto store;
+	    }
+	    if (cv != NULL) {
+		TclDiscard(cv);
+	    }
 	}
     }
 

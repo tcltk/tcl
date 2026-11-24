@@ -542,6 +542,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
 	((Interp *) interp)->typesData = NULL;
     }
     d->dead = 1;
+    d->interp = NULL;
     d->refs++;				/* pendant le nettoyage */
     for (hPtr = Tcl_FirstHashEntry(&d->converts, &search); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&search)) {
@@ -643,6 +644,11 @@ FreeTypeData(TypeData *d)
     Tcl_DeleteHashTable(&d->canon);
     Tcl_DeleteHashTable(&d->parsed);
     Tcl_DeleteHashTable(&d->converts);
+    if (d->specs != NULL) {
+	Tcl_Free(d->specs);
+	d->specs = NULL;
+	d->nSpecs = d->capSpecs = 0;
+    }
     Tcl_DeleteHashTable(&d->derefs);
     LambdasFlush(d);
     Tcl_DeleteHashTable(&d->lambdas);
@@ -3952,6 +3958,9 @@ FindRule(TypeData *d, const char *from, const char *to)
     char key[512];
     Tcl_HashEntry *hPtr;
 
+    if (d->converts.numEntries == 0) {
+	return NULL;			/* aucune règle : pas de clé à former */
+    }
     snprintf(key, sizeof(key), "%s\1%s", from, to);
     hPtr = Tcl_FindHashEntry(&d->converts, key);
     return hPtr != NULL ? (Tcl_Obj *) Tcl_GetHashValue(hPtr) : NULL;
@@ -3993,6 +4002,173 @@ ApplyBareRule(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *rule,
     Tcl_SetStringObj(content, s, len);
     TclDiscard(res);
     return TCL_OK;
+}
+
+/*
+ * 23/11 : le registre des spécialisations. Une déclaration fait monter la
+ * génération : chaque type refait son choix à son prochain usage (les types
+ * déjà définis profitent d'une bibliothèque chargée après eux).
+ */
+int
+TclTypesRegisterOps(Tcl_Interp *interp, const TclTypeSpec *spec)
+{
+    TypeData *d = GetData(interp);
+
+    if (d == NULL || spec == NULL || spec->match == NULL
+	    || spec->ops == NULL || spec->version != TCL_TYPE_OPS_VERSION
+	    || spec->ops->version != TCL_TYPE_OPS_VERSION) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type ops \"%s\": "
+		    "version %d expected", (spec && spec->name) ? spec->name
+		    : "?", TCL_TYPE_OPS_VERSION));
+	}
+	return TCL_ERROR;
+    }
+    if (d->nSpecs == d->capSpecs) {
+	d->capSpecs = d->capSpecs ? 2 * d->capSpecs : 8;
+	d->specs = (TclTypeSpec *) Tcl_Realloc(d->specs,
+		d->capSpecs * sizeof(TclTypeSpec));
+    }
+    d->specs[d->nSpecs++] = *spec;
+    d->opsGen++;
+    return TCL_OK;
+}
+
+/*
+ * Mode de contrôle (variable d'environnement TCL_TYPE_OPS) : "off", aucune
+ * spécialisation ; "check", la spécialisation ET le chemin général, comparés
+ * (texte et type) ; un écart est écrit sur stderr et le résultat général
+ * l'emporte. Lu une fois.
+ */
+int
+TclTypeOpsMode(void)
+{
+    static int mode = -1;
+
+    if (mode < 0) {
+	const char *e = getenv("TCL_TYPE_OPS");
+
+	mode = (e == NULL) ? TCL_TYPE_OPS_ON : strcmp(e, "off") == 0
+		? TCL_TYPE_OPS_OFF : strcmp(e, "check") == 0
+		? TCL_TYPE_OPS_CHECK : TCL_TYPE_OPS_ON;
+    }
+    return mode;
+}
+
+/* Compare la valeur d'une spécialisation (OPS) à celle du chemin général
+ * (GEN) ; 1 si égales. */
+int
+TclTypeOpsSame(const char *where, Tcl_Obj *ops, Tcl_Obj *gen)
+{
+    TclType *t1 = NULL, *t2 = NULL;
+    int same;
+
+    if (ops == NULL || gen == NULL) {
+	same = (ops == gen);
+    } else {
+	TclAnnotInfo(ops, NULL, &t1, NULL, NULL);
+	TclAnnotInfo(gen, NULL, &t2, NULL, NULL);
+	same = (t1 == t2) && strcmp(Tcl_GetString(ops), Tcl_GetString(gen)) == 0;
+    }
+    if (!same) {
+	fprintf(stderr, "type ops %s : \"%s\" (%s) au lieu de \"%s\" (%s)\n",
+		where, ops ? Tcl_GetString(ops) : "NULL", t1 ? t1->name : "-",
+		gen ? Tcl_GetString(gen) : "NULL", t2 ? t2->name : "-");
+    }
+    return same;
+}
+
+const TclTypeOps *
+TclTypeOpsOf(const TclType *tp)
+{
+    TypeData *d;
+    TclType *t = (TclType *) tp;
+    Tcl_Size k;
+    int best = 0, found = 0;
+
+    if (tp == NULL || (d = tp->owner) == NULL || d->dead
+	    || TclTypeOpsMode() == TCL_TYPE_OPS_OFF) {
+	return NULL;
+    }
+    if (t->opsGen == d->opsGen) {
+	return t->ops;
+    }
+    t->ops = NULL;
+    for (k = 0; k < d->nSpecs; k++) {
+	const TclTypeSpec *sp = &d->specs[k];
+
+	if ((!found || sp->priority > best)
+		&& sp->match(d->interp, tp, sp->clientData)) {
+	    t->ops = sp->ops;
+	    best = sp->priority;
+	    found = 1;
+	}
+    }
+    t->opsGen = d->opsGen;
+    return t->ops;
+}
+
+/*
+ * 23/11 : l'entrée des bibliothèques externes (version simplifiée, TIP 764).
+ * Une extension la trouve par Tcl_GetAssocData(interp, "tclTypesOps", NULL)
+ * (tclTypesOps.h) : la déclaration des spécialisations, la lecture d'un
+ * type (opaque) et la fabrication d'une valeur typée.
+ */
+static int ExtKind(const TclType *tp) { return (int) tp->kind; }
+static const char *ExtName(const TclType *tp) { return tp->name; }
+static const TclType *ExtElem(const TclType *tp) { return tp->elem; }
+static Tcl_Size ExtNFields(const TclType *tp)
+{
+    return tp->kind == TCLT_PRODUCT ? tp->nfields : 0;
+}
+static const char *ExtFieldName(const TclType *tp, Tcl_Size f)
+{
+    return (f >= 0 && f < ExtNFields(tp) && tp->fields[f].name)
+	    ? Tcl_GetString(tp->fields[f].name) : NULL;
+}
+static const TclType *ExtFieldType(const TclType *tp, Tcl_Size f)
+{
+    return (f >= 0 && f < ExtNFields(tp)) ? tp->fields[f].type : NULL;
+}
+static Tcl_Obj *ExtWrap(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *c)
+{
+    (void) interp;
+    return TclAnnotWrapType(c, tp);
+}
+
+static const TclTypesOpsApi typesOpsApi = {
+    TCL_TYPE_OPS_VERSION,
+    TclTypesRegisterOps,
+    ExtKind, ExtName, ExtElem, ExtNFields, ExtFieldName, ExtFieldType,
+    ExtWrap
+};
+
+const char *
+TclTypeOpsName(const TclType *tp)
+{
+    const TclTypeOps *ops = TclTypeOpsOf(tp);
+
+    return (ops != NULL && ops->name != NULL) ? ops->name : NULL;
+}
+
+/* 23/11 : une règle type convert s'applique-t-elle à une valeur nue de
+ * type tp (any T, string T, ou la validation d'un nominal) ? */
+int
+TclTypeHasBareRule(Tcl_Interp *interp, const TclType *tp)
+{
+    TypeData *d;
+
+    if (interp == NULL || tp == NULL) {
+	return 0;
+    }
+    d = GetData(interp);
+    if (d->converts.numEntries == 0) {
+	return 0;
+    }
+    return (tp->nominal && tp->under != NULL
+	    && FindRule(d, tp->under->name, tp->name) != NULL)
+	    || FindRule(d, "any", tp->name) != NULL
+	    || FindRule(d, "string", tp->name) != NULL;
 }
 
 int
@@ -9838,6 +10014,26 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "debug") == 0) {
 	return TclTypeDebugCmd(interp, objc, objv);	/* v16y */
     }
+    if (strcmp(sub, "ops") == 0) {
+	/* 23/11 : type ops TYPE : la spécialisation choisie pour TYPE (son
+	 * nom), ou rien si TYPE n'a que le chemin général */
+	TclType *tp;
+	const char *w, *nm;
+	Tcl_Size len;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "type");
+	    return TCL_ERROR;
+	}
+	w = Tcl_GetStringFromObj(objv[2], &len);
+	tp = TclTypeParse(interp, w, len);
+	if (tp == NULL) {
+	    return TCL_ERROR;
+	}
+	nm = TclTypeOpsName(tp);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(nm ? nm : "", -1));
+	return TCL_OK;
+    }
     if (strcmp(sub, "variant") == 0) {
 	/* v16w : type variant VALEUR : le nom de la variante d'une valeur
 	 * d'une somme ou d'une union (son texte pour un littéral) */
@@ -9876,7 +10072,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, meta, parse, proc, variant "
+	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, meta, ops, parse, proc, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }
@@ -10626,6 +10822,16 @@ TclTypesInit(Tcl_Interp *interp)
     Tcl_SetHashValue(Tcl_CreateHashEntry(&d->names, "array", &isNew), NULL);
     Tcl_SetAssocData(interp, "tclTypes", DeleteData, d);
     ((Interp *) interp)->typesData = d;
+    d->interp = interp;
+    d->opsGen = 1;
+    Tcl_SetAssocData(interp, "tclTypesOps", NULL, (void *) &typesOpsApi);
+    {
+	int k;
+
+	for (k = 0; k < tclBuiltinTypeSpecCount; k++) {
+	    TclTypesRegisterOps(interp, &tclBuiltinTypeSpecs[k]);
+	}
+    }
     Tcl_CreateObjCommand2(interp, "type", TypeObjCmd, d, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::content", ContentObjCmd,

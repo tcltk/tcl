@@ -105,6 +105,10 @@ typedef struct TypeData {
     Tcl_HashTable lambdas;	/* v16z : "{T}lambda" -> la lambda (Tcl_Obj*,
 				 * comptée) qui garde sa Proc d'un appel à
 				 * l'autre : apply {T}{...} */
+    struct TclTypeSpec *specs;	/* 23/11 : spécialisations déclarées */
+    Tcl_Size nSpecs, capSpecs;
+    size_t opsGen;		/* +1 à chaque déclaration (>= 1) */
+    Tcl_Interp *interp;		/* pour les fonctions match */
 } TypeData;
 
 void	TclTypesSync(TypeData *d);

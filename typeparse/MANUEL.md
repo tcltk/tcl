@@ -460,3 +460,23 @@ EN: a list whose element count is an expression over other fields is checked as 
 is built; omitted fields count with their default. Field-by-field assignments are not checked
 (an intermediate state is legitimate); `type binary encode` checks again when writing. Byte sizes of
 strings (`string(raw,$len)`) are not checked at construction.
+
+## Opérations spécialisées / Specialised operations
+
+Un type est connu dès sa définition : les opérations fréquentes n'ont pas à
+le retrouver dans chaque valeur. Chaque type peut porter une table
+d'opérations spécialisées, choisie dans un registre : intégrée (listes de
+nombres, listes de produits) ou fournie par une bibliothèque chargée.
+
+    type ops list.double        ;# list-scalar
+    type ops pts                ;# list-product
+    load ./libproduits.so Produits
+    type ops list.pt            ;# produits-ordinaires (priorité 10)
+
+Une spécialisation ne fait qu'aller plus vite : même valeur, même texte, même
+type. `TCL_TYPE_OPS=off` les coupe toutes ; `TCL_TYPE_OPS=check` exécute
+aussi le chemin général et compare (un écart est écrit sur stderr). Le
+bytecode s'en sert pour `$P($i.champ)` (le champ lu sans former l'index), et
+`{double}x`, `{int}x` reçoivent un résultat d'`expr` dans leur propre valeur
+quand la variable est seule à la tenir. Exemple de bibliothèque :
+`exemples/ops/` (`tclTypesOps.h`, `make`, `test_ops.tcl`).

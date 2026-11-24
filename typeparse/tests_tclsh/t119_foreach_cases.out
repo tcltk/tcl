@@ -1,0 +1,8 @@
+lappend : 1 2 3 4 5
+dict : k1 1 k2 2 k3 3 k4 4 k5 5
+y=5 x=5 typed
+lmap : 2 4 6 8 10
+paires : 1/2 3/4 5/
+somme 4.0
+trace : 5 écritures
+append : 1! 2! 3! 4! 5!

@@ -1,0 +1,31 @@
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -2652,6 +2652,28 @@
+ 	Tcl_Size k;
+ 
+ 	opnd = TclGetUInt1AtPtr(pc + 1);
++	if (opnd == 2 && mask == 1u && (pc[6] == INST_LOAD_ARRAY1
++		|| pc[6] == INST_LOAD_ARRAY4)
++		&& TclTypeOpsMode() != TCL_TYPE_OPS_CHECK) {
++	    /* TIP 764 : $P($i.champ) sur une liste typée de produits : le
++	     * champ lu par la spécialisation du type, sans former l'index */
++	    int nl = (pc[6] == INST_LOAD_ARRAY1) ? 2 : 5;
++	    Var *ap = LOCAL((pc[6] == INST_LOAD_ARRAY1)
++		    ? TclGetUInt1AtPtr(pc + 7) : TclGetUInt4AtPtr(pc + 7));
++
++	    while (TclIsVarLink(ap)) {
++		ap = ap->value.linkPtr;
++	    }
++	    if (!TclIsVarArray(ap) && (ap->flags & VAR_TYPED)
++		    && ap->value.objPtr != NULL) {
++		objResultPtr = TclTypedElemFieldFast(ap->value.objPtr,
++			OBJ_AT_DEPTH(1), OBJ_AT_TOS);
++		if (objResultPtr != NULL) {
++		    TRACE_WITH_OBJ(("%u (champ) => ", opnd), objResultPtr);
++		    NEXT_INST_V(6 + nl, 2, 1);
++		}
++	    }
++	}
+ 	for (k = 0; k < opnd; k++) {
+ 	    subst[k] = (char) ((mask >> k) & 1u);
+ 	}

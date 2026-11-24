@@ -33,6 +33,36 @@
 
 typedef struct TclType TclType;
 
+/*
+ * 23/11 : opérations spécialisées d'un type (voir CONCEPTION-ops.md). Une
+ * bibliothèque, intégrée ou chargée, déclare par TclTypesRegisterOps une
+ * fonction « match » qui reconnaît les types visés et la table de leurs
+ * opérations ; le type retient la meilleure (priorité la plus haute). Une
+ * opération absente (NULL), ou qui rend NULL / 0, laisse le chemin général.
+ * CONTENT est le contenu de la valeur typée (sans son annotation).
+ */
+typedef struct TclTypeOps {
+    int version;		/* TCL_TYPE_OPS_VERSION */
+    const char *name;		/* pour type info ops */
+    /* l'élément I (vue liste) : une valeur typée neuve (compte 0) */
+    Tcl_Obj *(*index)(const TclType *tp, Tcl_Obj *content, Tcl_Size i);
+    /* le champ F (rang) de l'élément I d'une liste de produits */
+    Tcl_Obj *(*elemField)(const TclType *tp, Tcl_Obj *content, Tcl_Size i,
+	    Tcl_Size f);
+    /* l'élément I en double, sans objet : 1 si lu */
+    int (*indexDouble)(const TclType *tp, Tcl_Obj *content, Tcl_Size i,
+	    double *outPtr);
+} TclTypeOps;
+
+typedef struct TclTypeSpec {
+    int version;		/* TCL_TYPE_OPS_VERSION */
+    const char *name;
+    int priority;		/* la plus haute l'emporte ; intégrées : 0 */
+    int (*match)(Tcl_Interp *interp, const TclType *tp, void *clientData);
+    const TclTypeOps *ops;
+    void *clientData;
+} TclTypeSpec;
+
 /* Une clé admise d'un dictionnaire contraint : dict(x, y?, z?=0). */
 typedef struct TclDictKey {
     Tcl_Obj *name;		/* la clé (toujours du texte) */
@@ -173,6 +203,8 @@ struct TclType {
 				 * ("variante charge") ; TCLT_SUM_UNION, une
 				 * union ("|"), disjointe, dont la valeur est
 				 * la charge seule */
+    const TclTypeOps *ops;	/* 23/11 : opérations spécialisées, ou NULL */
+    size_t opsGen;		/* génération du registre où ops a été choisi */
     struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
 };
 #define TCLT_SUM_TAGGED	0
@@ -391,6 +423,22 @@ Tcl_Obj *	TclTypesNames(Tcl_Interp *interp);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
+int TclAnnotIsPlainTyped(Tcl_Obj *objPtr);
+Tcl_Obj *TclAnnotWrapType(Tcl_Obj *c, const TclType *tp);
+int TclCompactScalarList(Tcl_Obj *v);
+int TclTypeHasBareRule(Tcl_Interp *interp, const TclType *tp);
+int TclTypesRegisterOps(Tcl_Interp *interp, const TclTypeSpec *spec);
+const TclTypeOps *TclTypeOpsOf(const TclType *tp);
+enum { TCL_TYPE_OPS_ON = 1, TCL_TYPE_OPS_OFF, TCL_TYPE_OPS_CHECK };
+int TclTypeOpsMode(void);
+int TclTypeOpsSame(const char *where, Tcl_Obj *ops, Tcl_Obj *gen);
+Tcl_Obj *TclTypedElemFieldFast(Tcl_Obj *a, Tcl_Obj *idx, Tcl_Obj *lit);
+const char *TclTypeOpsName(const TclType *tp);
+#define TCL_TYPES_INTERNAL
+#include "tclTypesOps.h"
+extern const TclTypeSpec tclBuiltinTypeSpecs[];
+extern const int tclBuiltinTypeSpecCount;
+int TclCompactIndexInto(Tcl_Obj *v, Tcl_Size index, Tcl_Obj *cur);
 int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
 int TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code);
 int TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]);

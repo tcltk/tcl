@@ -1307,6 +1307,12 @@ TclAnnotIterList(Tcl_Obj *aPtr)
 	return NULL;
     }
     if (TclIsCompact(v)) {
+	/* 23/11 : des scalaires nus : la boucle lit les cases elles-mêmes
+	 * (liste abstraite), sans liste d'objets à côté */
+	if (TclCompactScalarList(v)) {
+	    /* nus : les cases ; typés : A, élément par élément */
+	    return BareLoopElem(AnnotListElemType(aPtr)) ? v : NULL;
+	}
 	/* en cases : la liste des éléments gardée à côté des cases (des vues),
 	 * privée à V, typée sur place comme une liste ordinaire */
 	v = TclCompactCache(v);
@@ -1382,8 +1388,55 @@ TypeNotesOnly(Tcl_Obj *e, TclType *et)
     return WrapElem(e, et, -1);
 }
 
+static int AnnotListIndexGeneral(Tcl_Interp *interp, Tcl_Obj *aPtr,
+	Tcl_Size index, Tcl_Obj **elemPtr);
+
 static int
 AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
+	Tcl_Obj **elemPtr)
+{
+    Tcl_Obj *v;
+    TclType *lt = FastListType(aPtr, &v);
+
+    if (lt != NULL) {
+	/* 23/11 : la spécialisation du type, s'il en a une */
+	const TclTypeOps *ops = TclTypeOpsOf(lt);
+
+	if (ops != NULL && ops->index != NULL) {
+	    Tcl_Obj *r = ops->index(lt, v, index);
+
+	    if (r != NULL && TclTypeOpsMode() == TCL_TYPE_OPS_CHECK) {
+		/* le chemin général aussi, et la comparaison */
+		Tcl_Obj *g = NULL;
+		int rc;
+
+		Tcl_IncrRefCount(r);
+		rc = AnnotListIndexGeneral(interp, aPtr, index, &g);
+		if (rc == TCL_OK) {
+		    if (g != NULL) {
+			Tcl_IncrRefCount(g);
+		    }
+		    TclTypeOpsSame(ops->name, r, g);
+		    if (g != NULL) {
+			g->refCount--;	/* rendu tel qu'il est venu (compte 0 s'il
+					 * est neuf), sans le libérer */
+		    }
+		}
+		Tcl_DecrRefCount(r);
+		*elemPtr = g;
+		return rc;
+	    }
+	    if (r != NULL) {
+		*elemPtr = r;
+		return TCL_OK;
+	    }
+	}
+    }
+    return AnnotListIndexGeneral(interp, aPtr, index, elemPtr);
+}
+
+static int
+AnnotListIndexGeneral(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	Tcl_Obj **elemPtr)
 {
     Tcl_Obj *v;
@@ -1410,6 +1463,13 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
 	*elemPtr = TypeNotesOnly(*elemPtr, lt->elem);
 	return TCL_OK;			/* élément déjà typé dans V */
+    }
+    if (lt != NULL && *elemPtr != NULL && PlainScalarElem(lt->elem)) {
+	/* 23/11 : un scalaire simple, laissé nu dans V (v16s) : l'enveloppe
+	 * neuve tout de suite, sans repasser par la vue, la résolution du
+	 * type de la liste et la vérification de l'élément */
+	*elemPtr = WrapElem(*elemPtr, lt->elem, -1);
+	return TCL_OK;
     }
     if (lt == NULL && (lt = FastProductType(aPtr, &v)) != NULL
 	    && index >= 0 && index < lt->nfields) {
@@ -2209,6 +2269,82 @@ NormElems(Tcl_Size n, Tcl_Obj *const *ev, TclType *elem, TclTypeField *fields,
     }
 }
 
+/*
+ * 23/11 : textes sûrement canoniques, reconnus sans les refaire (avant :
+ * Tcl_PrintDouble à chaque valeur typée lue d'un texte, 13 % d'un appel
+ * {double}a). Un double écrit d.ddd avec au plus 15 chiffres significatifs
+ * est son propre texte le plus court (DBL_DIG) ; Tcl l'écrit sans exposant
+ * de 1e-4 à 1e16. Dans le doute : 0, et l'on compare au texte refait.
+ */
+static int
+CanonIntText(const char *p)
+{
+    const char *q;
+    int neg = (*p == '-');
+
+    if (neg) {
+	p++;
+    }
+    if (*p == '0') {
+	return p[1] == '\0' && !neg;
+    }
+    for (q = p; *q >= '0' && *q <= '9'; q++) {
+    }
+    return q > p && *q == '\0' && q - p <= 18;
+}
+
+static int
+CanonDoubleText(const char *p)
+{
+    const char *ip, *fp, *q;
+    int nint, nfrac, lead = 0, sig;
+
+    if (*p == '-') {
+	p++;
+    }
+    ip = p;
+    if (*p == '0') {
+	p++;
+    } else {
+	while (*p >= '0' && *p <= '9') {
+	    p++;
+	}
+    }
+    nint = (int) (p - ip);
+    if (nint == 0 || nint > 15 || *p != '.') {
+	return 0;
+    }
+    fp = ++p;
+    while (*p >= '0' && *p <= '9') {
+	p++;
+    }
+    if (*p != '\0') {
+	return 0;
+    }
+    nfrac = (int) (p - fp);
+    if (nfrac == 0) {
+	return 0;
+    }
+    if (nfrac == 1 && fp[0] == '0') {
+	return 1;				/* n.0 */
+    }
+    if (p[-1] == '0') {
+	return 0;				/* zéro final : 1.10 */
+    }
+    if (nint == 1 && ip[0] == '0') {
+	for (q = fp; *q == '0'; q++) {
+	    lead++;
+	}
+	if (lead > 3) {
+	    return 0;				/* 1e-5 */
+	}
+	sig = nfrac - lead;
+    } else {
+	sig = nint + nfrac;
+    }
+    return sig <= 15;
+}
+
 static Tcl_Obj *
 NormContent(TclType *tp, int variant, Tcl_Obj *v)
 {
@@ -2225,9 +2361,9 @@ NormContent(TclType *tp, int variant, Tcl_Obj *v)
 
 	char buf[32];
 
-	if (tp->bitWidth != 0 || v->bytes == NULL
+	if (tp->bitWidth != 0 || v->bytes == NULL || CanonIntText(v->bytes)
 		|| Tcl_GetWideIntFromObj(NULL, v, &w) != TCL_OK) {
-	    return NULL;		/* déjà sans texte, ou grand entier */
+	    return NULL;		/* sans texte, canonique, ou grand entier */
 	}
 	snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (long long) w);
 	if (strcmp(buf, v->bytes) == 0) {
@@ -2242,7 +2378,8 @@ NormContent(TclType *tp, int variant, Tcl_Obj *v)
 
 	char buf[TCL_DOUBLE_SPACE];
 
-	if (v->bytes == NULL || Tcl_GetDoubleFromObj(NULL, v, &d) != TCL_OK) {
+	if (v->bytes == NULL || CanonDoubleText(v->bytes)
+		|| Tcl_GetDoubleFromObj(NULL, v, &d) != TCL_OK) {
 	    return NULL;
 	}
 	Tcl_PrintDouble(NULL, d, buf);
@@ -6900,4 +7037,256 @@ TclCompactInit(Tcl_Interp *interp)
     Tcl_RegisterObjType(&annotatedObjType);	/* pour tclCompact.h */
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::compact", CompactObjCmd,
 	    NULL, NULL);
+}
+
+/*
+ * 23/11 : foreach sur une liste en cases d'éléments scalaires. La boucle
+ * parcourt les cases sans faire la liste de leurs objets (avant : un objet
+ * par élément, gardé à côté des cases). CUR est la valeur que tient la
+ * variable de boucle : si elle seule la tient, l'élément INDEX y est écrit
+ * (aucun objet neuf) ; rend 1. Sinon 0 : le chemin ordinaire (CompactIndex,
+ * un objet neuf).
+ */
+int
+TclCompactScalarList(Tcl_Obj *v)
+{
+    return v->typePtr == &compactListType
+	    && COMPACT_BUF(v)->lay->node[0].kind != CN_PROD;
+}
+
+int
+TclCompactIndexInto(Tcl_Obj *v, Tcl_Size index, Tcl_Obj *cur)
+{
+    TclCompactBuf *b;
+    const CNode *nd;
+    const unsigned char *p;
+
+    Tcl_Obj *wrap = NULL;
+
+    if (cur == NULL || Tcl_IsShared(cur)) {
+	return 0;
+    }
+    if (v->typePtr == &annotatedObjType) {
+	/* éléments typés : la valeur typée et son contenu, tous deux à la
+	 * seule variable, du type des éléments */
+	Tcl_Obj *inner, *ct;
+	TclType *lt = FastListType(v, &inner);
+
+	if (lt == NULL || inner->typePtr != &compactListType
+		|| cur->typePtr != &annotatedObjType) {
+	    return 0;
+	}
+	ct = (Tcl_Obj *) cur->internalRep.twoPtrValue.ptr2;
+	if (ct->typePtr != &typeRefObjType
+		|| (TclType *) ct->internalRep.twoPtrValue.ptr1 != lt->elem
+		|| ct->internalRep.twoPtrValue.ptr2 != NULL
+		|| Tcl_IsShared((Tcl_Obj *) cur->internalRep.twoPtrValue.ptr1)) {
+	    return 0;
+	}
+	wrap = cur;
+	cur = (Tcl_Obj *) cur->internalRep.twoPtrValue.ptr1;
+	v = inner;
+    } else if (v->typePtr != &compactListType
+	    || cur->typePtr == &annotatedObjType) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    nd = &b->lay->node[0];
+    if (index < 0 || index >= b->n || nd->kind == CN_PROD) {
+	return 0;
+    }
+    p = b->data + (size_t) index * b->stride + nd->off;
+    switch (nd->kind) {
+    case CN_FLT:
+	if (nd->size == 4) {
+	    float f;
+
+	    memcpy(&f, p, 4);
+	    Tcl_SetDoubleObj(cur, (double) f);
+	} else {
+	    double d;
+
+	    memcpy(&d, p, 8);
+	    Tcl_SetDoubleObj(cur, d);
+	}
+	break;
+    case CN_INT:
+	switch (nd->size) {
+	case 1: { int8_t x; memcpy(&x, p, 1); Tcl_SetWideIntObj(cur, x); break; }
+	case 2: { int16_t x; memcpy(&x, p, 2); Tcl_SetWideIntObj(cur, x); break; }
+	case 4: { int32_t x; memcpy(&x, p, 4); Tcl_SetWideIntObj(cur, x); break; }
+	default: { int64_t x; memcpy(&x, p, 8); Tcl_SetWideIntObj(cur, x); }
+	}
+	break;
+    default:
+	switch (nd->size) {
+	case 1: { uint8_t x; memcpy(&x, p, 1); Tcl_SetWideIntObj(cur, x); break; }
+	case 2: { uint16_t x; memcpy(&x, p, 2); Tcl_SetWideIntObj(cur, x); break; }
+	case 4: { uint32_t x; memcpy(&x, p, 4); Tcl_SetWideIntObj(cur, x); break; }
+	default: {
+	    uint64_t x;
+
+	    memcpy(&x, p, 8);
+	    if (x > (uint64_t) WIDE_MAX) {
+		return 0;
+	    }
+	    Tcl_SetWideIntObj(cur, (Tcl_WideInt) x);
+	}
+	}
+    }
+    if (wrap != NULL) {
+	TclInvalidateStringRep(wrap);
+    }
+    return 1;
+}
+
+/*
+ * 23/11 : les spécialisations intégrées (voir TclTypesRegisterOps). Elles
+ * ne font que ce que fait le chemin général, sans passer par la
+ * résolution : même valeur, même texte.
+ */
+
+/* list.T, T scalaire simple (int, double, string, sans règle de variante) :
+ * éléments nus dans le contenu (v16s), ou en cases. */
+static int
+MatchScalarList(Tcl_Interp *interp, const TclType *tp, void *cd)
+{
+    (void) interp;
+    (void) cd;
+    return tp->kind == TCLT_LIST && tp->elem != NULL
+	    && PlainScalarElem(tp->elem);
+}
+
+static Tcl_Obj *
+ScalarListIndex(const TclType *tp, Tcl_Obj *v, Tcl_Size i)
+{
+    Tcl_Obj *e = NULL;
+
+    if (v->typePtr == &compactListType) {
+	TclCompactBuf *b = COMPACT_BUF(v);
+
+	if (i < 0 || i >= b->n || b->lay->node[0].kind == CN_PROD) {
+	    return NULL;
+	}
+	e = DecodeScalar(&b->lay->node[0], b->data
+		+ (size_t) i * b->stride + b->lay->node[0].off);
+	return WrapElem(e, tp->elem, -1);
+    }
+    if (TclIsCompact(v) || Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK
+	    || e == NULL || TCL_ANNOT_P(e)) {
+	return NULL;
+    }
+    return WrapElem(e, tp->elem, -1);
+}
+
+static int
+ScalarListIndexDouble(const TclType *tp, Tcl_Obj *v, Tcl_Size i,
+	double *outPtr)
+{
+    Tcl_Obj *e = NULL;
+
+    if (tp->elem->kind != TCLT_DOUBLE && tp->elem->kind != TCLT_INT) {
+	return 0;
+    }
+    if (v->typePtr == &compactListType) {
+	TclCompactBuf *b = COMPACT_BUF(v);
+	int r;
+
+	if (i < 0 || i >= b->n || b->lay->node[0].kind == CN_PROD) {
+	    return 0;
+	}
+	e = DecodeScalar(&b->lay->node[0], b->data
+		+ (size_t) i * b->stride + b->lay->node[0].off);
+	r = (Tcl_GetDoubleFromObj(NULL, e, outPtr) == TCL_OK);
+	TclDiscard(e);
+	return r;
+    }
+    if (TclIsCompact(v) || Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK
+	    || e == NULL || TCL_ANNOT_P(e)) {
+	return 0;
+    }
+    return Tcl_GetDoubleFromObj(NULL, e, outPtr) == TCL_OK;
+}
+
+static const TclTypeOps scalarListOps = {
+    TCL_TYPE_OPS_VERSION, "list-scalar",
+    ScalarListIndex, NULL, ScalarListIndexDouble
+};
+
+/* list.P, P un produit : le champ F de l'élément I lu dans la case. */
+static int
+MatchProductList(Tcl_Interp *interp, const TclType *tp, void *cd)
+{
+    (void) interp;
+    (void) cd;
+    return tp->kind == TCLT_LIST && tp->elem != NULL
+	    && tp->elem->kind == TCLT_PRODUCT && tp->elem->nfields > 0;
+}
+
+static Tcl_Obj *
+ProductListElemField(const TclType *tp, Tcl_Obj *v, Tcl_Size i, Tcl_Size f)
+{
+    TclCompactBuf *b;
+    const CNode *root;
+    TclType *ft;
+    Tcl_Size k;
+    int n;
+
+    if (v->typePtr != &compactListType || f < 0 || f >= tp->elem->nfields) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    root = &b->lay->node[0];
+    ft = tp->elem->fields[f].type;
+    if (i < 0 || i >= b->n || root->kind != CN_PROD || root->isList
+	    || root->nchild != tp->elem->nfields || ft == NULL
+	    || ft->kind == TCLT_SUM) {
+	return NULL;
+    }
+    for (n = 1, k = 0; k < f; k++) {
+	n += b->lay->node[n].nsub;
+    }
+    return WrapElem(CompactPart(b, (size_t) i * b->stride, n), ft, -1);
+}
+
+static const TclTypeOps productListOps = {
+    TCL_TYPE_OPS_VERSION, "list-product",
+    NULL, ProductListElemField, NULL
+};
+
+const TclTypeSpec tclBuiltinTypeSpecs[] = {
+    {TCL_TYPE_OPS_VERSION, "list-scalar", 0, MatchScalarList,
+	    &scalarListOps, NULL},
+    {TCL_TYPE_OPS_VERSION, "list-product", 0, MatchProductList,
+	    &productListOps, NULL}
+};
+const int tclBuiltinTypeSpecCount =
+	(int) (sizeof(tclBuiltinTypeSpecs) / sizeof(tclBuiltinTypeSpecs[0]));
+
+/* 23/11 : une valeur typée sans note (son état n'est que la référence de
+ * type). */
+int
+TclAnnotIsPlainTyped(Tcl_Obj *objPtr)
+{
+    return objPtr->typePtr == &annotatedObjType
+	    && ((Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2)->typePtr
+	    == &typeRefObjType;
+}
+
+/* 23/11 : une valeur typée neuve de type TP autour de C, sans
+ * interpréteur (spécialisations externes) ; C déjà typé : lui-même s'il est
+ * de type TP, sinon NULL. */
+Tcl_Obj *
+TclAnnotWrapType(Tcl_Obj *c, const TclType *tp)
+{
+    TclType *t = NULL;
+
+    if (c == NULL || tp == NULL) {
+	return NULL;
+    }
+    if (c->typePtr == &annotatedObjType) {
+	return (TclAnnotInfo(c, NULL, &t, NULL, NULL) == 1 && t == tp)
+		? c : NULL;
+    }
+    return WrapElem(c, (TclType *) tp, -1);
 }
