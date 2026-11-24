@@ -48,7 +48,14 @@ namespace eval ::math::geometry {
     type def line     {{coord}x1; {coord}y1; {coord}x2; {coord}y2}
     type alias segment line
     type alias rect    line
-    type def polyline list.coord
+    if {$coord eq "double"} {
+	# v17m : la même polyligne, en cases (des doubles contigus) : une
+	# forme du même type, pour le C et les commandes de masse
+	type def polyline list.coord {-compact}polylinec
+	type alias polygonc polylinec
+    } else {
+	type def polyline list.coord
+    }
     type alias polygon polyline
     # what an intersection or a search returns: a point, or a word
     type def intersection {{point}at | "coincident" | "none"}

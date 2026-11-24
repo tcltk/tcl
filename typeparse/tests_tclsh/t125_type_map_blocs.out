@@ -1,0 +1,13 @@
+entiers et zéros aux bords : identique (1000 éléments)
+racines : identique (1000 éléments)
+log : identique (1000 éléments)
+débordement : identique (1000 éléments)
+fonctions : identique (1000 éléments)
+erreur : cannot use non-numeric string "abc" as left operand of "+" / {type map element 300}
+infini seul : 1.5 Inf 2.5 -Inf
+infini calculé : 2.5 Inf 3.5 -Inf
+inverse : 0.6666666666666666 0.0 0.4 -0.0
+après : x=3 y=0.0010000000000000009
+cases : 1.162409 1.161604 1.160801
+doublon : 2.0 1.998 1.996
+somme : 1000311.9300999998

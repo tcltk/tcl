@@ -22,7 +22,7 @@
 # Étapes : 1. extrait l'archive dans un dossier temporaire et ne remplace dans typeparse/ que
 #             les fichiers qui DIFFÈRENT (cmp) ; liste ce qui est nouveau/modifié/absent de l'archive
 #          2. sources de types (tclTypes*.{c,h}, tclAnnotObj.c, tclTypedVar.c, tclTypePath.c,
-#             tclTypeGeneric.c, tclTypeParse.c, tclVarRef.c, tclTypeDebug.h) : livrées ENTIÈRES dans typeparse/,
+#             tclTypeGeneric.c, tclTypeParse.c, tclVarRef.c, tclTypesOps.h, tclTypeDebug.h) : livrées ENTIÈRES dans typeparse/,
 #             copiées dans generic/ quand elles diffèrent ; elles ne sont jamais patchées
 #          3. patchs de typeparse/noyau/ORDRE.txt, partie NOYAU seulement (les sections qui visent
 #             les sources de types sont ignorées), sans fuzz (-F0) : le nombre m de patchs déjà
@@ -120,7 +120,7 @@ main() {
 
     echo "== 2. Sources de types -> generic/"
     local applied_now=0 p line
-    local TYPEFILES="tclAnnotObj.c tclTypes.c tclTypeParse.c tclTypeGeneric.c tclTypedVar.c tclTypePath.c tclVarRef.c tclTypes.h tclTypesInt.h tclTypeDebug.h"
+    local TYPEFILES="tclAnnotObj.c tclTypes.c tclTypeParse.c tclTypeGeneric.c tclTypedVar.c tclTypePath.c tclVarRef.c tclTypes.h tclTypesInt.h tclTypesOps.h tclTypeDebug.h"
     for f in $TYPEFILES; do
         [ -f "typeparse/$f" ] || { echo "   MANQUE   typeparse/$f"; return 1; }
         if [ ! -f "generic/$f" ] || ! same "typeparse/$f" "generic/$f"; then

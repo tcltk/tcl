@@ -218,7 +218,7 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	Tcl_Obj **valuePtrPtr, int *flagsPtr, Tcl_Obj **tmpPtrPtr)
 {
     Tcl_Interp *errInterp = (*flagsPtr & TCL_LEAVE_ERR_MSG) ? interp : NULL;
-    Tcl_Obj *value = *valuePtrPtr, *cur, *curContent = NULL, *res;
+    Tcl_Obj *value = *valuePtrPtr, *cur = NULL, *curContent = NULL, *res;
     Tcl_Obj *content;
     TclType *contract = NULL, *at;
     int variant = -1, status, avar;
@@ -240,6 +240,39 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
     }
 
     /*
+     * 23/11 : {double}x ou {int}x (types simples) qui reçoit un nombre nu de
+     * son genre (le résultat d'expr) : si la variable est seule à tenir sa
+     * valeur et son contenu, le nombre est écrit dedans. Aucun objet neuf,
+     * aucune vérification à refaire (un double est un double).
+     */
+    if (contract != NULL && variant < 0 && !(*flagsPtr & TCL_APPEND_VALUE)
+	    && !contract->nominal && !contract->refine
+	    && contract->bitWidth == 0 && contract->binKind == 0
+	    && contract->metaMask == 0 && curContent != NULL
+	    && !Tcl_IsShared(cur) && !Tcl_IsShared(curContent)
+	    && TclAnnotIsSettled(cur) && !TclIsAnnotated(value)
+	    && ((contract->kind == TCLT_DOUBLE
+		&& TclHasInternalRep(value, &tclDoubleType)
+		&& TclHasInternalRep(curContent, &tclDoubleType))
+	    || (contract->kind == TCLT_INT
+		&& TclHasInternalRep(value, &tclIntType)
+		&& TclHasInternalRep(curContent, &tclIntType)))) {
+	if (TclAnnotIsPlainTyped(cur)) {
+	    if (contract->kind == TCLT_DOUBLE) {
+		curContent->internalRep.doubleValue
+			= value->internalRep.doubleValue;
+	    } else {
+		curContent->internalRep.wideValue
+			= value->internalRep.wideValue;
+	    }
+	    TclInvalidateStringRep(curContent);
+	    TclInvalidateStringRep(cur);
+	    *valuePtrPtr = cur;
+	    return TCL_OK;
+	}
+    }
+
+    /*
      * v16s : une valeur déjà du type du contrat, sans note (un échange
      * (y1, y2) = ($y2, $y1) entre variables typées) : rangée telle quelle,
      * sans copie ni revalidation.
@@ -249,7 +282,11 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	TclType *vt = NULL;
 
 	if (TclAnnotInfo(value, NULL, &vt, NULL, NULL) == 1
-		&& vt == contract) {
+		&& (vt == contract || (vt != NULL
+		&& TclTypeFamily(vt) == TclTypeFamily(contract)))) {
+	    /* (24/11 : ou une autre forme du même type : une variable passe
+	     * d'une disposition à l'autre sans conversion ; seul un {T}
+	     * écrit, ou le C, exige une forme) */
 	    return TCL_OK;
 	}
     }
@@ -1688,6 +1725,29 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
 
     /*
+     * 24/11 : set {T}x $v, v d'une forme de T (type def T DEF {-compact}F) :
+     * v telle quelle, sans changer de disposition (comme un paramètre {T}).
+     */
+    if (nargs == 1 && ctorPath == NULL && sumTp == NULL && forced < 0
+	    && TclIsAnnotated(objv[2]) && TclAnnotIsSettled(objv[2])) {
+	TclType *vt = NULL;
+
+	if (TclAnnotInfo(objv[2], NULL, &vt, NULL, NULL) == 1 && vt != NULL
+		&& tp != NULL && vt->formOf != NULL && vt->formOf == tp) {
+	    valueA = objv[2];
+	    goto store;
+	}
+	/* 24/11 : v déjà du type T (réglée, sans notes) : telle quelle, au
+	 * lieu de la déplier et de revérifier chaque élément (200 000
+	 * éléments : 40 ms) */
+	if (vt != NULL && vt == tp && tp->kind == TCLT_LIST
+		&& TclAnnotNotes(objv[2]) == NULL) {
+	    valueA = objv[2];
+	    goto store;
+	}
+    }
+
+    /*
      * Voie rapide : set {T}x a b... d'un produit de scalaires, autant de
      * valeurs nues (sans annotation ni note) que de champs. Chaque valeur
      * est validée en place et partagée par le contenu, sans copie ; au
@@ -1713,6 +1773,48 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 	    valueA = TclNewAnnotatedOwn(fresh, TclTypeRefFor(interp, tp, -1));
 	    goto store;
+	}
+    }
+
+    /*
+     * 23/11 : voie rapide pour une liste de nombres ou de chaînes simples,
+     * set {list.int}L {*}$valeurs : des valeurs nues, sans règle de
+     * conversion pour les éléments : la liste entière est vérifiée d'un
+     * coup (comme type cast), au lieu d'un passage par valeur. Au moindre
+     * écart, la voie générale reprend tout et donne son message.
+     */
+    if (status == TCLA_RAW && ctorPath == NULL && tp->kind == TCLT_LIST
+	    && sumTp == NULL && forced < 0 && nargs > 1
+	    && tp->binLink == NULL && tp->elem != NULL
+	    && (tp->elem->kind == TCLT_INT || tp->elem->kind == TCLT_DOUBLE
+		|| tp->elem->kind == TCLT_STRING
+		|| TclTypeIsNumUnion(tp->elem))	/* (24/11 : num) */
+	    && tp->elem->binLink == NULL
+	    && !TclTypeHasBareRule(interp, tp->elem)
+	    && !TclTypeHasBareRule(interp, tp)) {
+	for (i = 0; i < nargs; i++) {
+	    if (TclIsAnnotated(objv[2 + i])) {
+		break;
+	    }
+	}
+	if (i == nargs) {
+	    Tcl_Obj *fresh = Tcl_NewListObj(nargs, objv + 2), *cv;
+
+	    Tcl_IncrRefCount(fresh);
+	    cv = TclTypedConform(NULL, tp, fresh);
+	    Tcl_DecrRefCount(fresh);
+	    if (cv != NULL && !TclIsAnnotated(cv)) {
+		if (cv->refCount == 0) {
+		    valueA = TclNewAnnotatedOwn(cv, TclTypeRefFor(interp, tp,
+			    -1));
+		} else {
+		    valueA = TclNewAnnotated(interp, tp, -1, cv);
+		}
+		goto store;
+	    }
+	    if (cv != NULL) {
+		TclDiscard(cv);
+	    }
 	}
     }
 
@@ -2321,5 +2423,58 @@ TclTypedVarRedeclare(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *nameObj)
 	Tcl_DecrRefCount(typed);
 	(void) Tcl_RestoreInterpState(interp, st);
     }
+    return TCL_OK;
+}
+
+/*
+ * 24/11 : lappend L a b ... (bytecode lappendList) dans une liste typée :
+ * chaque élément vérifié seul et ajouté sur place (le chemin d'un lappend
+ * à un élément), au lieu de copier la liste entière et de la revérifier à
+ * chaque appel (quadratique : 100 000 points construits un à un prenaient
+ * 145 s). Tout ou rien : les éléments sont d'abord tous vérifiés ; au
+ * moindre refus, TCL_CONTINUE et le chemin ordinaire donne son message.
+ */
+int
+TclTypedVarLappendElems(Tcl_Interp *interp, Var *varPtr, Tcl_Size objc,
+	Tcl_Obj *const objv[], int index, Tcl_Obj **resultPtr)
+{
+    Tcl_Obj *cur = varPtr->value.objPtr, *res = NULL;
+    TclType *tp = NULL;
+    Tcl_Size k;
+
+    if (cur == NULL || TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr)
+	    || TclAnnotInfo(cur, NULL, &tp, NULL, NULL) != 1 || tp == NULL
+	    || tp->kind != TCLT_LIST || tp->arity >= 0 || tp->elem == NULL
+	    || (tp->lenRange && tp->lenMax >= 0) || tp->binDyn != NULL
+	    || !PlainElemType(tp->elem, 0)) {
+	return TCL_CONTINUE;
+    }
+    for (k = 0; k < objc; k++) {
+	Tcl_Obj *e;
+	int ok;
+
+	if (TclIsAnnotated(objv[k])) {
+	    return TCL_CONTINUE;
+	}
+	e = Tcl_DuplicateObj(objv[k]);
+	Tcl_IncrRefCount(e);
+	ok = (TclTypeComplete(NULL, tp->elem, e, -1, NULL) == TCL_OK);
+	Tcl_DecrRefCount(e);
+	if (!ok) {
+	    return TCL_CONTINUE;
+	}
+    }
+    if (objc == 0) {
+	*resultPtr = cur;
+	return TCL_OK;
+    }
+    for (k = 0; k < objc; k++) {
+	res = TclPtrSetVarIdx(interp, varPtr, NULL, NULL, NULL, objv[k],
+		TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_LEAVE_ERR_MSG, index);
+	if (res == NULL) {
+	    return TCL_ERROR;
+	}
+    }
+    *resultPtr = res;
     return TCL_OK;
 }

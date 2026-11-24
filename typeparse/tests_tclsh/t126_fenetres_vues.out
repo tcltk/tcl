@@ -1,0 +1,31 @@
+fenêtre (0,1,2,3)::2 : {{0.0 2.0 4.0} {1.0 3.0 5.0} {2.0 4.0 6.0} {3.0 5.0 7.0}}
+avec la fin : {{0.0 2.0 4.0} {1.0 3.0 5.0} {2.0 4.0 6.0} {3.0 5.0 7.0}}
+x et y : {{0.0 2.0 4.0 6.0} {1.0 3.0 5.0 7.0}}
+pas -2 : {{7.0 5.0 3.0 1.0} {6.0 4.0 2.0 0.0}}
+glissante : {{0.0 1.0 2.0 3.0} {2.0 3.0 4.0 5.0} {4.0 5.0 6.0 7.0}}
+début substitué : {{1.0 4.0} {2.0 5.0}}
+un seul tour : {5.0 6.0}
+aucun : {{} {}}
+pas nul : ERR the step of a range must be a non-zero integer, not "0"
+pas un index : ERR bad index "a": must be integer?[+-]integer? or end?[+-]integer?
+index substitué entier : ERR bad index "1:3": must be integer?[+-]integer? or end?[+-]integer?
+groupe sans : : {1.0 3.0}
+en cases : {{0.0 2.0 4.0} {1.0 3.0 5.0}}
+type map : -4.0
+écrit en cases : {10.0 -1.0 20.0 -2.0 30.0 -3.0} cd
+llength lindex : 4 5.0 7.0
+foreach lmap : 16.0 {2.0 6.0 10.0 14.0}
+lsort join : {7.0 5.0 3.0 1.0} 1.0,3.0,5.0,7.0
+lappend copie : {1.0 3.0 5.0 7.0 99.0} {1.0 3.0 5.0 7.0}
+vue de vue : 1.0 5.0
+base changée : {0.0 100.0 2.0 3.0} {1.0 3.0 5.0 7.0}
+type map vue : 1.0 1.0 1.0 1.0
+entrelacées : 10.0 -1.0 20.0 -2.0 30.0 -3.0
+partagée : {-1.0 10.0 -2.0 20.0 -3.0 30.0} {10.0 -1.0 20.0 -2.0 30.0 -3.0}
+une pour tous : 7.0 8.0 7.0 8.0 7.0 8.0
+longueur : ERR the range selects 3 values (or one for all), not 2
+mauvais type : 1.0 -1.0 2.0 -2.0 3.0 -3.0
+texte : ERR expected floating-point number but got "x"
+num : {10 2.0 30 4.0} {{list.num}{10 2.0 30 4.0}}
+num rapide : {list.num}{0.0 0.0 0.0 0.0}
+même type : {1.0 2.0} list<double>

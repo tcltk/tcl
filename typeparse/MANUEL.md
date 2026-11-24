@@ -125,6 +125,37 @@ négatif retourne, en lecture), `set L(1::2) 0` (une valeur pour tous),
 compacte ou un grand bitarray tenu par la seule variable est écrit sur
 place.
 
+**Fenêtres.** `(d0,d1,...):fin:pas` : une colonne par début, toutes
+avançant du même pas ; la fin donnée borne le premier début, et on ne
+garde que les fenêtres complètes (aucune colonne ne sort de la liste). Sur
+une polyligne plate `x1 y1 x2 y2 ...` :
+
+    $pl((0,1)::2)            ;# deux colonnes : les x, les y
+    $pl((0,1,2,3)::2)        ;# x[i] y[i] x[i+1] y[i+1], pour chaque i
+    type map -sum {x0 y0 x1 y1} $pl((0,1,2,3)::2) {($x0*$y1 - $x1*$y0)}
+    set out((0,1)::2) $X $Y  ;# réentrelace deux colonnes
+
+Les débuts sont des index simples (entier, `end-k`, ou une valeur
+substituée : `$P(($i,2)::3)`). Une fenêtre d'un seul tour se lit comme une
+tranche d'un élément (`$L((5,6)::2)` rend `5.0 6.0`). En écriture, une
+valeur par colonne : une liste de la longueur de la colonne, ou une valeur
+pour tous. Un index entièrement substitué reste un nom entier (`set s
+1:3; $L($s)` cherche l'élément `1:3`) : une valeur ne fait pas de la
+syntaxe de chemin.
+
+**Vues.** Une tranche à pas d'une liste typée de scalaires n'est pas
+copiée : c'est une *vue* (la liste de base, un début, un pas, un nombre),
+en cases comme en objets. Pour une liste d'objets, la base est tenue par
+une copie qui partage son stockage (comme `lrange` dans Tcl 9) : ni la
+tranche ni sa libération ne touchent les éléments. `type map` lit une vue
+directement dans sa base ; `llength`, `lindex` la lisent sans la défaire ;
+les autres commandes la voient comme une liste (faite une fois, à la
+demande). Une vue ne change pas quand la base change. `TCL_TYPE_NOVIEW=1`
+fait des copies, pour comparer. Écrire des colonnes typées du type des
+éléments (`set L(::2) $X`, `set L((0,1)::2) $X $Y`) dans une liste de
+nombres (ou de `num`) tenue par la seule variable se fait sur place, sans
+revérifier les éléments.
+
 **Deux ordres, deux types.** `bitarray(8,lsb0)` et `bitarray(8,msb0)` ne se
 mélangent pas : affecter l'un à l'autre est un `type mismatch`. Le défaut
 `bitarray(8)` est `bitarray(8,lsb0)`.
@@ -480,3 +511,61 @@ bytecode s'en sert pour `$P($i.champ)` (le champ lu sans former l'index), et
 `{double}x`, `{int}x` reçoivent un résultat d'`expr` dans leur propre valeur
 quand la variable est seule à la tenir. Exemple de bibliothèque :
 `exemples/ops/` (`tclTypesOps.h`, `make`, `test_ops.tcl`).
+
+## type map : une expression appliquée à chaque élément
+
+    set d [type map {x y z} $P(*.(a,b,c)) {($x + $y * $z)}]
+    set s [type map {x} $L {k} $poids {($x * $k)}]
+
+Les listes avancent ensemble (même longueur) ; une liste de K variables
+prend une liste de K colonnes, ce que rend un chemin à plusieurs champs. Le
+corps est une expression entre parenthèses (la forme de la TIP 759). Faite
+de nombres, de variables, d'arithmétique, de comparaisons, de `&&`, `||`,
+`!`, `?:` et des fonctions mathématiques usuelles, elle est compilée une
+fois et évaluée en C, sans objets ; sinon (ou pour un élément qui
+déborderait, diviserait par zéro...) par `expr` : le résultat est toujours
+celui d'`expr`. Comme `lmap`, les variables gardent le dernier élément. Avec `-sum`,
+la somme des résultats (comme `::tcl::mathop::+`) ; avec `-min`, `-max`, le plus
+petit, le plus grand (comme `::tcl::mathfunc::min`, `max`). Le
+résultat est une `list.double` ou une `list.int` en cases quand tous les
+résultats en sont. Quand l'expression ne calcule qu'en flottants, elle est
+évaluée par blocs de 256 éléments : les valeurs de chaque colonne sont
+d'abord rassemblées dans un petit tableau (cases, vues ou objets), puis
+chaque opération est appliquée au bloc entier ; un élément qui n'est pas un
+flottant simple, ou dont un calcul n'est pas fini, est repris seul par le
+chemin ordinaire (le résultat reste celui d'`expr`). `TCL_TYPE_NOBLOCK=1`
+désactive les blocs, pour comparer. De 10 000 à 100 000 éléments : 3 à 5 ns
+par élément en cases, 9 à 10 ns en objets, contre 100 à 150 ns avec `lmap` ;
+un million : 7 à 8 ns en cases, 17 à 20 en objets.
+
+Exemple : `exemples/tcllib_geometry/vectorise.tcl` réécrit l'aire, la
+longueur, la translation, la rotation et la boîte englobante d'une
+polyligne (liste plate x1 y1 x2 y2 ...) avec des fenêtres
+(`$pl((0,1,2,3)::2)`, `$pl((0,1)::2)`), `type map -sum` et l'écriture de
+colonnes. Coordonnées double, 100 000 sommets, par rapport à geometry.tcl
+typé : aire ×5,9, longueur ×7,1, translation ×2,8, rotation ×3,9, boîte
+×3,2 ; en `num` : ×4,6, ×4,0, ×2,0, ×1,9, ×2,4.
+`exemples/tcllib_geometry/COMPARAISON.md` compare la chaîne entière en dix
+variantes (Tcl nu, typé scintillant ou de bout en bout, en Tcl, vectorisé
+ou en C, en objets ou en cases), un principe par variante : ×0,5 pour le
+Tcl typé élément par élément, ×20 pour le Tcl typé vectorisé en cases, ×41
+pour le C en cases.
+
+## Formes d'un type : `type def T DÉF {-compact}F`
+
+    type def poly list.double {-compact}polyc
+
+`poly` et `polyc` sont le même type sous deux dispositions (objets Tcl, ou
+cases contiguës pour le C). Une forme entre telle quelle là où le type est
+attendu (`{poly}p`, `set {poly}x`, réaffectation) ; entrer dans la forme est
+un contrat écrit : `{polyc}p` refuse un `poly` (« use an explicit cast »),
+et `type cast` passe de l'une à l'autre sans règle. Exemple de bout en bout :
+`exemples/tcllib_geometry/e2e.tcl` (polygone typé une fois en `polylinec`,
+puis translation, rotation, aire, longueur, boîte : environ 6 fois plus
+rapide qu'en objets pour 100 000 sommets).
+
+Vues : une tranche à pas d'une liste en cases (`$L(1::2)`) ou une colonne
+d'une liste en cases de produits (`$P(*.x)`) est une vue sur les mêmes
+cases (base, début, pas, nombre), sans copie ; la base partagée est copiée
+avant toute écriture. `TCL_TYPE_NOVIEW=1` les remplace par des copies (pour
+comparer).

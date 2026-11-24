@@ -1,5 +1,10 @@
 # tcllib math::geometry, reformulé, et son cœur en C (v16q)
 
+> **Commencer par `COMPARAISON.md`** : la même chaîne (translate, rotate, aire, longueur,
+> boîte) en dix variantes, du Tcl nu de tcllib au tout typé en C (`comparaison.tcl`,
+> `geomcells.c`). Chaque variante illustre un principe ; en cases, le Tcl typé vectorisé
+> va 20 fois plus vite que le Tcl nu, et le C 41 fois.
+
 `geometry.tcl` reprend **tout** le fichier `geometry.tcl` de tcllib (math::geometry 1.4.2, 52
 procédures) avec les procédures typées (v16p/v16q) et les corps en expressions (TIP 759). Mêmes
 noms, mêmes arguments (des listes nues, comme les appelants de tcllib), mêmes résultats.

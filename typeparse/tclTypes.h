@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17m"
+#define TCL_TYPES_VERSION "v17o"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -203,6 +203,8 @@ struct TclType {
 				 * ("variante charge") ; TCLT_SUM_UNION, une
 				 * union ("|"), disjointe, dont la valeur est
 				 * la charge seule */
+    struct TclType *formOf;	/* 24/11 : forme (disposition) d'un type,
+				 * type def T DEF {-compact}F : F->formOf = T */
     const TclTypeOps *ops;	/* 23/11 : opérations spécialisées, ou NULL */
     size_t opsGen;		/* génération du registre où ops a été choisi */
     struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
@@ -424,9 +426,15 @@ Tcl_Obj *	TclTypesNames(Tcl_Interp *interp);
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
 int TclAnnotIsPlainTyped(Tcl_Obj *objPtr);
+int TclTypePlainScalar(const TclType *tp);
+int TclTypeBareElem(const TclType *tp);
+#define TclTypeFamily(t) ((t)->formOf != NULL ? (t)->formOf : (t))
 Tcl_Obj *TclAnnotWrapType(Tcl_Obj *c, const TclType *tp);
 int TclCompactScalarList(Tcl_Obj *v);
 int TclTypeHasBareRule(Tcl_Interp *interp, const TclType *tp);
+struct Var;
+int TclTypedVarLappendElems(Tcl_Interp *interp, struct Var *varPtr,
+	Tcl_Size objc, Tcl_Obj *const objv[], int index, Tcl_Obj **resultPtr);
 int TclTypesRegisterOps(Tcl_Interp *interp, const TclTypeSpec *spec);
 const TclTypeOps *TclTypeOpsOf(const TclType *tp);
 enum { TCL_TYPE_OPS_ON = 1, TCL_TYPE_OPS_OFF, TCL_TYPE_OPS_CHECK };
@@ -455,6 +463,21 @@ int	TclCompactFlat(TclType *et, size_t *stridePtr, int max, size_t off[],
 const unsigned char *TclCompactData(Tcl_Obj *v, const TclType *et,
 	    Tcl_Size *nPtr);
 Tcl_Obj *TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr);
+Tcl_Obj *TclCompactNewAlways(TclType *ltp, Tcl_Size n,
+	unsigned char **dataPtr);
+Tcl_Obj *TclCompactFieldColumn(Tcl_Obj *v, Tcl_Size f, TclType *lt);
+Tcl_Obj *TclCompactViewNew(Tcl_Obj *v, Tcl_Size first, Tcl_Size step,
+	Tcl_Size count);
+int TclIsCompactView(Tcl_Obj *v);
+Tcl_Obj *TclObjViewNew(Tcl_Obj *v, Tcl_Size first, Tcl_Size step,
+	Tcl_Size count);
+int TclObjViewInfo(Tcl_Obj *v, Tcl_Obj **basePtr, Tcl_Obj *const **elemsPtr,
+	Tcl_Size *nPtr, Tcl_Size *stridePtr);
+int TclIsObjView(Tcl_Obj *v);
+int TclCompactScalarWritable(Tcl_Obj *v);
+int TclCompactScalarInfo(Tcl_Obj *v, Tcl_Size *nPtr,
+	const unsigned char **dataPtr, size_t *stridePtr, int *kindPtr,
+	int *sizePtr);
 Tcl_Obj *TclCompactCast(TclType *target, Tcl_Obj *content);
 Tcl_Obj *TclCompactElement(Tcl_Obj *v, Tcl_Size i);
 Tcl_Obj *TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx);

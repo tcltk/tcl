@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17k"
+#define TCL_TYPES_VERSION "v17o"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -32,6 +32,36 @@
  * -------------------------------------------------------------------- */
 
 typedef struct TclType TclType;
+
+/*
+ * 23/11 : opérations spécialisées d'un type (voir CONCEPTION-ops.md). Une
+ * bibliothèque, intégrée ou chargée, déclare par TclTypesRegisterOps une
+ * fonction « match » qui reconnaît les types visés et la table de leurs
+ * opérations ; le type retient la meilleure (priorité la plus haute). Une
+ * opération absente (NULL), ou qui rend NULL / 0, laisse le chemin général.
+ * CONTENT est le contenu de la valeur typée (sans son annotation).
+ */
+typedef struct TclTypeOps {
+    int version;		/* TCL_TYPE_OPS_VERSION */
+    const char *name;		/* pour type info ops */
+    /* l'élément I (vue liste) : une valeur typée neuve (compte 0) */
+    Tcl_Obj *(*index)(const TclType *tp, Tcl_Obj *content, Tcl_Size i);
+    /* le champ F (rang) de l'élément I d'une liste de produits */
+    Tcl_Obj *(*elemField)(const TclType *tp, Tcl_Obj *content, Tcl_Size i,
+	    Tcl_Size f);
+    /* l'élément I en double, sans objet : 1 si lu */
+    int (*indexDouble)(const TclType *tp, Tcl_Obj *content, Tcl_Size i,
+	    double *outPtr);
+} TclTypeOps;
+
+typedef struct TclTypeSpec {
+    int version;		/* TCL_TYPE_OPS_VERSION */
+    const char *name;
+    int priority;		/* la plus haute l'emporte ; intégrées : 0 */
+    int (*match)(Tcl_Interp *interp, const TclType *tp, void *clientData);
+    const TclTypeOps *ops;
+    void *clientData;
+} TclTypeSpec;
 
 /* Une clé admise d'un dictionnaire contraint : dict(x, y?, z?=0). */
 typedef struct TclDictKey {
@@ -173,6 +203,10 @@ struct TclType {
 				 * ("variante charge") ; TCLT_SUM_UNION, une
 				 * union ("|"), disjointe, dont la valeur est
 				 * la charge seule */
+    struct TclType *formOf;	/* 24/11 : forme (disposition) d'un type,
+				 * type def T DEF {-compact}F : F->formOf = T */
+    const TclTypeOps *ops;	/* 23/11 : opérations spécialisées, ou NULL */
+    size_t opsGen;		/* génération du registre où ops a été choisi */
     struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
 };
 #define TCLT_SUM_TAGGED	0
@@ -391,6 +425,28 @@ Tcl_Obj *	TclTypesNames(Tcl_Interp *interp);
 /* Représentation compacte (tclAnnotObj.c) */
 typedef struct TclCompactLayout TclCompactLayout;
 int TclAnnotIsSettled(Tcl_Obj *objPtr);
+int TclAnnotIsPlainTyped(Tcl_Obj *objPtr);
+int TclTypePlainScalar(const TclType *tp);
+int TclTypeBareElem(const TclType *tp);
+#define TclTypeFamily(t) ((t)->formOf != NULL ? (t)->formOf : (t))
+Tcl_Obj *TclAnnotWrapType(Tcl_Obj *c, const TclType *tp);
+int TclCompactScalarList(Tcl_Obj *v);
+int TclTypeHasBareRule(Tcl_Interp *interp, const TclType *tp);
+struct Var;
+int TclTypedVarLappendElems(Tcl_Interp *interp, struct Var *varPtr,
+	Tcl_Size objc, Tcl_Obj *const objv[], int index, Tcl_Obj **resultPtr);
+int TclTypesRegisterOps(Tcl_Interp *interp, const TclTypeSpec *spec);
+const TclTypeOps *TclTypeOpsOf(const TclType *tp);
+enum { TCL_TYPE_OPS_ON = 1, TCL_TYPE_OPS_OFF, TCL_TYPE_OPS_CHECK };
+int TclTypeOpsMode(void);
+int TclTypeOpsSame(const char *where, Tcl_Obj *ops, Tcl_Obj *gen);
+Tcl_Obj *TclTypedElemFieldFast(Tcl_Obj *a, Tcl_Obj *idx, Tcl_Obj *lit);
+const char *TclTypeOpsName(const TclType *tp);
+#define TCL_TYPES_INTERNAL
+#include "tclTypesOps.h"
+extern const TclTypeSpec tclBuiltinTypeSpecs[];
+extern const int tclBuiltinTypeSpecCount;
+int TclCompactIndexInto(Tcl_Obj *v, Tcl_Size index, Tcl_Obj *cur);
 int TclAnnotFastIndex(Tcl_Obj *aPtr, int encodedIndex, Tcl_Obj **elemPtr);
 int TclAnnotExpireFromRet(Tcl_Interp *interp, Tcl_Size mark, int code);
 int TclTypeDebugCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[]);
@@ -407,6 +463,21 @@ int	TclCompactFlat(TclType *et, size_t *stridePtr, int max, size_t off[],
 const unsigned char *TclCompactData(Tcl_Obj *v, const TclType *et,
 	    Tcl_Size *nPtr);
 Tcl_Obj *TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr);
+Tcl_Obj *TclCompactNewAlways(TclType *ltp, Tcl_Size n,
+	unsigned char **dataPtr);
+Tcl_Obj *TclCompactFieldColumn(Tcl_Obj *v, Tcl_Size f, TclType *lt);
+Tcl_Obj *TclCompactViewNew(Tcl_Obj *v, Tcl_Size first, Tcl_Size step,
+	Tcl_Size count);
+int TclIsCompactView(Tcl_Obj *v);
+Tcl_Obj *TclObjViewNew(Tcl_Obj *v, Tcl_Size first, Tcl_Size step,
+	Tcl_Size count);
+int TclObjViewInfo(Tcl_Obj *v, Tcl_Obj **basePtr, Tcl_Obj *const **elemsPtr,
+	Tcl_Size *nPtr, Tcl_Size *stridePtr);
+int TclIsObjView(Tcl_Obj *v);
+int TclCompactScalarWritable(Tcl_Obj *v);
+int TclCompactScalarInfo(Tcl_Obj *v, Tcl_Size *nPtr,
+	const unsigned char **dataPtr, size_t *stridePtr, int *kindPtr,
+	int *sizePtr);
 Tcl_Obj *TclCompactCast(TclType *target, Tcl_Obj *content);
 Tcl_Obj *TclCompactElement(Tcl_Obj *v, Tcl_Size i);
 Tcl_Obj *TclCompactFieldNumber(Tcl_Obj *o, Tcl_Size idx);
@@ -466,6 +537,17 @@ int	TclValueDeref(Tcl_Interp *interp, Tcl_Obj *value,
 /* bitarray(n, ordre) : entier de n bits dont on lit/écrit les bits.
  * Les positions (lo, len) sont toujours celles du poids faible (0 = bit de
  * droite) ; la conversion depuis l'indice msb0 est faite par l'appelant. */
+int	TclBitsSetInPlace(Tcl_Obj *v, Tcl_Size lo, int bit,
+	    Tcl_Size widthDigits);
+Tcl_Obj *	TclBitsNewWorkObj(Tcl_Obj *value, Tcl_Size widthDigits);
+int	TclBitsGather(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
+	    Tcl_Size step, Tcl_Size count, int reverse, Tcl_Obj **resultPtr);
+int	TclBitsPutStride(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
+	    Tcl_Size step, Tcl_Size count, int reverse, Tcl_Obj *pattern,
+	    int fill, Tcl_Size widthDigits, Tcl_Obj **resultPtr);
+int	TclBitsFillStride(Tcl_Obj *v, Tcl_Size lo, Tcl_Size step,
+	    Tcl_Size count, int bit, Tcl_Size widthDigits);
+int	TclAnnotSwapContent(Tcl_Obj *a, Tcl_Obj *v);
 int	TclBitsGet(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,
 	    Tcl_Size len, Tcl_Obj **resultPtr);
 int	TclBitsPut(Tcl_Interp *interp, Tcl_Obj *value, Tcl_Size lo,

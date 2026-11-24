@@ -294,6 +294,34 @@ static Tcl_ObjTypeIndexProc	CompactElemIndex;
 static Tcl_ObjTypeGetElements	CompactElemGetElements;
 static Tcl_ObjTypeReplaceProc	CompactElemReplace;
 
+/* 24/11 : une vue à pas sur les cases scalaires d'une liste en cases */
+static Tcl_FreeInternalRepProc	FreeCompactView;
+static Tcl_DupInternalRepProc	DupCompactView;
+static Tcl_UpdateStringProc	UpdateStringOfCompactView;
+static Tcl_ObjTypeLengthProc	CompactViewLength;
+static Tcl_ObjTypeIndexProc	CompactViewIndex;
+static Tcl_ObjTypeGetElements	CompactViewGetElements;
+
+static Tcl_FreeInternalRepProc	FreeObjView;
+static Tcl_DupInternalRepProc	DupObjView;
+static Tcl_UpdateStringProc	UpdateStringOfObjView;
+static Tcl_ObjTypeLengthProc	ObjViewLength;
+static Tcl_ObjTypeIndexProc	ObjViewIndex;
+static Tcl_ObjTypeGetElements	ObjViewGetElements;
+
+static const Tcl_ObjType objViewType = {
+    "objview", FreeObjView, DupObjView, UpdateStringOfObjView, NULL,
+    TCL_OBJTYPE_V2(ObjViewLength, ObjViewIndex, NULL, NULL,
+	    ObjViewGetElements, NULL, NULL, NULL)
+};
+
+static const Tcl_ObjType compactViewType = {
+    "compactview", FreeCompactView, DupCompactView,
+    UpdateStringOfCompactView, NULL,
+    TCL_OBJTYPE_V2(CompactViewLength, CompactViewIndex, NULL, NULL,
+	    CompactViewGetElements, NULL, NULL, NULL)
+};
+
 static const Tcl_ObjType compactElemType = {
     "compactelem", FreeCompactElem, DupCompactElem, UpdateStringOfCompactElem,
     NULL, TCL_OBJTYPE_V2(CompactElemLength, CompactElemIndex, NULL, NULL,
@@ -1307,6 +1335,12 @@ TclAnnotIterList(Tcl_Obj *aPtr)
 	return NULL;
     }
     if (TclIsCompact(v)) {
+	/* 23/11 : des scalaires nus : la boucle lit les cases elles-mêmes
+	 * (liste abstraite), sans liste d'objets à côté */
+	if (TclCompactScalarList(v)) {
+	    /* nus : les cases ; typés : A, élément par élément */
+	    return BareLoopElem(AnnotListElemType(aPtr)) ? v : NULL;
+	}
 	/* en cases : la liste des éléments gardée à côté des cases (des vues),
 	 * privée à V, typée sur place comme une liste ordinaire */
 	v = TclCompactCache(v);
@@ -1382,8 +1416,55 @@ TypeNotesOnly(Tcl_Obj *e, TclType *et)
     return WrapElem(e, et, -1);
 }
 
+static int AnnotListIndexGeneral(Tcl_Interp *interp, Tcl_Obj *aPtr,
+	Tcl_Size index, Tcl_Obj **elemPtr);
+
 static int
 AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
+	Tcl_Obj **elemPtr)
+{
+    Tcl_Obj *v;
+    TclType *lt = FastListType(aPtr, &v);
+
+    if (lt != NULL) {
+	/* 23/11 : la spécialisation du type, s'il en a une */
+	const TclTypeOps *ops = TclTypeOpsOf(lt);
+
+	if (ops != NULL && ops->index != NULL) {
+	    Tcl_Obj *r = ops->index(lt, v, index);
+
+	    if (r != NULL && TclTypeOpsMode() == TCL_TYPE_OPS_CHECK) {
+		/* le chemin général aussi, et la comparaison */
+		Tcl_Obj *g = NULL;
+		int rc;
+
+		Tcl_IncrRefCount(r);
+		rc = AnnotListIndexGeneral(interp, aPtr, index, &g);
+		if (rc == TCL_OK) {
+		    if (g != NULL) {
+			Tcl_IncrRefCount(g);
+		    }
+		    TclTypeOpsSame(ops->name, r, g);
+		    if (g != NULL) {
+			g->refCount--;	/* rendu tel qu'il est venu (compte 0 s'il
+					 * est neuf), sans le libérer */
+		    }
+		}
+		Tcl_DecrRefCount(r);
+		*elemPtr = g;
+		return rc;
+	    }
+	    if (r != NULL) {
+		*elemPtr = r;
+		return TCL_OK;
+	    }
+	}
+    }
+    return AnnotListIndexGeneral(interp, aPtr, index, elemPtr);
+}
+
+static int
+AnnotListIndexGeneral(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	Tcl_Obj **elemPtr)
 {
     Tcl_Obj *v;
@@ -1410,6 +1491,13 @@ AnnotListIndex(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size index,
 	    && *elemPtr != NULL && TCL_ANNOT_P(*elemPtr)) {
 	*elemPtr = TypeNotesOnly(*elemPtr, lt->elem);
 	return TCL_OK;			/* élément déjà typé dans V */
+    }
+    if (lt != NULL && *elemPtr != NULL && PlainScalarElem(lt->elem)) {
+	/* 23/11 : un scalaire simple, laissé nu dans V (v16s) : l'enveloppe
+	 * neuve tout de suite, sans repasser par la vue, la résolution du
+	 * type de la liste et la vérification de l'élément */
+	*elemPtr = WrapElem(*elemPtr, lt->elem, -1);
+	return TCL_OK;
     }
     if (lt == NULL && (lt = FastProductType(aPtr, &v)) != NULL
 	    && index >= 0 && index < lt->nfields) {
@@ -1798,6 +1886,28 @@ AnnotListReplace(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size first,
     return rc;
 }
 
+/*
+ * 23/11 : remplacer sur place le contenu d'une valeur annotée que personne
+ * d'autre ne tient (l'écriture d'un bit, TclBitsSetInPlace). 1 si fait.
+ */
+int
+TclAnnotSwapContent(Tcl_Obj *a, Tcl_Obj *v)
+{
+    Tcl_Obj *old;
+
+    if (a->typePtr != &annotatedObjType || Tcl_IsShared(a)) {
+	return 0;
+    }
+    old = (Tcl_Obj *) a->internalRep.twoPtrValue.ptr1;
+    Tcl_IncrRefCount(v);
+    a->internalRep.twoPtrValue.ptr1 = v;
+    if (old != NULL) {
+	Tcl_DecrRefCount(old);
+    }
+    TclInvalidateStringRep(a);
+    return 1;
+}
+
 /* Convention des setElementProc (TclLsetList et [lset] ajoutent la
  * référence ; INST_LSET_FLAT et lpop aussi, avec chemins-modification ou
  * lset-reference.patch) : une copie SANS référence propre ; NULL en cas
@@ -1810,6 +1920,43 @@ AnnotListSetElement(Tcl_Interp *interp, Tcl_Obj *aPtr, Tcl_Size indexCount,
     int rc;
     TclType *ltp = NULL;
 
+    /*
+     * 23/11 : lset L i v, d'une liste typée que seule la variable tient
+     * (INST_LSET_FLAT a rendu la référence de la pile), d'éléments simples
+     * (entiers, flottants) : l'élément est vérifié seul, puis écrit sur place
+     * (en cases, ou dans la liste). Le contrat ne peut pas refuser le
+     * résultat : il est du même type, élément vérifié. Avant : une copie de
+     * la liste, puis sa revalidation entière, à chaque lset (O(n²) pour une
+     * boucle).
+     */
+    if (valueObj != NULL && indexCount == 1 && !Tcl_IsShared(aPtr)
+	    && aPtr->typePtr == &annotatedObjType && !TclIsAnnotated(valueObj)
+	    && TclAnnotIsSettled(aPtr)
+	    && TclAnnotInfo(aPtr, &w, &ltp, NULL, NULL) == 1
+	    && ltp->kind == TCLT_LIST && ltp->elem != NULL
+	    && (ltp->elem->kind == TCLT_INT || ltp->elem->kind == TCLT_DOUBLE)
+	    && !Tcl_IsShared(w)
+	    && TclTypeValidate(NULL, ltp->elem, valueObj, -1, NULL) == TCL_OK) {
+	Tcl_Size ne, ix;
+
+	if (Tcl_ListObjLength(NULL, w, &ne) == TCL_OK
+		&& Tcl_GetIntForIndex(NULL, indexArray[0], ne - 1, &ix)
+			== TCL_OK
+		&& ix >= 0 && ix < ne) {
+	    int done = 0;
+
+	    if (TclIsCompact(w)) {
+		done = TclCompactWriteScalar(w, ix, 0, NULL, valueObj);
+	    } else if (w->typePtr == &tclListType) {
+		done = (TclListObjSetElement(NULL, w, ix, valueObj) == TCL_OK);
+	    }
+	    if (done) {
+		TclInvalidateStringRep(w);
+		TclInvalidateStringRep(aPtr);
+		return aPtr;
+	    }
+	}
+    }
     settled = NULL;
     if (valueObj != NULL) {		/* lpop : NULL, un élément retiré */
 	settled = SettleElement(interp, aPtr, valueObj);	/* v16m */
@@ -1945,7 +2092,9 @@ MakeAnnotated(Tcl_Obj *vPtr, Tcl_Obj *tPtr)
     /* v17a : les nombres prennent leur écriture canonique. Un contenu sans
      * propriétaire (compte 0 : copie ou neuf) est remplacé ; un contenu
      * partagé reste intact, la valeur typée en reçoit un autre. */
-    if (IsTypeRef(tPtr) && vPtr->typePtr != &compactListType) {
+    if (IsTypeRef(tPtr) && vPtr->typePtr != &compactListType
+	    && vPtr->typePtr != &compactViewType	/* (24/11 : cases) */
+	    && vPtr->typePtr != &objViewType) {	/* (24/11 : vue d'objets) */
 	Tcl_Obj *nc = NormContent(
 		(TclType *) tPtr->internalRep.twoPtrValue.ptr1,
 		(int) (intptr_t) tPtr->internalRep.twoPtrValue.ptr2 - 1, vPtr);
@@ -2150,6 +2299,82 @@ NormElems(Tcl_Size n, Tcl_Obj *const *ev, TclType *elem, TclTypeField *fields,
     }
 }
 
+/*
+ * 23/11 : textes sûrement canoniques, reconnus sans les refaire (avant :
+ * Tcl_PrintDouble à chaque valeur typée lue d'un texte, 13 % d'un appel
+ * {double}a). Un double écrit d.ddd avec au plus 15 chiffres significatifs
+ * est son propre texte le plus court (DBL_DIG) ; Tcl l'écrit sans exposant
+ * de 1e-4 à 1e16. Dans le doute : 0, et l'on compare au texte refait.
+ */
+static int
+CanonIntText(const char *p)
+{
+    const char *q;
+    int neg = (*p == '-');
+
+    if (neg) {
+	p++;
+    }
+    if (*p == '0') {
+	return p[1] == '\0' && !neg;
+    }
+    for (q = p; *q >= '0' && *q <= '9'; q++) {
+    }
+    return q > p && *q == '\0' && q - p <= 18;
+}
+
+static int
+CanonDoubleText(const char *p)
+{
+    const char *ip, *fp, *q;
+    int nint, nfrac, lead = 0, sig;
+
+    if (*p == '-') {
+	p++;
+    }
+    ip = p;
+    if (*p == '0') {
+	p++;
+    } else {
+	while (*p >= '0' && *p <= '9') {
+	    p++;
+	}
+    }
+    nint = (int) (p - ip);
+    if (nint == 0 || nint > 15 || *p != '.') {
+	return 0;
+    }
+    fp = ++p;
+    while (*p >= '0' && *p <= '9') {
+	p++;
+    }
+    if (*p != '\0') {
+	return 0;
+    }
+    nfrac = (int) (p - fp);
+    if (nfrac == 0) {
+	return 0;
+    }
+    if (nfrac == 1 && fp[0] == '0') {
+	return 1;				/* n.0 */
+    }
+    if (p[-1] == '0') {
+	return 0;				/* zéro final : 1.10 */
+    }
+    if (nint == 1 && ip[0] == '0') {
+	for (q = fp; *q == '0'; q++) {
+	    lead++;
+	}
+	if (lead > 3) {
+	    return 0;				/* 1e-5 */
+	}
+	sig = nfrac - lead;
+    } else {
+	sig = nint + nfrac;
+    }
+    return sig <= 15;
+}
+
 static Tcl_Obj *
 NormContent(TclType *tp, int variant, Tcl_Obj *v)
 {
@@ -2166,9 +2391,9 @@ NormContent(TclType *tp, int variant, Tcl_Obj *v)
 
 	char buf[32];
 
-	if (tp->bitWidth != 0 || v->bytes == NULL
+	if (tp->bitWidth != 0 || v->bytes == NULL || CanonIntText(v->bytes)
 		|| Tcl_GetWideIntFromObj(NULL, v, &w) != TCL_OK) {
-	    return NULL;		/* déjà sans texte, ou grand entier */
+	    return NULL;		/* sans texte, canonique, ou grand entier */
 	}
 	snprintf(buf, sizeof(buf), "%" TCL_LL_MODIFIER "d", (long long) w);
 	if (strcmp(buf, v->bytes) == 0) {
@@ -2183,7 +2408,8 @@ NormContent(TclType *tp, int variant, Tcl_Obj *v)
 
 	char buf[TCL_DOUBLE_SPACE];
 
-	if (v->bytes == NULL || Tcl_GetDoubleFromObj(NULL, v, &d) != TCL_OK) {
+	if (v->bytes == NULL || CanonDoubleText(v->bytes)
+		|| Tcl_GetDoubleFromObj(NULL, v, &d) != TCL_OK) {
 	    return NULL;
 	}
 	Tcl_PrintDouble(NULL, d, buf);
@@ -2366,7 +2592,11 @@ TclAnnotNumericContent(Tcl_Obj *objPtr)
 	return NULL;
     }
     c = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
-    if (c->typePtr != &tclIntType && c->typePtr != &tclDoubleType) {
+    /* 23/11 : un grand entier aussi (un bitarray de plus de 64 bits) :
+     * sinon la comparaison relisait la valeur annotée, et deux grands
+     * entiers se confondaient ($d == 2**150 rendait 0) */
+    if (c->typePtr != &tclIntType && c->typePtr != &tclDoubleType
+	    && c->typePtr != &tclBignumType) {
 	return NULL;
     }
     return c;
@@ -6266,6 +6496,10 @@ TclCompactElement(Tcl_Obj *v, Tcl_Size i)
 {
     Tcl_Obj *e = NULL;
 
+    if (v->typePtr == &compactViewType) {
+	CompactViewIndex(NULL, v, i, &e);	/* 24/11 : une vue */
+	return e;
+    }
     CompactIndex(NULL, v, i, &e);
     return e;
 }
@@ -6544,6 +6778,519 @@ TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
     ir.twoPtrValue.ptr2 = NULL;
     Tcl_StoreInternalRep(v, &compactListType, &ir);
     TclInvalidateStringRep(v);		/* chaîne recalculée depuis les cases */
+    *dataPtr = b->data;
+    return v;
+}
+
+
+/*
+ * 24/11 : vue à pas. Une tranche b(a:b:c) ou une colonne P(*.x) d'une liste
+ * en cases de scalaires : la base (comptée), le début, le pas, le nombre et
+ * le scalaire lu (genre, taille). Pas de copie ; une valeur Tcl comme une
+ * autre (liste abstraite, immuable : la base partagée est copiée avant
+ * toute écriture, b->refCount > 1). Lue directement par les commandes de
+ * masse (TclCompactScalarInfo) ; ailleurs, élément par élément.
+ */
+typedef struct CompactView {
+    TclCompactBuf *base;
+    size_t off;			/* octets depuis base->data */
+    size_t stride;
+    Tcl_Size n;
+    CNode node;			/* le scalaire (off 0) */
+    Tcl_Obj *list;		/* les éléments, faits à la demande */
+} CompactView;
+
+#define COMPACT_VIEW(o) ((CompactView *) (o)->internalRep.twoPtrValue.ptr1)
+
+static Tcl_Obj *
+NewCompactView(TclCompactBuf *b, size_t off, size_t stride, Tcl_Size n,
+	const CNode *nd)
+{
+    CompactView *cv = (CompactView *) Tcl_Alloc(sizeof(CompactView));
+    Tcl_Obj *o = Tcl_NewObj();
+    Tcl_ObjInternalRep ir;
+
+    cv->base = b;
+    b->refCount++;
+    cv->off = off;
+    cv->stride = stride;
+    cv->n = n;
+    cv->node = *nd;
+    cv->node.off = 0;
+    cv->list = NULL;
+    ir.twoPtrValue.ptr1 = cv;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(o, &compactViewType, &ir);
+    TclInvalidateStringRep(o);
+    return o;
+}
+
+static void
+FreeCompactView(Tcl_Obj *objPtr)
+{
+    CompactView *cv = COMPACT_VIEW(objPtr);
+
+    if (cv->list != NULL) {
+	Tcl_DecrRefCount(cv->list);
+    }
+    ReleaseCompactBuf(cv->base);
+    Tcl_Free(cv);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupCompactView(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    CompactView *cv = COMPACT_VIEW(srcPtr), *nv;
+    Tcl_ObjInternalRep ir;
+
+    nv = (CompactView *) Tcl_Alloc(sizeof(CompactView));
+    *nv = *cv;
+    nv->list = NULL;
+    nv->base->refCount++;
+    ir.twoPtrValue.ptr1 = nv;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(dupPtr, &compactViewType, &ir);
+}
+
+static Tcl_Obj *
+CompactViewElem(const CompactView *cv, Tcl_Size i)
+{
+    return DecodeScalar(&cv->node,
+	    cv->base->data + cv->off + (size_t) i * cv->stride);
+}
+
+static void
+UpdateStringOfCompactView(Tcl_Obj *objPtr)
+{
+    CompactView *cv = COMPACT_VIEW(objPtr);
+    Tcl_DString ds;
+    Tcl_Size i;
+
+    Tcl_DStringInit(&ds);
+    for (i = 0; i < cv->n; i++) {
+	Tcl_Obj *e = CompactViewElem(cv, i);
+
+	Tcl_DStringAppendElement(&ds, Tcl_GetString(e));
+	TclDiscard(e);
+    }
+    TclInitStringRep(objPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+}
+
+static Tcl_Size
+CompactViewLength(Tcl_Obj *objPtr)
+{
+    return COMPACT_VIEW(objPtr)->n;
+}
+
+static int
+CompactViewIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index,
+	Tcl_Obj **elemPtr)
+{
+    CompactView *cv = COMPACT_VIEW(objPtr);
+
+    (void) interp;
+    *elemPtr = (index < 0 || index >= cv->n) ? NULL
+	    : CompactViewElem(cv, index);
+    return TCL_OK;
+}
+
+static int
+CompactViewGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+{
+    CompactView *cv = COMPACT_VIEW(objPtr);
+
+    if (cv->list == NULL) {
+	Tcl_Size i;
+
+	cv->list = Tcl_NewListObj(cv->n, NULL);
+	Tcl_IncrRefCount(cv->list);
+	for (i = 0; i < cv->n; i++) {
+	    Tcl_ListObjAppendElement(NULL, cv->list, CompactViewElem(cv, i));
+	}
+    }
+    return Tcl_ListObjGetElements(interp, cv->list, objcPtr, objvPtr);
+}
+
+/* une vue sur V (liste en cases de scalaires, ou vue) : les éléments
+ * first, first+step... (count), step >= 1 */
+Tcl_Obj *
+TclCompactViewNew(Tcl_Obj *v, Tcl_Size first, Tcl_Size step, Tcl_Size count)
+{
+    if (step < 1 || count < 0 || first < 0) {
+	return NULL;
+    }
+    if (v->typePtr == &compactViewType) {
+	CompactView *cv = COMPACT_VIEW(v);
+
+	if (count > 0 && first + (count - 1) * step >= cv->n) {
+	    return NULL;
+	}
+	return NewCompactView(cv->base, cv->off + (size_t) first * cv->stride,
+		cv->stride * (size_t) step, count, &cv->node);
+    }
+    if (v->typePtr == &compactListType) {
+	TclCompactBuf *b = COMPACT_BUF(v);
+	const CNode *nd = &b->lay->node[0];
+
+	if (nd->kind == CN_PROD
+		|| (count > 0 && first + (count - 1) * step >= b->n)) {
+	    return NULL;
+	}
+	return NewCompactView(b, nd->off + (size_t) first * b->stride,
+		b->stride * (size_t) step, count, nd);
+    }
+    return NULL;
+}
+
+/* 24/11 : le tampon d'une liste en cases de scalaires, à elle seule, prêt
+ * à être écrit (cache des éléments et texte jetés) ; 0 si une vue ou une
+ * copie le partage */
+int
+TclCompactScalarWritable(Tcl_Obj *v)
+{
+    TclCompactBuf *b;
+
+    if (v->typePtr != &compactListType || Tcl_IsShared(v)) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    if (b->lay->node[0].kind == CN_PROD) {
+	return 0;
+    }
+    CompactDropCache(v);
+    if (b->refCount > 1) {
+	return 0;
+    }
+    TclInvalidateStringRep(v);
+    return 1;
+}
+
+int
+TclIsCompactView(Tcl_Obj *v)
+{
+    return v != NULL && v->typePtr == &compactViewType;
+}
+
+/*
+ * 24/11 : une vue à pas sur une liste d'objets (le « résumé » d'une liste
+ * éparpillée) : la liste de base, tenue par une copie privée qui partage son
+ * stockage (TclListObjCopy, sans toucher les éléments), un début, un pas et
+ * un nombre. Une tranche d'une liste d'objets se fait ainsi en O(1), sans
+ * compter ni décompter chaque élément ; les commandes de masse (type map)
+ * lisent directement base[début + i * pas]. Ailleurs : élément par élément
+ * (lindex, llength), ou la liste faite une fois à la demande. Immuable,
+ * comme la vue en cases : le stockage partagé n'est jamais modifié sur
+ * place (son compte est > 1).
+ */
+typedef struct ObjView {
+    Tcl_Obj *base;		/* copie privée, stockage partagé */
+    Tcl_Size off, stride, n;
+    Tcl_Obj *list;		/* les éléments, faits à la demande */
+} ObjView;
+
+#define OBJ_VIEW(o) ((ObjView *) (o)->internalRep.twoPtrValue.ptr1)
+
+static Tcl_Obj *const *
+ObjViewElems(const ObjView *ov)
+{
+    Tcl_Size n;
+    Tcl_Obj **ev;
+
+    if (TclListObjGetElements(NULL, ov->base, &n, &ev) != TCL_OK) {
+	return NULL;			/* (ne se produit pas : une liste) */
+    }
+    return ev + ov->off;
+}
+
+static Tcl_Obj *
+NewObjView(Tcl_Obj *base, Tcl_Size off, Tcl_Size stride, Tcl_Size n)
+{
+    ObjView *ov = (ObjView *) Tcl_Alloc(sizeof(ObjView));
+    Tcl_Obj *o = Tcl_NewObj();
+    Tcl_ObjInternalRep ir;
+
+    ov->base = base;
+    Tcl_IncrRefCount(base);
+    ov->off = off;
+    ov->stride = stride;
+    ov->n = n;
+    ov->list = NULL;
+    ir.twoPtrValue.ptr1 = ov;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(o, &objViewType, &ir);
+    TclInvalidateStringRep(o);
+    return o;
+}
+
+static void
+FreeObjView(Tcl_Obj *objPtr)
+{
+    ObjView *ov = OBJ_VIEW(objPtr);
+
+    if (ov->list != NULL) {
+	Tcl_DecrRefCount(ov->list);
+    }
+    Tcl_DecrRefCount(ov->base);
+    Tcl_Free(ov);
+    objPtr->typePtr = NULL;
+}
+
+static void
+DupObjView(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr)
+{
+    ObjView *ov = OBJ_VIEW(srcPtr), *nv;
+    Tcl_ObjInternalRep ir;
+
+    nv = (ObjView *) Tcl_Alloc(sizeof(ObjView));
+    *nv = *ov;
+    nv->list = NULL;
+    Tcl_IncrRefCount(nv->base);
+    ir.twoPtrValue.ptr1 = nv;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(dupPtr, &objViewType, &ir);
+}
+
+static void
+UpdateStringOfObjView(Tcl_Obj *objPtr)
+{
+    ObjView *ov = OBJ_VIEW(objPtr);
+    Tcl_Obj *const *ev = ObjViewElems(ov);
+    Tcl_DString ds;
+    Tcl_Size i;
+
+    Tcl_DStringInit(&ds);
+    for (i = 0; i < ov->n; i++) {
+	Tcl_DStringAppendElement(&ds, Tcl_GetString(ev[i * ov->stride]));
+    }
+    TclInitStringRep(objPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
+}
+
+static Tcl_Size
+ObjViewLength(Tcl_Obj *objPtr)
+{
+    return OBJ_VIEW(objPtr)->n;
+}
+
+static int
+ObjViewIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Size index,
+	Tcl_Obj **elemPtr)
+{
+    ObjView *ov = OBJ_VIEW(objPtr);
+
+    (void) interp;
+    *elemPtr = (index < 0 || index >= ov->n) ? NULL
+	    : ObjViewElems(ov)[index * ov->stride];
+    return TCL_OK;
+}
+
+static int
+ObjViewGetElements(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	Tcl_Size *objcPtr, Tcl_Obj ***objvPtr)
+{
+    ObjView *ov = OBJ_VIEW(objPtr);
+
+    if (ov->list == NULL) {
+	Tcl_Obj *const *ev = ObjViewElems(ov);
+	Tcl_Obj **sel;
+	Tcl_Size i;
+
+	if (ov->stride == 1) {
+	    ov->list = Tcl_NewListObj(ov->n, ev);
+	} else {
+	    sel = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
+		    * (size_t) (ov->n ? ov->n : 1));
+	    for (i = 0; i < ov->n; i++) {
+		sel[i] = ev[i * ov->stride];
+	    }
+	    ov->list = Tcl_NewListObj(ov->n, sel);
+	    Tcl_Free(sel);
+	}
+	Tcl_IncrRefCount(ov->list);
+    }
+    return Tcl_ListObjGetElements(interp, ov->list, objcPtr, objvPtr);
+}
+
+/* une vue sur V (liste d'objets, ou vue d'objets) : les éléments first,
+ * first+step... (count), step >= 1 ; NULL sinon */
+Tcl_Obj *
+TclObjViewNew(Tcl_Obj *v, Tcl_Size first, Tcl_Size step, Tcl_Size count)
+{
+    Tcl_Obj *base;
+    Tcl_Size n;
+
+    if (step < 1 || count < 0 || first < 0) {
+	return NULL;
+    }
+    if (v->typePtr == &objViewType) {
+	ObjView *ov = OBJ_VIEW(v);
+
+	if (count > 0 && first + (count - 1) * step >= ov->n) {
+	    return NULL;
+	}
+	return NewObjView(ov->base, ov->off + first * ov->stride,
+		ov->stride * step, count);
+    }
+    if (!TclHasInternalRep(v, &tclListType)) {
+	return NULL;
+    }
+    if (TclListObjLength(NULL, v, &n) != TCL_OK
+	    || (count > 0 && first + (count - 1) * step >= n)) {
+	return NULL;
+    }
+    base = TclListObjCopy(NULL, v);
+    if (base == NULL) {
+	return NULL;
+    }
+    return NewObjView(base, first, step, count);
+}
+
+/* les éléments d'une vue d'objets : *elemsPtr[i * *stridePtr], i < *nPtr ;
+ * *basePtr tient le stockage (à garder compté pendant l'usage) */
+int
+TclObjViewInfo(Tcl_Obj *v, Tcl_Obj **basePtr, Tcl_Obj *const **elemsPtr,
+	Tcl_Size *nPtr, Tcl_Size *stridePtr)
+{
+    ObjView *ov;
+
+    if (v == NULL || v->typePtr != &objViewType) {
+	return 0;
+    }
+    ov = OBJ_VIEW(v);
+    *basePtr = ov->base;
+    *elemsPtr = ObjViewElems(ov);
+    *nPtr = ov->n;
+    *stridePtr = ov->stride;
+    return *elemsPtr != NULL;
+}
+
+int
+TclIsObjView(Tcl_Obj *v)
+{
+    return v != NULL && v->typePtr == &objViewType;
+}
+
+/* 23/11 : une liste en cases de scalaires : ses cases, leur pas, le genre
+ * (0 entier signé, 1 non signé, 2 flottant) et la taille d'un scalaire. */
+int
+TclCompactScalarInfo(Tcl_Obj *v, Tcl_Size *nPtr, const unsigned char **dataPtr,
+	size_t *stridePtr, int *kindPtr, int *sizePtr)
+{
+    TclCompactBuf *b;
+    const CNode *nd;
+
+    if (v != NULL && v->typePtr == &compactViewType) {
+	CompactView *cv = COMPACT_VIEW(v);
+
+	*nPtr = cv->n;
+	*dataPtr = cv->base->data + cv->off;
+	*stridePtr = cv->stride;
+	nd = &cv->node;
+	*kindPtr = (nd->kind == CN_INT) ? 0 : (nd->kind == CN_UINT) ? 1 : 2;
+	*sizePtr = nd->size;
+	return 1;
+    }
+    if (v == NULL || v->typePtr != &compactListType) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    nd = &b->lay->node[0];
+    if (nd->kind == CN_PROD) {
+	return 0;
+    }
+    *nPtr = b->n;
+    *dataPtr = b->data + nd->off;
+    *stridePtr = b->stride;
+    *kindPtr = (nd->kind == CN_INT) ? 0 : (nd->kind == CN_UINT) ? 1 : 2;
+    *sizePtr = nd->size;
+    return 1;
+}
+
+/*
+ * 23/11 : la colonne du champ F (scalaire) d'une liste en cases de
+ * produits : une liste en cases neuve de type LT (list.T du champ), copiée
+ * case à case. NULL si ce n'est pas possible ici.
+ */
+Tcl_Obj *
+TclCompactFieldColumn(Tcl_Obj *v, Tcl_Size f, TclType *lt)
+{
+    TclCompactBuf *b;
+    const CNode *root, *nd;
+    Tcl_Obj *col;
+    unsigned char *dst;
+    const unsigned char *src;
+    Tcl_Size k, i, n;
+    int idx;
+
+    if (v == NULL || v->typePtr != &compactListType || lt == NULL) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    root = &b->lay->node[0];
+    if (root->kind != CN_PROD || root->isList || f < 0 || f >= root->nchild) {
+	return NULL;
+    }
+    for (idx = 1, k = 0; k < f; k++) {
+	idx += b->lay->node[idx].nsub;
+    }
+    nd = &b->lay->node[idx];
+    if (nd->kind == CN_PROD) {
+	return NULL;
+    }
+    n = b->n;
+    if (getenv("TCL_TYPE_NOVIEW") == NULL) {
+	/* 24/11 : la colonne est une vue (base, décalage du champ, pas d'un
+	 * produit), sans copie */
+	(void) lt;
+	return NewCompactView(b, nd->off, b->stride, n, nd);
+    }
+    col = TclCompactNewAlways(lt, n, &dst);
+    if (col == NULL) {
+	return NULL;
+    }
+    {
+	TclCompactBuf *cb = COMPACT_BUF(col);
+	const CNode *cn = &cb->lay->node[0];
+
+	if (cn->kind != nd->kind || cn->size != nd->size) {
+	    Tcl_DecrRefCount(col);	/* (compte 0 : libéré) */
+	    return NULL;
+	}
+	src = b->data + nd->off;
+	dst = cb->data + cn->off;
+	for (i = 0; i < n; i++) {
+	    memcpy(dst + (size_t) i * cb->stride,
+		    src + (size_t) i * b->stride, (size_t) nd->size);
+	}
+    }
+    return col;
+}
+
+/* 23/11 : la même, même quand la forme compacte n'est pas demandée (le
+ * résultat de type map : des nombres, en cases d'emblée). */
+Tcl_Obj *
+TclCompactNewAlways(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
+{
+    TclCompactLayout *lay;
+    TclCompactBuf *b;
+    Tcl_Obj *v;
+    Tcl_ObjInternalRep ir;
+
+    if (ltp == NULL || ltp->kind != TCLT_LIST || ltp->elem == NULL || n < 0
+	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL) {
+	return NULL;
+    }
+    b = NewCompactBuf(ltp->elem, lay, n);
+    b->norm = 1;
+    b->n = n;
+    v = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(v, &compactListType, &ir);
+    TclInvalidateStringRep(v);
     *dataPtr = b->data;
     return v;
 }
@@ -6837,4 +7584,272 @@ TclCompactInit(Tcl_Interp *interp)
     Tcl_RegisterObjType(&annotatedObjType);	/* pour tclCompact.h */
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::compact", CompactObjCmd,
 	    NULL, NULL);
+}
+
+/*
+ * 23/11 : foreach sur une liste en cases d'éléments scalaires. La boucle
+ * parcourt les cases sans faire la liste de leurs objets (avant : un objet
+ * par élément, gardé à côté des cases). CUR est la valeur que tient la
+ * variable de boucle : si elle seule la tient, l'élément INDEX y est écrit
+ * (aucun objet neuf) ; rend 1. Sinon 0 : le chemin ordinaire (CompactIndex,
+ * un objet neuf).
+ */
+int
+TclCompactScalarList(Tcl_Obj *v)
+{
+    return v->typePtr == &compactListType
+	    && COMPACT_BUF(v)->lay->node[0].kind != CN_PROD;
+}
+
+int
+TclCompactIndexInto(Tcl_Obj *v, Tcl_Size index, Tcl_Obj *cur)
+{
+    TclCompactBuf *b;
+    const CNode *nd;
+    const unsigned char *p;
+
+    Tcl_Obj *wrap = NULL;
+
+    if (cur == NULL || Tcl_IsShared(cur)) {
+	return 0;
+    }
+    if (v->typePtr == &annotatedObjType) {
+	/* éléments typés : la valeur typée et son contenu, tous deux à la
+	 * seule variable, du type des éléments */
+	Tcl_Obj *inner, *ct;
+	TclType *lt = FastListType(v, &inner);
+
+	if (lt == NULL || inner->typePtr != &compactListType
+		|| cur->typePtr != &annotatedObjType) {
+	    return 0;
+	}
+	ct = (Tcl_Obj *) cur->internalRep.twoPtrValue.ptr2;
+	if (ct->typePtr != &typeRefObjType
+		|| (TclType *) ct->internalRep.twoPtrValue.ptr1 != lt->elem
+		|| ct->internalRep.twoPtrValue.ptr2 != NULL
+		|| Tcl_IsShared((Tcl_Obj *) cur->internalRep.twoPtrValue.ptr1)) {
+	    return 0;
+	}
+	wrap = cur;
+	cur = (Tcl_Obj *) cur->internalRep.twoPtrValue.ptr1;
+	v = inner;
+    } else if (v->typePtr != &compactListType
+	    || cur->typePtr == &annotatedObjType) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    nd = &b->lay->node[0];
+    if (index < 0 || index >= b->n || nd->kind == CN_PROD) {
+	return 0;
+    }
+    p = b->data + (size_t) index * b->stride + nd->off;
+    switch (nd->kind) {
+    case CN_FLT:
+	if (nd->size == 4) {
+	    float f;
+
+	    memcpy(&f, p, 4);
+	    Tcl_SetDoubleObj(cur, (double) f);
+	} else {
+	    double d;
+
+	    memcpy(&d, p, 8);
+	    Tcl_SetDoubleObj(cur, d);
+	}
+	break;
+    case CN_INT:
+	switch (nd->size) {
+	case 1: { int8_t x; memcpy(&x, p, 1); Tcl_SetWideIntObj(cur, x); break; }
+	case 2: { int16_t x; memcpy(&x, p, 2); Tcl_SetWideIntObj(cur, x); break; }
+	case 4: { int32_t x; memcpy(&x, p, 4); Tcl_SetWideIntObj(cur, x); break; }
+	default: { int64_t x; memcpy(&x, p, 8); Tcl_SetWideIntObj(cur, x); }
+	}
+	break;
+    default:
+	switch (nd->size) {
+	case 1: { uint8_t x; memcpy(&x, p, 1); Tcl_SetWideIntObj(cur, x); break; }
+	case 2: { uint16_t x; memcpy(&x, p, 2); Tcl_SetWideIntObj(cur, x); break; }
+	case 4: { uint32_t x; memcpy(&x, p, 4); Tcl_SetWideIntObj(cur, x); break; }
+	default: {
+	    uint64_t x;
+
+	    memcpy(&x, p, 8);
+	    if (x > (uint64_t) WIDE_MAX) {
+		return 0;
+	    }
+	    Tcl_SetWideIntObj(cur, (Tcl_WideInt) x);
+	}
+	}
+    }
+    if (wrap != NULL) {
+	TclInvalidateStringRep(wrap);
+    }
+    return 1;
+}
+
+/*
+ * 23/11 : les spécialisations intégrées (voir TclTypesRegisterOps). Elles
+ * ne font que ce que fait le chemin général, sans passer par la
+ * résolution : même valeur, même texte.
+ */
+
+/* list.T, T scalaire simple (int, double, string, sans règle de variante) :
+ * éléments nus dans le contenu (v16s), ou en cases. */
+static int
+MatchScalarList(Tcl_Interp *interp, const TclType *tp, void *cd)
+{
+    (void) interp;
+    (void) cd;
+    return tp->kind == TCLT_LIST && tp->elem != NULL
+	    && PlainScalarElem(tp->elem);
+}
+
+static Tcl_Obj *
+ScalarListIndex(const TclType *tp, Tcl_Obj *v, Tcl_Size i)
+{
+    Tcl_Obj *e = NULL;
+
+    if (v->typePtr == &compactListType) {
+	TclCompactBuf *b = COMPACT_BUF(v);
+
+	if (i < 0 || i >= b->n || b->lay->node[0].kind == CN_PROD) {
+	    return NULL;
+	}
+	e = DecodeScalar(&b->lay->node[0], b->data
+		+ (size_t) i * b->stride + b->lay->node[0].off);
+	return WrapElem(e, tp->elem, -1);
+    }
+    if (TclIsCompact(v) || Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK
+	    || e == NULL || TCL_ANNOT_P(e)) {
+	return NULL;
+    }
+    return WrapElem(e, tp->elem, -1);
+}
+
+static int
+ScalarListIndexDouble(const TclType *tp, Tcl_Obj *v, Tcl_Size i,
+	double *outPtr)
+{
+    Tcl_Obj *e = NULL;
+
+    if (tp->elem->kind != TCLT_DOUBLE && tp->elem->kind != TCLT_INT) {
+	return 0;
+    }
+    if (v->typePtr == &compactListType) {
+	TclCompactBuf *b = COMPACT_BUF(v);
+	int r;
+
+	if (i < 0 || i >= b->n || b->lay->node[0].kind == CN_PROD) {
+	    return 0;
+	}
+	e = DecodeScalar(&b->lay->node[0], b->data
+		+ (size_t) i * b->stride + b->lay->node[0].off);
+	r = (Tcl_GetDoubleFromObj(NULL, e, outPtr) == TCL_OK);
+	TclDiscard(e);
+	return r;
+    }
+    if (TclIsCompact(v) || Tcl_ListObjIndex(NULL, v, i, &e) != TCL_OK
+	    || e == NULL || TCL_ANNOT_P(e)) {
+	return 0;
+    }
+    return Tcl_GetDoubleFromObj(NULL, e, outPtr) == TCL_OK;
+}
+
+static const TclTypeOps scalarListOps = {
+    TCL_TYPE_OPS_VERSION, "list-scalar",
+    ScalarListIndex, NULL, ScalarListIndexDouble
+};
+
+/* list.P, P un produit : le champ F de l'élément I lu dans la case. */
+static int
+MatchProductList(Tcl_Interp *interp, const TclType *tp, void *cd)
+{
+    (void) interp;
+    (void) cd;
+    return tp->kind == TCLT_LIST && tp->elem != NULL
+	    && tp->elem->kind == TCLT_PRODUCT && tp->elem->nfields > 0;
+}
+
+static Tcl_Obj *
+ProductListElemField(const TclType *tp, Tcl_Obj *v, Tcl_Size i, Tcl_Size f)
+{
+    TclCompactBuf *b;
+    const CNode *root;
+    TclType *ft;
+    Tcl_Size k;
+    int n;
+
+    if (v->typePtr != &compactListType || f < 0 || f >= tp->elem->nfields) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    root = &b->lay->node[0];
+    ft = tp->elem->fields[f].type;
+    if (i < 0 || i >= b->n || root->kind != CN_PROD || root->isList
+	    || root->nchild != tp->elem->nfields || ft == NULL
+	    || ft->kind == TCLT_SUM) {
+	return NULL;
+    }
+    for (n = 1, k = 0; k < f; k++) {
+	n += b->lay->node[n].nsub;
+    }
+    return WrapElem(CompactPart(b, (size_t) i * b->stride, n), ft, -1);
+}
+
+static const TclTypeOps productListOps = {
+    TCL_TYPE_OPS_VERSION, "list-product",
+    NULL, ProductListElemField, NULL
+};
+
+const TclTypeSpec tclBuiltinTypeSpecs[] = {
+    {TCL_TYPE_OPS_VERSION, "list-scalar", 0, MatchScalarList,
+	    &scalarListOps, NULL},
+    {TCL_TYPE_OPS_VERSION, "list-product", 0, MatchProductList,
+	    &productListOps, NULL}
+};
+const int tclBuiltinTypeSpecCount =
+	(int) (sizeof(tclBuiltinTypeSpecs) / sizeof(tclBuiltinTypeSpecs[0]));
+
+/* 23/11 : une valeur typée sans note (son état n'est que la référence de
+ * type). */
+int
+TclAnnotIsPlainTyped(Tcl_Obj *objPtr)
+{
+    return objPtr->typePtr == &annotatedObjType
+	    && ((Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2)->typePtr
+	    == &typeRefObjType;
+}
+
+/* 23/11 : une valeur typée neuve de type TP autour de C, sans
+ * interpréteur (spécialisations externes) ; C déjà typé : lui-même s'il est
+ * de type TP, sinon NULL. */
+Tcl_Obj *
+TclAnnotWrapType(Tcl_Obj *c, const TclType *tp)
+{
+    TclType *t = NULL;
+
+    if (c == NULL || tp == NULL) {
+	return NULL;
+    }
+    if (c->typePtr == &annotatedObjType) {
+	return (TclAnnotInfo(c, NULL, &t, NULL, NULL) == 1 && t == tp)
+		? c : NULL;
+    }
+    return WrapElem(c, (TclType *) tp, -1);
+}
+
+/* 23/11 : un scalaire simple (int, double, string sans règle), comme
+ * l'élément d'une list.double laissé nu dans son contenu */
+int
+TclTypePlainScalar(const TclType *tp)
+{
+    return tp != NULL && PlainScalarElem(tp);
+}
+
+/* 23/11 : un élément gardé nu dans le contenu d'une liste (scalaire simple
+ * ou union de nombres, v16s) */
+int
+TclTypeBareElem(const TclType *tp)
+{
+    return tp != NULL && BareLoopElem(tp);
 }

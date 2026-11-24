@@ -1,0 +1,27 @@
+--- a/generic/tclExecute.c
++++ b/generic/tclExecute.c
+@@ -3712,6 +3712,24 @@
+ 	}
+ 
+     lappendListPtr:
++	if (arrayPtr == NULL && (varPtr->flags & VAR_CONTRACT)) {
++	    /* TIP 764 : lappend L a b ... dans une liste typée : élément par
++	     * élément, sur place, sans revérifier toute la liste */
++	    int trc;
++
++	    DECACHE_STACK_INFO();
++	    trc = TclTypedVarLappendElems(interp, varPtr, objc, objv, opnd,
++		    &objResultPtr);
++	    CACHE_STACK_INFO();
++	    if (trc == TCL_ERROR) {
++		TRACE_ERROR(interp);
++		goto gotError;
++	    }
++	    if (trc == TCL_OK) {
++		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
++		NEXT_INST_V(pcAdjustment, cleanup, 1);
++	    }
++	}
+ 	if (TclIsVarInHash(varPtr)) {
+ 	    VarHashRefCount(varPtr)++;
+ 	}

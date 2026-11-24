@@ -40,6 +40,30 @@ d'une list.double 274 (nu 50), `$P($i.x)` sur une liste compacte de points
 | `lindex` d'une list.double | 117 | 117–150 (bruit) |
 | `set x [expr]`, `{double}x` | 204 avant | 94 (nu 60) |
 
+## type map (même jour)
+
+`type map VARS LISTE ?VARS LISTE ...? {(EXPR)}` : l'expression compilée une
+fois en un petit programme sur des nombres (`MExpr` : arbre ; `MDProg` :
+programme postfixe sur des doubles quand tout est flottant), évaluée en C
+pour chaque élément ; un élément que le programme ne sait pas traiter
+exactement comme `expr` passe par `expr` (`Tcl_ExprObj`, variables posées
+dans le cadre de l'appelant). {x y z} prend trois colonnes (ce que rend
+`$P(*.(a,b,c))`). Entrées en cases lues directement ; résultat en cases si
+tous les résultats sont des doubles (ou des entiers). Vérifié par
+différence avec `TCL_TYPE_OPS=off` (tout par `expr`) : 3 000 expressions
+aléatoires × 225 couples de valeurs, entrées ordinaires et en cases, et des
+listes en cases de toutes largeurs : aucun écart. `$P(*.a)` et
+`$P(*.(a,b,c))` sur une liste en cases de produits copient les colonnes
+d'un coup (`TclCompactFieldColumn`) : 1 800 → 2 à 17 ns par élément.
+
+| un million d'éléments, `$x + $y * $z` | ns / élément |
+|---|---:|
+| `lmap` + `lassign` (lignes) | 144–155 |
+| `lmap` sur trois colonnes | 123–126 |
+| `type map`, colonnes ordinaires | 39–40 |
+| `type map`, colonnes en cases | 24–28 |
+| `type map {x y z} $P(*.(a,b,c))` (chemin compris) | 39 |
+
 ## La suite
 
 * Plus d'opérations : écriture d'un élément ou d'un champ, parcours

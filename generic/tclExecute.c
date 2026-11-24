@@ -2652,6 +2652,28 @@ TEBCresume(
 	Tcl_Size k;
 
 	opnd = TclGetUInt1AtPtr(pc + 1);
+	if (opnd == 2 && mask == 1u && (pc[6] == INST_LOAD_ARRAY1
+		|| pc[6] == INST_LOAD_ARRAY4)
+		&& TclTypeOpsMode() != TCL_TYPE_OPS_CHECK) {
+	    /* TIP 764 : $P($i.champ) sur une liste typée de produits : le
+	     * champ lu par la spécialisation du type, sans former l'index */
+	    int nl = (pc[6] == INST_LOAD_ARRAY1) ? 2 : 5;
+	    Var *ap = LOCAL((pc[6] == INST_LOAD_ARRAY1)
+		    ? TclGetUInt1AtPtr(pc + 7) : TclGetUInt4AtPtr(pc + 7));
+
+	    while (TclIsVarLink(ap)) {
+		ap = ap->value.linkPtr;
+	    }
+	    if (!TclIsVarArray(ap) && (ap->flags & VAR_TYPED)
+		    && ap->value.objPtr != NULL) {
+		objResultPtr = TclTypedElemFieldFast(ap->value.objPtr,
+			OBJ_AT_DEPTH(1), OBJ_AT_TOS);
+		if (objResultPtr != NULL) {
+		    TRACE_WITH_OBJ(("%u (champ) => ", opnd), objResultPtr);
+		    NEXT_INST_V(6 + nl, 2, 1);
+		}
+	    }
+	}
 	for (k = 0; k < opnd; k++) {
 	    subst[k] = (char) ((mask >> k) & 1u);
 	}
@@ -3690,6 +3712,24 @@ TEBCresume(
 	}
 
     lappendListPtr:
+	if (arrayPtr == NULL && (varPtr->flags & VAR_CONTRACT)) {
+	    /* TIP 764 : lappend L a b ... dans une liste typée : élément par
+	     * élément, sur place, sans revérifier toute la liste */
+	    int trc;
+
+	    DECACHE_STACK_INFO();
+	    trc = TclTypedVarLappendElems(interp, varPtr, objc, objv, opnd,
+		    &objResultPtr);
+	    CACHE_STACK_INFO();
+	    if (trc == TCL_ERROR) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	    if (trc == TCL_OK) {
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(pcAdjustment, cleanup, 1);
+	    }
+	}
 	if (TclIsVarInHash(varPtr)) {
 	    VarHashRefCount(varPtr)++;
 	}
@@ -6100,6 +6140,11 @@ TEBCresume(
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
+	/* 23/11 : une valeur annotée (un bitarray typé) se compare par son
+	 * contenu numérique, comme pour + : sans cela, un grand entier annoté
+	 * n'était jamais égal à son nombre ($d == 2**150 rendait 0) */
+	valuePtr = NumObj(valuePtr);
+	value2Ptr = NumObj(value2Ptr);
 
 	/*
 	 * Try to determine, without triggering generation of a string
@@ -6926,6 +6971,23 @@ TEBCresume(
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
+		    if (hasAbstractList && valIndex < listLen) {
+			/* TIP 764 : l'élément d'une liste en cases écrit dans
+			 * la valeur que la variable est seule à tenir */
+			Var *vp = LOCAL(varListPtr->varIndexes[j]);
+
+			while (TclIsVarLink(vp)) {
+			    vp = vp->value.linkPtr;
+			}
+			if (TclIsVarScalar(vp) && !TclIsVarUndefined(vp)
+				&& !TclIsVarTricky(vp, VAR_TRACED_WRITE
+				    |VAR_DEAD_HASH|VAR_CONSTANT|VAR_CONTRACT)
+				&& TclCompactIndexInto(listPtr, valIndex,
+				    vp->value.objPtr)) {
+			    valIndex++;
+			    continue;
+			}
+		    }
 		    if (valIndex >= listLen) {
 			TclNewObj(valuePtr);
 		    } else {

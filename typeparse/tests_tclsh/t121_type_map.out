@@ -1,0 +1,21 @@
+colonnes : 6.0 15.0 24.5 {list.double}{6.0 15.0 24.5}
+entiers : {list.int}{2 4 6}
+deux listes : 11 41 91
+variable : 0.5 1.0 1.5
+division entière : 3 -4 -4
+par zéro (flottant) : 1.0 Inf 0.5
+par zéro (entier) : divide by zero
+débordement : 9223372036854775808 2
+round : 3 -3 3
+?: : -1 -1 1.7320508075688772
+chaînes (expr) : {list.int}{1 2 3}
+après : x=ccc
+en cases : 0.25 2.25 6.25
+corps : type map: the body must be an expression in parentheses, {(...)}
+longueurs : type map: the lists have different lengths
+colonnes : type map: {x y z} needs a list of 3 columns, not 2
+valeur : cannot use non-numeric string "a" as left operand of "*"
+somme : 12 0.6000000000000001 0
+somme (grand entier) : 9223372036854775808
+tranches : {list.double}{1.0 3.0} {list.double}{2.0 4.0 6.0}
+écriture d'une tranche typée : 10.0 2.0 30.0 4.0 50.0 6.0

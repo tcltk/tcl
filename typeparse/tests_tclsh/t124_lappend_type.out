@@ -1,0 +1,4 @@
+1.0 2.5 16.0 poly
+refus : expected floating-point number but got "abc" ; p=1.0 2.5 16.0
+copie intacte : q=1.0 2.5 16.0 p=1.0 2.5 16.0 7.0
+0.0 1.0 2.0 1

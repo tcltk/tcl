@@ -375,7 +375,8 @@ ParseIndexLexeme(
 	case '*':
 	    /* "*" seul (suivi de la fin, de . , : ) ou d'un blanc) : toutes
 	     * les parties ; sinon le dépliage unaire. */
-	    if (start + 1 == limit || strchr(".,:) \t", start[1]) != NULL) {
+	    /* 23/11 : "*:" est le dépliage d'une tranche (*:2), pas « tout » */
+	    if (start + 1 == limit || strchr(".,) \t", start[1]) != NULL) {
 		*lexemePtr = ALLWORD;
 		*literalPtr = Tcl_NewStringObj("*", 1);
 		return 1;
@@ -537,6 +538,20 @@ ParseIndex(
 	literal = NULL;
 	scanned = ParseIndexLexeme(start, numBytes, &lexeme, &literal, sp,
 		&atom);
+
+	/* 23/11 : une partie omise d'un intervalle (:b, a:, a::c) : un nom
+	 * vide, que l'évaluation remplace (0, end, pas 1) ; rien n'est lu */
+	if (IsOperator(lastParsed) && (lexeme == RANGE
+		|| (nodes[lastParsed].lexeme == RANGE && (lexeme == END
+		    || lexeme == CLOSE_PAREN || lexeme == COMMA)))) {
+	    if (literal != NULL) {
+		TclDiscard(literal);
+	    }
+	    lexeme = NAMEWORD;
+	    literal = Tcl_NewObj();
+	    atom = 0;
+	    scanned = 0;
+	}
 
 	if ((NODE_TYPE & lexeme) == 0) {
 	    switch (lexeme) {
@@ -757,8 +772,17 @@ typedef struct IndexStep {
     StepKind kind;
     Tcl_Obj *a;			/* nom, clé, début d'intervalle, étiquette */
     Tcl_Obj *b;			/* fin d'intervalle */
+    Tcl_Obj *c;			/* pas d'intervalle a:b:c (NULL : aucun) */
     int atom;			/* nom = une valeur substituée, seule */
+    /* 24/11 : fenêtre (s0,s1,...):b:c, une colonne par début ; le nombre
+     * est celui des fenêtres complètes (NULL : intervalle ordinaire) */
+    Tcl_Obj *wstarts;		/* la liste des débuts */
+    Tcl_Obj *wbound;		/* la fin, pour le premier début */
+    int wj;			/* la colonne de ce chemin */
 } IndexStep;
+
+/* un intervalle résolu par RangeSpec (avec pas, ou fenêtre) */
+#define RANGE_SPECD(s) ((s)->c != NULL || (s)->wstarts != NULL)
 
 typedef struct IndexPath {
     IndexStep *step;
@@ -881,6 +905,13 @@ PathFree(IndexPath *p)
 	if (p->step[i].b != NULL) {
 	    Tcl_DecrRefCount(p->step[i].b);
 	}
+	if (p->step[i].c != NULL) {
+	    Tcl_DecrRefCount(p->step[i].c);
+	}
+	if (p->step[i].wstarts != NULL) {
+	    Tcl_DecrRefCount(p->step[i].wstarts);
+	    Tcl_DecrRefCount(p->step[i].wbound);
+	}
     }
     if (p->step != NULL) {
 	Tcl_Free(p->step);
@@ -925,7 +956,11 @@ OneStep(StepKind kind, Tcl_Obj *a, Tcl_Obj *b)
     p.step[0].kind = kind;
     p.step[0].a = a;
     p.step[0].b = b;
+    p.step[0].c = NULL;
     p.step[0].atom = 0;
+    p.step[0].wstarts = NULL;
+    p.step[0].wbound = NULL;
+    p.step[0].wj = 0;
     if (a != NULL) {
 	Tcl_IncrRefCount(a);
     }
@@ -1017,6 +1052,13 @@ ApplyDot(IndexEnv *env)
 		if (p.step[k].b != NULL) {
 		    Tcl_IncrRefCount(p.step[k].b);
 		}
+		if (p.step[k].c != NULL) {
+		    Tcl_IncrRefCount(p.step[k].c);
+		}
+		if (p.step[k].wstarts != NULL) {
+		    Tcl_IncrRefCount(p.step[k].wstarts);
+		    Tcl_IncrRefCount(p.step[k].wbound);
+		}
 	    }
 	    SetAddPath(&out, p);
 	}
@@ -1053,7 +1095,11 @@ ApplyComma(IndexEnv *env)
     PushSet(env, l);
 }
 
-/* ":" : intervalle ; les deux bornes sont des index simples. */
+/*
+ * ":" : intervalle ; les deux bornes sont des index simples. 23/11 : un
+ * pas, a:b:c (à la Python, la fin restant incluse comme en Tcl), et des
+ * parties omises (texte vide : :b, a:, ::c) que l'évaluation résout.
+ */
 
 static int
 ApplyRange(IndexEnv *env)
@@ -1063,6 +1109,80 @@ ApplyRange(IndexEnv *env)
 	    && l.path[0].step[0].kind <= IS_KEY
 	    && r.path[0].step[0].kind <= IS_KEY);
 
+    if (!ok && l.n == 1 && r.n == 1 && l.path[0].n == 1 && r.path[0].n == 1
+	    && l.path[0].step[0].kind == IS_RANGE
+	    && l.path[0].step[0].c == NULL
+	    && l.path[0].step[0].wstarts == NULL
+	    && r.path[0].step[0].kind <= IS_KEY) {
+	/* (a:b):c : le pas */
+	l.path[0].step[0].c = r.path[0].step[0].a;
+	Tcl_IncrRefCount(l.path[0].step[0].c);
+	SetFree(&r);
+	PushSet(env, l);
+	return TCL_OK;
+    }
+    if (!ok && l.n >= 1 && r.n == 1 && r.path[0].n == 1
+	    && r.path[0].step[0].kind <= IS_KEY
+	    && l.path[0].n == 1 && l.path[0].step[0].wstarts != NULL
+	    && l.path[0].step[0].c == NULL) {
+	/* ((s0,s1...):b):c : le pas de la fenêtre, pour chaque colonne */
+	Tcl_Size j;
+
+	for (j = 0; j < l.n; j++) {
+	    l.path[j].step[0].c = r.path[0].step[0].a;
+	    Tcl_IncrRefCount(l.path[j].step[0].c);
+	}
+	SetFree(&r);
+	PushSet(env, l);
+	return TCL_OK;
+    }
+    if (!ok && l.n > 1 && !l.open && r.n == 1 && r.path[0].n == 1
+	    && r.path[0].step[0].kind <= IS_KEY) {
+	/* 24/11 : (s0,s1,...):b, une fenêtre : une colonne par début */
+	Tcl_Size j;
+	Tcl_Obj *starts, *empty;
+	PathSet w;
+
+	for (j = 0; j < l.n; j++) {
+	    if (l.path[j].n != 1 || l.path[j].step[0].kind > IS_KEY) {
+		PathErr(env->interp, "a window needs single indices: "
+			"(start,start,...):end:step%s%s", "", "");
+		SetFree(&l);
+		SetFree(&r);
+		return TCL_ERROR;
+	    }
+	}
+	starts = Tcl_NewListObj(0, NULL);
+	for (j = 0; j < l.n; j++) {
+	    Tcl_ListObjAppendElement(NULL, starts, l.path[j].step[0].a);
+	}
+	empty = Tcl_NewObj();
+	Tcl_IncrRefCount(empty);
+	memset(&w, 0, sizeof(w));
+	for (j = 0; j < l.n; j++) {
+	    PathSet one = OneStep(IS_RANGE, l.path[j].step[0].a,
+		    (j == 0) ? r.path[0].step[0].a : empty);
+	    IndexStep *st = &one.path[0].step[0];
+
+	    st->wstarts = starts;
+	    st->wbound = r.path[0].step[0].a;
+	    Tcl_IncrRefCount(st->wstarts);
+	    Tcl_IncrRefCount(st->wbound);
+	    st->wj = (int) j;
+	    SetAddPath(&w, one.path[0]);
+	    one.n = 0;
+	    SetFree(&one);
+	}
+	Tcl_DecrRefCount(empty);
+	w.shape = l.shape;		/* le groupe : une colonne par début */
+	memset(&l.shape, 0, sizeof(l.shape));
+	w.multi = 1;
+	w.open = 0;
+	SetFree(&l);
+	SetFree(&r);
+	PushSet(env, w);
+	return TCL_OK;
+    }
     if (!ok) {
 	PathErr(env->interp, "the bounds of a range must be single indices%s%s",
 		"", "");
@@ -1461,6 +1581,9 @@ GetCompiledPath(Tcl_Interp *interp, const char *text, Tcl_Obj *pathObj)
 static void
 PathErr(Tcl_Interp *interp, const char *fmt, const char *a, const char *b)
 {
+    if (interp == NULL) {
+	return;
+    }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(fmt, a, b));
     Tcl_SetErrorCode(interp, "TCL", "TYPE", "PATH", (char *) NULL);
 }
@@ -2074,14 +2197,179 @@ ItemsInit(Items *it)
 
 
 
+/*
+ * 23/11 : intervalle a:b:c (parties omises : texte vide). RangeA, RangeB :
+ * les bornes d'un intervalle sans pas (0, end par défaut). RangeSpec : les
+ * indices first, first+stride, ... (count) parmi n, à la Python : bornes
+ * ramenées dans [0, n-1] en gardant l'alignement, la fin incluse.
+ */
+static const char *
+RangeA(const IndexStep *s)
+{
+    const char *t = Tcl_GetString(s->a);
+
+    return *t ? t : "0";
+}
+
+static const char *
+RangeB(const IndexStep *s)
+{
+    const char *t = Tcl_GetString(s->b);
+
+    return *t ? t : "end";
+}
+
 static int
-StepRange(Tcl_Interp *interp, Tcl_Obj *a, const char *from, const char *to,
-	Items *out)
+RangeStrided(const IndexStep *s)
+{
+    return s->kind == IS_RANGE && RANGE_SPECD(s);
+}
+
+static int
+RangeSpec(Tcl_Interp *interp, const IndexStep *s, Tcl_Size n,
+	Tcl_Size *firstPtr, Tcl_Size *countPtr, Tcl_Size *stridePtr)
+{
+    Tcl_WideInt st = 1;
+    const char *a, *b;
+    Tcl_Size first, last, count;
+
+    if (s->wstarts != NULL) {
+	/* une fenêtre : la colonne wj, autant d'éléments que de fenêtres
+	 * complètes (chaque début avec le même pas ; la fin donnée borne le
+	 * premier) */
+	IndexStep sub = *s;
+	Tcl_Obj **sv, *empty;
+	Tcl_Size ns, k, f, c, str, cnt = -1, fj = 0, sj = 1;
+	int rc = TCL_OK;
+
+	if (Tcl_ListObjGetElements(interp, s->wstarts, &ns, &sv) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	empty = Tcl_NewObj();
+	Tcl_IncrRefCount(empty);
+	sub.wstarts = NULL;
+	for (k = 0; k < ns && rc == TCL_OK; k++) {
+	    sub.a = sv[k];
+	    sub.b = (k == 0) ? s->wbound : empty;
+	    rc = RangeSpec(interp, &sub, n, &f, &c, &str);
+	    if (rc == TCL_OK) {
+		if (*Tcl_GetString(sv[k]) == '\0') {
+		    rc = TCL_ERROR;	/* (le lexique l'interdit déjà) */
+		    PathErr(interp, "a window needs explicit starts%s%s", "", "");
+		    break;
+		}
+		if (cnt < 0 || c < cnt) {
+		    cnt = c;
+		}
+		if (k == s->wj) {
+		    fj = f;
+		}
+		sj = str;
+	    }
+	}
+	Tcl_DecrRefCount(empty);
+	if (rc != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*firstPtr = fj;
+	*countPtr = (cnt < 0) ? 0 : cnt;
+	*stridePtr = sj;
+	return TCL_OK;
+    }
+    a = Tcl_GetString(s->a);
+    b = Tcl_GetString(s->b);
+
+    if (s->c != NULL && *Tcl_GetString(s->c) != '\0'
+	    && (Tcl_GetWideIntFromObj(NULL, s->c, &st) != TCL_OK || st == 0)) {
+	PathErr(interp, "the step of a range must be a non-zero integer, "
+		"not \"%s\"%s", Tcl_GetString(s->c), "");
+	return TCL_ERROR;
+    }
+    if (*a == '\0') {
+	first = (st > 0) ? 0 : n - 1;
+    } else if (ListIndex(interp, a, n, &first) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (*b == '\0') {
+	last = (st > 0) ? n - 1 : 0;
+    } else if (ListIndex(interp, b, n, &last) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (st > 0) {
+	if (first < 0) {
+	    first += ((-first + st - 1) / st) * st;
+	}
+	if (last >= n) {
+	    last = n - 1;
+	}
+	count = (first > last) ? 0 : (last - first) / st + 1;
+    } else {
+	if (first >= n) {
+	    first -= ((first - (n - 1) - st - 1) / -st) * -st;
+	}
+	if (last < 0) {
+	    last = 0;
+	}
+	count = (first < last) ? 0 : (first - last) / -st + 1;
+    }
+    *firstPtr = first;
+    *countPtr = count;
+    *stridePtr = (Tcl_Size) st;
+    return TCL_OK;
+}
+
+/* Le même, en positions de bits depuis le poids faible (lo, pas). */
+static int
+BitsStride(Tcl_Interp *interp, const TclType *tp, const IndexStep *s,
+	Tcl_Size *loPtr, Tcl_Size *countPtr, Tcl_Size *stepPtr)
+{
+    Tcl_Size first, stride;
+
+    if (RangeSpec(interp, s, tp->bitWidth, &first, countPtr, &stride)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    *loPtr = tp->bitMsb0 ? tp->bitWidth - 1 - first : first;
+    *stepPtr = tp->bitMsb0 ? -stride : stride;
+    return TCL_OK;
+}
+
+static int
+StepRange(Tcl_Interp *interp, Tcl_Obj *a, const IndexStep *st, Items *out)
 {
     Tcl_Obj *v, *elem;
     TclType *tp;
     int variant;
     Tcl_Size n, i, lo, hi;
+    const char *from = RangeA(st), *to = RangeB(st);
+
+    if (RANGE_SPECD(st) && TclAnnotInfo(a, &v, &tp, &variant, NULL) == 1
+	    && tp->kind == TCLT_INT && tp->bitWidth > 0) {
+	/* b(a:b:c) : les bits choisis, en un bitarray de count bits */
+	Tcl_Obj *bits, *w;
+	Tcl_Size blo, count, bstep;
+
+	if (BitsStride(interp, tp, st, &blo, &count, &bstep) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (count == 0) {
+	    PathErr(interp, "bit range \"%s\" selects no bit%s",
+		    Tcl_GetString(st->a), "");
+	    return TCL_ERROR;
+	}
+	if (TclBitsGather(interp, v, blo, bstep, count, tp->bitMsb0, &bits)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	w = TclNewAnnotated(interp, BitsSliceType(interp, tp, count), -1, bits);
+	TclDiscard(bits);
+	if (w == NULL) {
+	    return TCL_ERROR;
+	}
+	TclVecAdd(&out->vec, w);
+	out->bitSlice = 1;
+	return TCL_OK;
+    }
 
     if (TclAnnotInfo(a, &v, &tp, &variant, NULL) == 1
 	    && tp->kind == TCLT_INT && tp->bitWidth > 0) {
@@ -2109,6 +2397,25 @@ StepRange(Tcl_Interp *interp, Tcl_Obj *a, const char *from, const char *to,
 		(TclAnnotInfo(a, NULL, &tp, NULL, NULL) == 1) ? tp->name
 		: "an untyped value", "");
 	return TCL_ERROR;
+    }
+    if (RANGE_SPECD(st)) {
+	Tcl_Size count, stride, k;
+
+	if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
+		|| RangeSpec(interp, st, n, &lo, &count, &stride) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (k = 0, i = lo; k < count; k++, i += stride) {
+	    Tcl_Obj *w;
+
+	    Tcl_ListObjIndex(interp, v, i, &elem);
+	    w = WrapSlot(interp, tp->elem, elem);
+	    if (w == NULL) {
+		return TCL_ERROR;
+	    }
+	    TclVecAdd(&out->vec, w);
+	}
+	return TCL_OK;
     }
     if (Tcl_ListObjLength(interp, v, &n) != TCL_OK
 	    || ListIndex(interp, from, n, &lo) != TCL_OK
@@ -2226,8 +2533,7 @@ ReadSteps(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *p, Tcl_Size i,
 	Tcl_Size k;
 
 	ItemsInit(&part);
-	if (StepRange(interp, a, Tcl_GetString(step->a),
-		Tcl_GetString(step->b), &part) != TCL_OK) {
+	if (StepRange(interp, a, step, &part) != TCL_OK) {
 	    TclVecFree(&part.vec);
 	    return TCL_ERROR;
 	}
@@ -2679,6 +2985,229 @@ FlattenValues(Tcl_Interp *interp, const PathSet *set, Tcl_Size nvals,
  * immuables), le reste est partagé.
  * -------------------------------------------------------------------- */
 
+/*
+ * 23/11 : b(a:b:c) = valeur. Un bitarray (valeur typée) donne un motif de
+ * count bits ; 0 ou 1 vaut pour tous les bits choisis ; sinon une liste de
+ * count bits.
+ */
+static Tcl_Obj *
+BitsStrideSet(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v,
+	const IndexStep *step, Tcl_Obj *val)
+{
+    Tcl_Size lo, count, bstep, wd = tp->bitWidth / 60 + 2, n, k;
+    Tcl_Obj *nv = NULL, *res, *vc, **elems;
+    TclType *vt;
+    int b;
+
+    if (BitsStride(interp, tp, step, &lo, &count, &bstep) != TCL_OK) {
+	return NULL;
+    }
+    if (TclAnnotInfo(val, &vc, &vt, NULL, NULL) == 1
+	    && vt->kind == TCLT_INT) {
+	if (vt->bitWidth > 0 && vt->bitWidth != count) {
+	    char num[64];
+
+	    snprintf(num, sizeof(num), "%lld bits, not %lld",
+		    (long long) count, (long long) vt->bitWidth);
+	    PathErr(interp, "the bit range selects %s%s", num, "");
+	    return NULL;
+	}
+	if (TclBitsPutStride(interp, v, lo, bstep, count,
+		vt->bitWidth > 0 ? vt->bitMsb0 : tp->bitMsb0, vc, 0,
+		wd, &nv) != TCL_OK) {
+	    return NULL;
+	}
+    } else if (Tcl_ListObjGetElements(NULL, val, &n, &elems) == TCL_OK
+	    && n == 1 && Tcl_GetBooleanFromObj(NULL, elems[0], &b) == TCL_OK
+	    && (strcmp(Tcl_GetString(elems[0]), "0") == 0
+		|| strcmp(Tcl_GetString(elems[0]), "1") == 0)) {
+	if (TclBitsPutStride(interp, v, lo, bstep, count, 0, NULL, b, wd,
+		&nv) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	if (Tcl_ListObjGetElements(NULL, val, &n, &elems) != TCL_OK
+		|| n != count) {
+	    char num[64];
+
+	    snprintf(num, sizeof(num), "%lld", (long long) count);
+	    PathErr(interp, "a strided bit range takes 0, 1, a bitarray or "
+		    "a list of %s bits, not \"%s\"", num, Tcl_GetString(val));
+	    return NULL;
+	}
+	for (k = 0; k < n; k++) {
+	    const char *t = Tcl_GetString(elems[k]);
+
+	    if ((t[0] != '0' && t[0] != '1') || t[1] != '\0') {
+		PathErr(interp, "expected a bit 0 or 1 but got \"%s\"%s", t,
+			"");
+		return NULL;
+	    }
+	}
+	if (TclBitsPutStride(interp, v, lo, bstep, 0, 0, NULL, 0, wd, &nv)
+		!= TCL_OK) {
+	    return NULL;
+	}
+	for (k = 0; k < n; k++) {
+	    TclBitsSetInPlace(nv, lo + k * bstep,
+		    Tcl_GetString(elems[k])[0] == '1', wd);
+	}
+    }
+    res = TclNewAnnotated(interp, tp, -1, nv);
+    TclDiscard(nv);
+    return res;
+}
+
+/*
+ * 23/11 : L(a:b:c) = valeurs, une par élément choisi, ou une seule pour
+ * tous (si elle est du type des éléments, ou s'il n'y a qu'un élément).
+ * La longueur ne change pas.
+ */
+static Tcl_Obj *
+ListRangeSet(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v,
+	const IndexStep *step, Tcl_Obj *val)
+{
+    Tcl_Size n, first, count, stride, nv, k, i;
+    Tcl_Obj **vals, *nl, *res, *one = NULL;
+    int trusted = 0;
+
+    if (Tcl_ListObjLength(interp, v, &n) != TCL_OK) {
+	return NULL;
+    }
+    if (RANGE_SPECD(step)) {
+	if (RangeSpec(interp, step, n, &first, &count, &stride) != TCL_OK) {
+	    return NULL;
+	}
+    } else {
+	Tcl_Size hi;
+
+	if (ListIndex(interp, RangeA(step), n, &first) != TCL_OK
+		|| ListIndex(interp, RangeB(step), n, &hi) != TCL_OK) {
+	    return NULL;
+	}
+	if (first < 0) {
+	    first = 0;
+	}
+	if (hi >= n) {
+	    hi = n - 1;
+	}
+	count = (first > hi) ? 0 : hi - first + 1;
+	stride = 1;
+    }
+    if (count == 1) {
+	one = val;
+    } else if (TclAnnotInfo(val, NULL, NULL, NULL, NULL) != 1
+	    && tp->elem->kind != TCLT_LIST && tp->elem->kind != TCLT_PRODUCT
+	    && tp->elem->kind != TCLT_DICT
+	    && Tcl_ListObjLength(NULL, val, &nv) == TCL_OK && nv == 1) {
+	one = val;			/* un scalaire : pour tous */
+    } else {
+	TclType *vt = NULL;
+
+	if (TclAnnotInfo(val, NULL, &vt, NULL, NULL) == 1 && vt == tp->elem) {
+	    one = val;			/* typé comme un élément : pour tous */
+	}
+    }
+    if (one == NULL) {
+	Tcl_Obj *lv = val;
+	TclType *vlt = NULL;
+
+	if (TclAnnotInfo(val, &lv, &vlt, NULL, NULL) != 1) {
+	    lv = val;
+	    vlt = NULL;
+	}
+	/* 23/11 : une liste déjà du type des éléments (list.T, T scalaire
+	 * simple) : ses éléments sont valides, pas de vérification une à une */
+	trusted = (vlt != NULL && vlt->kind == TCLT_LIST
+		&& vlt->elem == tp->elem && TclTypePlainScalar(tp->elem));
+	if (trusted && (TclIsCompact(v) || TclIsCompactView(v))) {
+	    /* 24/11 : des cases dans des cases, de même disposition : copiées
+	     * octet à octet (une liste neuve), sans objet par élément */
+	    Tcl_Size tn, sn;
+	    const unsigned char *td, *sd;
+	    unsigned char *dd;
+	    size_t ts, ss, ds;
+	    int tk, tz, sk, sz, dk, dz;
+	    Tcl_Obj *cl;
+
+	    if (TclCompactScalarInfo(v, &tn, &td, &ts, &tk, &tz)
+		    && TclCompactScalarInfo(lv, &sn, &sd, &ss, &sk, &sz)
+		    && tk == sk && tz == sz && sn == count
+		    && (cl = TclCompactNewAlways(tp, tn, &dd)) != NULL) {
+		Tcl_Size dn;
+		const unsigned char *d0;
+
+		if (TclCompactScalarInfo(cl, &dn, &d0, &ds, &dk, &dz)
+			&& dk == tk && dz == tz) {
+		    dd = (unsigned char *) d0;
+		    for (i = 0; i < tn; i++) {
+			memcpy(dd + (size_t) i * ds, td + (size_t) i * ts,
+				(size_t) tz);
+		    }
+		    for (k = 0, i = first; k < count; k++, i += stride) {
+			memcpy(dd + (size_t) i * ds, sd + (size_t) k * ss,
+				(size_t) tz);
+		    }
+		    res = TclNewAnnotated(interp, tp, -1, cl);
+		    TclDiscard(cl);
+		    return res;
+		}
+		TclDiscard(cl);
+	    }
+	}
+	if (Tcl_ListObjGetElements(interp, lv, &nv, &vals) != TCL_OK) {
+	    return NULL;
+	}
+	if (nv != count) {
+	    char num[64];
+
+	    snprintf(num, sizeof(num), "%lld values (or one for all), not "
+		    "%lld", (long long) count, (long long) nv);
+	    PathErr(interp, "the range selects %s%s", num, "");
+	    return NULL;
+	}
+    }
+    if (one != NULL) {
+	one = TclTypedConform(interp, tp->elem, one);	/* une fois */
+	if (one == NULL) {
+	    return NULL;
+	}
+	Tcl_IncrRefCount(one);
+    }
+    nl = Tcl_DuplicateObj(v);
+    Tcl_IncrRefCount(nl);
+    for (k = 0, i = first; k < count; k++, i += stride) {
+	Tcl_Obj *c = one ? one : (trusted && !TclIsAnnotated(vals[k]))
+		? vals[k] : TclTypedConform(interp, tp->elem, vals[k]);
+
+	if (c == NULL) {
+	    Tcl_DecrRefCount(nl);
+	    return NULL;
+	}
+	if (TclIsCompact(nl) ? !TclCompactWriteScalar(nl, i, 0, NULL, c)
+		&& Tcl_ListObjReplace(interp, nl, i, 1, 1, &c) != TCL_OK
+		: Tcl_ListObjReplace(interp, nl, i, 1, 1, &c) != TCL_OK) {
+	    if (c == one) {
+		Tcl_DecrRefCount(one);
+	    } else if (c != vals[k]) {
+		TclDiscard(c);
+	    }
+	    Tcl_DecrRefCount(nl);
+	    return NULL;
+	}
+	if (c != one && c != vals[k]) {
+	    TclDiscard(c);
+	}
+    }
+    if (one != NULL) {
+	Tcl_DecrRefCount(one);
+    }
+    TclInvalidateStringRep(nl);
+    res = TclNewAnnotated(interp, tp, -1, nl);
+    Tcl_DecrRefCount(nl);
+    return res;
+}
+
 static Tcl_Obj *
 SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	Tcl_Obj *val, PendingWrites *pw)
@@ -2771,8 +3300,11 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 		    tp->name, name);
 	    return NULL;
 	}
+	if (RangeStrided(step)) {
+	    return BitsStrideSet(interp, tp, v, step, val);
+	}
 	if (step->kind == IS_RANGE) {
-	    if (BitsSlice(interp, tp, name, Tcl_GetString(step->b), &lo, &len)
+	    if (BitsSlice(interp, tp, RangeA(step), RangeB(step), &lo, &len)
 		    != TCL_OK) {
 		return NULL;
 	    }
@@ -2788,6 +3320,9 @@ SetIn(Tcl_Interp *interp, Tcl_Obj *a, const IndexPath *chain, Tcl_Size i,
 	res = TclNewAnnotated(interp, tp, -1, nv);
 	TclDiscard(nv);
 	return res;
+    }
+    if (step->kind == IS_RANGE && last && tp->kind == TCLT_LIST) {
+	return ListRangeSet(interp, tp, v, step, val);
     }
     if (step->kind == IS_RANGE) {
 	PathErr(interp, "only simple names can be assigned, not ranges or "
@@ -3090,6 +3625,17 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
     }
     set = &cp->set;
     memset(&pw, 0, sizeof(pw));
+    if (set->n == 1 && nvals > 1 && set->path[0].n > 0
+	    && set->path[0].step[set->path[0].n - 1].kind == IS_RANGE) {
+	/* 23/11 : set L(a:b:c) v1 v2 ... : les valeurs de la tranche */
+	Tcl_Obj *packed = Tcl_NewListObj(nvals, vals);
+
+	Tcl_IncrRefCount(packed);
+	rc = PathWrite(interp, containerPtr, path, pathObj, 1, &packed,
+		newPtr);
+	Tcl_DecrRefCount(packed);
+	return rc;
+    }
     if (FlattenValues(interp, set, nvals, vals, &flat) != TCL_OK) {
 	goto done;
     }
@@ -3552,6 +4098,9 @@ PathWriteObj(Tcl_Interp *interp, Tcl_Obj *containerPtr, Tcl_Obj *pathObj,
  * n'est pas typée : le comportement habituel de Tcl est alors conservé
  * (set a(1,2) x reste l'idiome du tableau à deux dimensions).
  */
+static int ColumnsPathWrite(Tcl_Obj *a, const char *name, Tcl_Size nvals,
+	Tcl_Obj *const vals[]);
+
 int
 TclSetPathCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -3592,7 +4141,16 @@ TclSetPathCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    Tcl_DecrRefCount(res);
 	}
     } else {
-	rc = TclTypePathWrite(interp, cur, path, objc - 2, objv + 2, &newA);
+	if (TclTypeOpsMode() == TCL_TYPE_OPS_ON
+		&& ColumnsPathWrite(cur, path, objc - 2, objv + 2)) {
+	    /* 24/11 : colonnes écrites sur place */
+	    newA = cur;
+	    Tcl_IncrRefCount(newA);
+	    rc = TCL_OK;
+	} else {
+	    rc = TclTypePathWrite(interp, cur, path, objc - 2, objv + 2,
+		    &newA);
+	}
 	if (rc == TCL_OK) {
 	    /* Le stockage repasse par le chemin d'écriture typé : même type,
 	     * donc le contrat est respecté. */
@@ -3644,9 +4202,11 @@ TclTypedVarGetElement(Tcl_Interp *interp, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    rc = PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &res);
+    /* 24/11 : les mêmes lectures directes que le chemin compilé (tranches,
+     * colonnes, champs) */
+    rc = TclTypedVarGetElementVar(interp, varPtr, part2Ptr, &res);
     if (rc != TCL_OK) {
-	return TCL_ERROR;
+	return rc;
     }
     Tcl_SetObjResult(interp, res);	/* l'interpréteur garde une référence */
     Tcl_DecrRefCount(res);
@@ -3951,6 +4511,698 @@ CompactPathPart(Tcl_Obj *a, Tcl_Obj *part2Ptr, TclType **tpPtr)
     return TclCompactReadPath(v, idx, k - 1, names + 1, tpPtr);
 }
 
+/*
+ * 23/11 : b(i) = 0|1 sur place, pour un bitarray que seule la variable tient :
+ * un bit écrit dans les chiffres du grand entier (TclBitsSetInPlace), au
+ * lieu d'un grand entier neuf à chaque bit (O(n) par écriture). 1 si écrit.
+ */
+static int
+BitsPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
+{
+    Tcl_Obj *v, *nv;
+    TclType *tp;
+    const char *name, *p;
+    Tcl_WideInt i;
+    Tcl_Size lo, widthDigits;
+    int bit;
+
+    if (Tcl_IsShared(a) || !TclAnnotIsSettled(a) || TclIsAnnotated(value)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_INT || tp->bitWidth <= 64) {
+	return 0;
+    }
+    name = Tcl_GetString(part2Ptr);
+    for (p = name; *p; p++) {
+	if (*p < '0' || *p > '9') {
+	    return 0;
+	}
+    }
+    if (p == name || p - name > 15) {
+	return 0;
+    }
+    i = strtoll(name, NULL, 10);
+    /* seulement 0 ou 1 tels quels : le reste (2, true, 0x1) suit le
+     * chemin ordinaire, qui le vérifie ou le refuse */
+    p = Tcl_GetString(value);
+    if (i < 0 || i >= tp->bitWidth || (p[0] != '0' && p[0] != '1')
+	    || p[1] != '\0') {
+	return 0;
+    }
+    bit = (p[0] == '1');
+    lo = tp->bitMsb0 ? tp->bitWidth - 1 - (Tcl_Size) i : (Tcl_Size) i;
+    widthDigits = tp->bitWidth / 60 + 2;
+    if (!TclBitsSetInPlace(v, lo, bit, widthDigits)) {
+	/* le premier bit : un contenu de travail, à soi */
+	nv = TclBitsNewWorkObj(a, widthDigits);
+	if (nv == NULL) {
+	    return 0;
+	}
+	Tcl_IncrRefCount(nv);
+	if (!TclAnnotSwapContent(a, nv)) {
+	    Tcl_DecrRefCount(nv);
+	    return 0;
+	}
+	Tcl_DecrRefCount(nv);
+	if (!TclBitsSetInPlace(nv, lo, bit, widthDigits)) {
+	    return 0;
+	}
+    }
+    Tcl_InvalidateStringRep(a);
+    return 1;
+}
+
+/*
+ * 23/11 : b(a:b:c) = 0|1 et L(a:b:c) = scalaire, sur place, pour une
+ * valeur que seule la variable tient (le crible : b(i*i::i) 1). Le chemin
+ * est fait de bornes simples (chiffres, end, end-n, vides). 1 si écrit.
+ */
+static int
+SimpleBound(const char *p, const char *e)
+{
+    if (p == e) {
+	return 1;
+    }
+    if (e - p >= 3 && strncmp(p, "end", 3) == 0) {
+	p += 3;
+	if (p == e) {
+	    return 1;
+	}
+	if (*p != '-' && *p != '+') {
+	    return 0;
+	}
+	p++;
+	if (p == e) {
+	    return 0;
+	}
+    } else if (*p == '-') {
+	p++;
+	if (p == e) {
+	    return 0;
+	}
+    }
+    for (; p < e; p++) {
+	if (*p < '0' || *p > '9') {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/*
+ * 23/11 : L(a:b:c) d'une liste de scalaires simples (nus dans le contenu,
+ * ou en cases) : la tranche faite d'un coup, list.T comme le chemin
+ * général, sans envelopper chaque élément pour le défaire ensuite. Une
+ * référence pour l'appelant ; NULL : le chemin général.
+ */
+/*
+ * Le texte d'une tranche a:b, a:b:c, ou d'une fenêtre (s0,s1,...):b:c
+ * (24/11), bornes simples seulement (entiers, end, end-k) : *st prêt pour
+ * RangeSpec (st->wj à régler par colonne), parts[] et *startsPtr à libérer
+ * par RangeTextFree. 1 si le texte a cette forme.
+ */
+typedef struct RangeText {
+    IndexStep st;
+    Tcl_Obj *parts[3];
+    int np;
+    Tcl_Obj *starts;		/* NULL : une tranche */
+    Tcl_Size ncols;		/* 1 pour une tranche */
+} RangeText;
+
+static void
+RangeTextFree(RangeText *rt)
+{
+    int k;
+
+    for (k = 0; k < rt->np; k++) {
+	TclDiscard(rt->parts[k]);
+    }
+    rt->np = 0;
+    if (rt->starts != NULL) {
+	Tcl_DecrRefCount(rt->starts);
+	rt->starts = NULL;
+    }
+}
+
+static int
+RangeTextParse(const char *name, Tcl_Size len, RangeText *rt)
+{
+    const char *p = name, *q = NULL, *end = name + len;
+
+    rt->np = 0;
+    rt->starts = NULL;
+    rt->ncols = 1;
+    if (len > 200 || memchr(name, ':', len) == NULL) {
+	return 0;
+    }
+    if (*p == '(') {
+	/* la fenêtre : (s0,s1,...) puis :b ou :b:c */
+	const char *close = (const char *) memchr(p, ')', end - p);
+
+	if (close == NULL || close + 1 >= end || close[1] != ':') {
+	    return 0;
+	}
+	rt->starts = Tcl_NewListObj(0, NULL);
+	Tcl_IncrRefCount(rt->starts);
+	rt->ncols = 0;
+	for (p = name + 1; ; p = q + 1) {
+	    q = (const char *) memchr(p, ',', close - p);
+	    if (q == NULL) {
+		q = close;
+	    }
+	    if (p == q || !SimpleBound(p, q) || ++rt->ncols > 64) {
+		RangeTextFree(rt);
+		return 0;
+	    }
+	    Tcl_ListObjAppendElement(NULL, rt->starts,
+		    Tcl_NewStringObj(p, q - p));
+	    if (q == close) {
+		break;
+	    }
+	}
+	if (rt->ncols < 2) {
+	    RangeTextFree(rt);
+	    return 0;
+	}
+	rt->parts[rt->np++] = Tcl_NewObj();	/* (débuts dans starts) */
+	p = close + 2;
+    }
+    for (; rt->np < 3; p = q + 1) {
+	q = (const char *) memchr(p, ':', end - p);
+	if (q == NULL) {
+	    q = end;
+	}
+	if (!SimpleBound(p, q)) {
+	    RangeTextFree(rt);
+	    return 0;
+	}
+	rt->parts[rt->np++] = Tcl_NewStringObj(p, q - p);
+	if (q == end) {
+	    break;
+	}
+    }
+    if (rt->np < 2 || q != end) {
+	RangeTextFree(rt);
+	return 0;
+    }
+    rt->st.kind = IS_RANGE;
+    rt->st.a = rt->parts[0];
+    rt->st.b = rt->parts[1];
+    rt->st.c = (rt->np == 3) ? rt->parts[2] : NULL;
+    rt->st.atom = 0;
+    rt->st.wstarts = rt->starts;
+    rt->st.wbound = rt->parts[1];
+    rt->st.wj = 0;
+    return 1;
+}
+
+/*
+ * 24/11 : l'index porte-t-il une valeur substituée qui contient de la
+ * syntaxe de chemin (: , ( ) . *) ? Le chemin général la lit comme un nom
+ * entier ($L($s), s = "1:3" : l'élément "1:3", pas une tranche) ; les voies
+ * rapides qui relisent le texte doivent alors lui laisser la main.
+ */
+static int
+SpansHideSyntax(Tcl_Obj *part2Ptr)
+{
+    const Tcl_Size *pos;
+    Tcl_Size n, k, i, len;
+    const char *t;
+
+    if (part2Ptr->typePtr == &typePathType) {
+	const CompiledPath *cp = (const CompiledPath *)
+		part2Ptr->internalRep.twoPtrValue.ptr1;
+	Tcl_Size a, b;
+
+	for (a = 0; a < cp->set.n; a++) {
+	    for (b = 0; b < cp->set.path[a].n; b++) {
+		const IndexStep *st = &cp->set.path[a].step[b];
+
+		if (st->atom && st->a != NULL
+			&& strpbrk(Tcl_GetString(st->a), ":,().*") != NULL) {
+		    return 1;
+		}
+	    }
+	}
+	return 0;
+    }
+    n = PathIndexSpans(part2Ptr, &pos);
+    if (n == 0) {
+	return 0;
+    }
+    t = Tcl_GetStringFromObj(part2Ptr, &len);
+    for (k = 0; k < n; k++) {
+	for (i = pos[2 * k]; i < pos[2 * k] + pos[2 * k + 1] && i < len; i++) {
+	    if (strchr(":,().*", t[i]) != NULL) {
+		return 1;
+	    }
+	}
+    }
+    return 0;
+}
+
+/* une colonne lue d'une liste de scalaires V (type lt) : une vue (cases ou
+ * objets) quand c'est possible, sinon une copie ; une référence pour
+ * l'appelant, NULL si la forme ne s'y prête pas */
+static Tcl_Obj *
+RangeColumn(Tcl_Interp *interp, Tcl_Obj *v, TclType *rt, Tcl_Size first,
+	Tcl_Size count, Tcl_Size stride)
+{
+    Tcl_Obj *res = NULL;
+    Tcl_Size n, k;
+    int noView = (getenv("TCL_TYPE_NOVIEW") != NULL);
+
+    if (stride > 0 && !noView
+	    && (TclIsCompact(v) || TclIsCompactView(v))) {
+	/* 24/11 : une vue à pas, sans copie */
+	Tcl_Obj *vw = TclCompactViewNew(v, first, stride, count);
+
+	if (vw != NULL) {
+	    res = TclNewAnnotatedOwn(vw, TclTypeRefFor(interp, rt, -1));
+	    Tcl_IncrRefCount(res);
+	    return res;
+	}
+    }
+    if (TclIsCompact(v) || TclIsCompactView(v)) {
+	Tcl_Size cn;
+	const unsigned char *src;
+	unsigned char *dst;
+	size_t cstride, dstride;
+	int ckind, csize;
+	Tcl_Obj *col;
+
+	if (!TclCompactScalarInfo(v, &cn, &src, &cstride, &ckind, &csize)
+		|| (col = TclCompactNewAlways(rt, count, &dst)) == NULL) {
+	    return NULL;
+	}
+	{
+	    Tcl_Size dn;
+	    const unsigned char *d0;
+	    int dk, ds;
+
+	    if (!TclCompactScalarInfo(col, &dn, &d0, &dstride, &dk, &ds)
+		    || dk != ckind || ds != csize) {
+		Tcl_DecrRefCount(col);
+		return NULL;
+	    }
+	    dst = (unsigned char *) d0;
+	}
+	for (k = 0; k < count; k++) {
+	    memcpy(dst + (size_t) k * dstride,
+		    src + (size_t) (first + k * stride) * cstride,
+		    (size_t) csize);
+	}
+	res = TclNewAnnotatedOwn(col, TclTypeRefFor(interp, rt, -1));
+    } else {
+	Tcl_Obj **ev, **sel, *l;
+
+	if (stride > 0 && !noView
+		&& (l = TclObjViewNew(v, first, stride, count)) != NULL) {
+	    /* 24/11 : une vue sur les objets, sans les compter un à un */
+	    res = TclNewAnnotatedOwn(l, TclTypeRefFor(interp, rt, -1));
+	    Tcl_IncrRefCount(res);
+	    return res;
+	}
+	if (TclListObjGetElements(NULL, v, &n, &ev) != TCL_OK) {
+	    return NULL;
+	}
+	sel = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
+		* (size_t) (count ? count : 1));
+	for (k = 0; k < count; k++) {
+	    /* (nus dans V, v16s ; un élément typé y resterait valide) */
+	    sel[k] = ev[first + k * stride];
+	}
+	l = Tcl_NewListObj(count, sel);
+	Tcl_Free(sel);
+	res = TclNewAnnotatedOwn(l, TclTypeRefFor(interp, rt, -1));
+    }
+    Tcl_IncrRefCount(res);
+    return res;
+}
+
+/*
+ * L(a:b:c) et la fenêtre L((s0,s1,...):b:c) (24/11) sur une liste typée de
+ * scalaires : les colonnes en vues quand c'est possible. Les bornes sont
+ * des index simples (entiers, end, end-k) ; sinon NULL (le chemin général).
+ */
+static Tcl_Obj *
+ScalarRangeRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v, *res = NULL, *cols[64];
+    TclType *lt, *rt;
+    RangeText rx;
+    Tcl_Size len, first, count, stride, n, k;
+    const char *name;
+
+    if (TclAnnotInfo(a, &v, &lt, NULL, NULL) != 1 || lt == NULL
+	    || lt->kind != TCLT_LIST || !TclTypeBareElem(lt->elem)) {
+	return NULL;
+    }
+    name = Tcl_GetStringFromObj(part2Ptr, &len);
+    if (!RangeTextParse(name, len, &rx)) {
+	return NULL;
+    }
+    if (Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+	    || (rt = TclTypeListOf(interp, lt->elem)) == NULL) {
+	goto done;
+    }
+    if (rx.starts == NULL) {
+	if (RangeSpec(NULL, &rx.st, n, &first, &count, &stride) != TCL_OK
+		|| count == 0) {
+	    goto done;
+	}
+	res = RangeColumn(interp, v, rt, first, count, stride);
+	goto done;
+    }
+    for (k = 0; k < rx.ncols; k++) {
+	rx.st.wj = (int) k;
+	if (RangeSpec(NULL, &rx.st, n, &first, &count, &stride) != TCL_OK
+		|| count < 2
+		|| (cols[k] = RangeColumn(interp, v, rt, first, count, stride))
+		== NULL) {
+	    /* (une fenêtre de 0 ou 1 : le chemin général, qui la rend comme
+	     * un intervalle ordinaire) */
+	    while (k-- > 0) {
+		Tcl_DecrRefCount(cols[k]);
+	    }
+	    goto done;
+	}
+    }
+    {
+	TclType *outT = TclTypeListOf(interp, rt);
+
+	if (outT != NULL) {
+	    Tcl_Obj *l = Tcl_NewListObj(rx.ncols, cols);
+
+	    Tcl_IncrRefCount(l);
+	    res = TclNewAnnotated(interp, outT, -1, l);
+	    Tcl_DecrRefCount(l);
+	    if (res != NULL) {
+		Tcl_IncrRefCount(res);
+	    }
+	}
+	for (k = 0; k < rx.ncols; k++) {
+	    Tcl_DecrRefCount(cols[k]);
+	}
+    }
+  done:
+    RangeTextFree(&rx);
+    return res;
+}
+
+/*
+ * 24/11 : L(a:b:c) = colonne, L((s0,s1,...):b:c) = colonne colonne ...,
+ * sur place : L une liste typée de nombres (entiers ou flottants, ni
+ * nominale ni binaire) tenue par la seule variable, en objets ou en cases ;
+ * chaque colonne une liste typée du même type d'élément (ses éléments n'ont
+ * pas à être revérifiés), de la longueur de la tranche. Tout ou rien : 0
+ * sans rien écrire si un cas ne s'y prête pas (le chemin général décide,
+ * avec ses messages).
+ */
+static int
+ColumnsPathWrite(Tcl_Obj *a, const char *name, Tcl_Size nvals,
+	Tcl_Obj *const vals[])
+{
+    Tcl_Obj *v, *srcList[64];
+    TclType *tp;
+    RangeText rx;
+    Tcl_Size n, k, i, j, first[64], count[64], stride[64];
+    Tcl_Obj *const *sElems[64];
+    Tcl_Size sStride[64];
+    const unsigned char *sData[64];
+    size_t sCStride[64];
+    int sKind[64], sSize[64], ok = 0, dKind = 0, dSize = 0;
+    int compact, numU;
+
+    if (nvals < 1 || nvals > 64 || Tcl_IsShared(a) || !TclAnnotIsSettled(a)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST || tp->elem == NULL
+	    || Tcl_IsShared(v)) {
+	return 0;
+    }
+    /* les éléments : des nombres simples, ou l'union {int}i | {double}d
+     * (num : la charge seule, nue ; sa variante est celle du nombre) */
+    numU = TclTypeIsNumUnion(tp->elem);
+    if (!numU && ((tp->elem->kind != TCLT_INT && tp->elem->kind != TCLT_DOUBLE)
+	    || tp->elem->nominal || tp->elem->binLink != NULL)) {
+	return 0;
+    }
+    compact = TclIsCompact(v);
+    if ((!compact && !TclHasInternalRep(v, &tclListType))
+	    || (compact && numU)) {
+	return 0;
+    }
+    if (!RangeTextParse(name, (Tcl_Size) strlen(name), &rx)) {
+	return 0;
+    }
+    if (rx.ncols != nvals || Tcl_ListObjLength(NULL, v, &n) != TCL_OK) {
+	goto done;
+    }
+    if (compact) {
+	Tcl_Size dn;
+	const unsigned char *dd;
+	size_t ds;
+
+	if (!TclCompactScalarInfo(v, &dn, &dd, &ds, &dKind, &dSize)) {
+	    goto done;
+	}
+    }
+    /* les colonnes : toutes vérifiées avant d'écrire */
+    for (j = 0; j < nvals; j++) {
+	Tcl_Obj *c;
+	TclType *vt;
+	Tcl_Size cn, bn;
+	Tcl_Obj *base;
+
+	rx.st.wj = (int) j;
+	if (RangeSpec(NULL, &rx.st, n, &first[j], &count[j], &stride[j])
+		!= TCL_OK
+		|| TclAnnotInfo(vals[j], &c, &vt, NULL, NULL) != 1
+		|| vt->kind != TCLT_LIST
+		|| (vt->elem != tp->elem && !(numU
+		    && (vt->elem == tp->elem->fields[0].type
+			|| vt->elem == tp->elem->fields[1].type)))) {
+	    goto done;
+	}
+	srcList[j] = c;
+	sElems[j] = NULL;
+	sData[j] = NULL;
+	if (TclCompactScalarInfo(c, &cn, &sData[j], &sCStride[j], &sKind[j],
+		&sSize[j])) {
+	    if ((compact && (sKind[j] != dKind || sSize[j] != dSize))
+		    || (!compact && sKind[j] == 1 && sSize[j] == 8)) {
+		goto done;		/* (un grand non signé : général) */
+	    }
+	} else if (compact) {
+	    goto done;			/* objets dans des cases : général */
+	} else if (TclObjViewInfo(c, &base, &sElems[j], &cn, &sStride[j])) {
+	    /* (base tenue par la vue, tenue par vals[j]) */
+	} else if (TclHasInternalRep(c, &tclListType)) {
+	    Tcl_Obj **ev;
+
+	    if (TclListObjGetElements(NULL, c, &cn, &ev) != TCL_OK) {
+		goto done;
+	    }
+	    sElems[j] = ev;
+	    sStride[j] = 1;
+	} else {
+	    goto done;
+	}
+	if (cn != count[j] || count[j] < 2) {
+	    goto done;			/* (0 ou 1 : le général, sa règle) */
+	}
+	(void) bn;
+    }
+    /* l'écriture */
+    if (compact) {
+	Tcl_Size dn;
+	const unsigned char *d0;
+	size_t ds;
+	int dk, dz;
+
+	/* le tampon à la seule liste (une vue le tient : général) */
+	if (!TclCompactScalarWritable(v)
+		|| !TclCompactScalarInfo(v, &dn, &d0, &ds, &dk, &dz)) {
+	    goto done;
+	}
+	for (j = 0; j < nvals; j++) {
+	    unsigned char *dd = (unsigned char *) d0;
+
+	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+		memcpy(dd + (size_t) i * ds, sData[j] + (size_t) k * sCStride[j],
+			(size_t) dz);
+	    }
+	}
+	ok = 1;
+    }
+    for (j = 0; j < nvals && !compact; j++) {
+	if (sData[j] != NULL) {
+	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+		const unsigned char *cp = sData[j] + (size_t) k * sCStride[j];
+		Tcl_Obj *o;
+
+		if (sKind[j] == 2) {
+		    double d;
+
+		    if (sSize[j] == 4) {
+			float f;
+
+			memcpy(&f, cp, 4);
+			d = f;
+		    } else {
+			memcpy(&d, cp, 8);
+		    }
+		    o = Tcl_NewDoubleObj(d);
+		} else {
+		    Tcl_WideInt w = 0;
+
+		    switch (sSize[j]) {
+		    case 1: w = sKind[j] ? (Tcl_WideInt) *(uint8_t *) cp
+				: (Tcl_WideInt) *(int8_t *) cp; break;
+		    case 2: { uint16_t u; int16_t s16; memcpy(&u, cp, 2);
+				memcpy(&s16, cp, 2);
+				w = sKind[j] ? (Tcl_WideInt) u : s16; break; }
+		    case 4: { uint32_t u; int32_t s32; memcpy(&u, cp, 4);
+				memcpy(&s32, cp, 4);
+				w = sKind[j] ? (Tcl_WideInt) u : s32; break; }
+		    default: memcpy(&w, cp, 8); break;
+		    }
+		    o = Tcl_NewWideIntObj(w);
+		}
+		TclListObjSetElement(NULL, v, i, o);
+	    }
+	} else {
+	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+		TclListObjSetElement(NULL, v, i, sElems[j][k * sStride[j]]);
+	    }
+	}
+	ok = 1;
+    }
+    TclInvalidateStringRep(v);
+    Tcl_InvalidateStringRep(a);
+  done:
+    (void) srcList;
+    RangeTextFree(&rx);
+    return ok;
+}
+
+static int
+RangePathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
+{
+    Tcl_Obj *v, *parts[3] = {NULL, NULL, NULL}, *c = NULL;
+    TclType *tp;
+    IndexStep st;
+    Tcl_Size len, first, count, stride, n, k, i;
+    const char *name, *p, *q, *end;
+    int np = 0, ok = 0;
+
+    if (Tcl_IsShared(a) || !TclAnnotIsSettled(a) || TclIsAnnotated(value)
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1) {
+	return 0;
+    }
+    if (!((tp->kind == TCLT_INT && tp->bitWidth > 64)
+	    || (tp->kind == TCLT_LIST && TclIsCompact(v))
+	    || (tp->kind == TCLT_LIST && !Tcl_IsShared(v)
+		&& TclHasInternalRep(v, &tclListType)
+		&& tp->elem != NULL && (tp->elem->kind == TCLT_INT
+		    || tp->elem->kind == TCLT_DOUBLE)
+		&& !tp->elem->nominal && tp->elem->binLink == NULL))) {
+	return 0;
+    }
+    name = Tcl_GetStringFromObj(part2Ptr, &len);
+    end = name + len;
+    if (memchr(name, ':', len) == NULL || len > 64) {
+	return 0;
+    }
+    for (p = name; np < 3; p = q + 1) {
+	q = (const char *) memchr(p, ':', end - p);
+	if (q == NULL) {
+	    q = end;
+	}
+	if (!SimpleBound(p, q)) {
+	    return 0;
+	}
+	parts[np++] = Tcl_NewStringObj(p, q - p);
+	if (q == end) {
+	    break;
+	}
+    }
+    if (np < 2 || q != end) {
+	goto done;
+    }
+    st.kind = IS_RANGE;
+    st.a = parts[0];
+    st.b = parts[1];
+    st.c = (np == 3) ? parts[2] : NULL;
+    st.atom = 0;
+    st.wstarts = NULL;
+    st.wbound = NULL;
+    st.wj = 0;
+    if (tp->kind == TCLT_INT) {
+	Tcl_Size lo, bstep, wd = tp->bitWidth / 60 + 2;
+	const char *t = Tcl_GetString(value);
+
+	if ((t[0] != '0' && t[0] != '1') || t[1] != '\0'
+		|| BitsStride(NULL, tp, &st, &lo, &count, &bstep) != TCL_OK) {
+	    goto done;
+	}
+	if (!TclBitsFillStride(v, lo, bstep, count, t[0] == '1', wd)) {
+	    Tcl_Obj *nv = TclBitsNewWorkObj(a, wd);
+
+	    if (nv == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(nv);
+	    if (!TclAnnotSwapContent(a, nv)
+		    || !TclBitsFillStride(nv, lo, bstep, count, t[0] == '1',
+			wd)) {
+		Tcl_DecrRefCount(nv);
+		goto done;		/* rien d'écrit : le chemin ordinaire */
+	    }
+	    Tcl_DecrRefCount(nv);
+	}
+	ok = 1;
+    } else {
+	if (Tcl_ListObjLength(NULL, v, &n) != TCL_OK
+		|| RangeSpec(NULL, &st, n, &first, &count, &stride) != TCL_OK
+		|| (c = TclTypedConform(NULL, tp->elem, value)) == NULL) {
+	    goto done;
+	}
+	Tcl_IncrRefCount(c);
+	if (!TclIsCompact(v)) {
+	    /* liste ordinaire de nombres, à la seule variable : la même
+	     * valeur (vérifiée une fois) partagée par les cases choisies */
+	    for (k = 0, i = first; k < count; k++, i += stride) {
+		if (TclListObjSetElement(NULL, v, i, c) != TCL_OK) {
+		    goto done;		/* (n'arrive pas : i est dans v) */
+		}
+	    }
+	    TclInvalidateStringRep(v);
+	    ok = 1;
+	    goto written;
+	}
+	if (count > 0 && !TclCompactWriteScalar(v, first, 0, NULL, c)) {
+	    goto done;
+	}
+	for (k = 1, i = first + stride; k < count; k++, i += stride) {
+	    TclCompactWriteScalar(v, i, 0, NULL, c);
+	}
+	TclInvalidateStringRep(v);
+	ok = 1;
+    }
+  written:
+    if (ok) {
+	Tcl_InvalidateStringRep(a);
+    }
+  done:
+    for (k = 0; k < np; k++) {
+	TclDiscard(parts[k]);
+    }
+    if (c != NULL) {
+	Tcl_DecrRefCount(c);
+    }
+    return ok;
+}
+
 /* L(i.j...) = value sur place (TclCompactWriteScalar) ; 1 si écrit. */
 static int
 CompactPathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
@@ -4134,6 +5386,239 @@ FastAllParts(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
  * Variantes qui travaillent sur un Var déjà résolu (exécuteur : variables
  * locales compilées, résolues sans nom).
  */
+/*
+ * 23/11 : P(*.champ) et P(*.(f,g,...)) sur une liste en cases de produits :
+ * chaque colonne copiée d'un coup en une liste en cases (avant : la liste
+ * des éléments refaite en objets, puis le champ de chacun). Mêmes types
+ * que le chemin général : list.T pour un champ ; plusieurs, list.list.T si
+ * leurs types sont les mêmes, sinon list.any de colonnes typées.
+ */
+static int
+MIdentChar(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+	    || (c >= '0' && c <= '9') || c == '_';
+}
+
+static Tcl_Obj *
+CompactColumnsRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v, *cols[64], *res = NULL;
+    TclType *lt, *pt, *ft0 = NULL, *outT;
+    const char *s, *p, *q;
+    Tcl_Size len, f, nf = 0, k;
+    Tcl_Size fidx[64];
+    int multi, same = 1;
+
+    if (TclAnnotInfo(a, &v, &lt, NULL, NULL) != 1 || lt == NULL
+	    || lt->kind != TCLT_LIST || (pt = lt->elem) == NULL
+	    || pt->kind != TCLT_PRODUCT || !TclIsCompact(v)) {
+	return NULL;
+    }
+    s = Tcl_GetStringFromObj(part2Ptr, &len);
+    if (len < 3 || s[0] != '*' || s[1] != '.') {
+	return NULL;
+    }
+    p = s + 2;
+    multi = (*p == '(');
+    if (multi) {
+	if (s[len - 1] != ')') {
+	    return NULL;
+	}
+	p++;
+    }
+    for (;;) {
+	for (q = p; MIdentChar(*q); q++) {
+	}
+	if (q == p || nf == 64) {
+	    return NULL;
+	}
+	for (f = 0; f < pt->nfields; f++) {
+	    Tcl_Size nl;
+	    const char *nm;
+
+	    if (pt->fields[f].name == NULL) {
+		continue;
+	    }
+	    nm = Tcl_GetStringFromObj(pt->fields[f].name, &nl);
+	    if (nl == q - p && memcmp(nm, p, nl) == 0) {
+		break;
+	    }
+	}
+	if (f == pt->nfields || pt->fields[f].type == NULL
+		|| pt->fields[f].type->kind == TCLT_SUM) {
+	    return NULL;
+	}
+	fidx[nf++] = f;
+	if (!multi) {
+	    if (*q != '\0') {
+		return NULL;
+	    }
+	    break;
+	}
+	if (*q == ',') {
+	    p = q + 1;
+	    continue;
+	}
+	if (*q == ')' && q[1] == '\0') {
+	    break;
+	}
+	return NULL;
+    }
+    for (k = 0; k < nf; k++) {
+	TclType *ft = pt->fields[fidx[k]].type;
+	TclType *clt = TclTypeListOf(interp, ft);
+	Tcl_Obj *c = (clt != NULL) ? TclCompactFieldColumn(v, fidx[k], clt)
+		: NULL;
+
+	if (c == NULL) {
+	    while (k-- > 0) {
+		Tcl_DecrRefCount(cols[k]);
+	    }
+	    return NULL;
+	}
+	cols[k] = TclNewAnnotated(interp, clt, -1, c);
+	TclDiscard(c);
+	Tcl_IncrRefCount(cols[k]);
+	if (k == 0) {
+	    ft0 = ft;
+	} else if (ft != ft0) {
+	    same = 0;
+	}
+    }
+    if (!multi) {
+	res = cols[0];			/* une référence pour l'appelant */
+	return res;
+    }
+    outT = same ? TclTypeListOf(interp, TclTypeListOf(interp, ft0))
+	    : TclTypeParse(interp, "list.any", 8);
+    if (outT != NULL) {
+	Tcl_Obj *l = Tcl_NewListObj(nf, cols);
+
+	Tcl_IncrRefCount(l);
+	res = TclNewAnnotated(interp, outT, -1, l);
+	Tcl_DecrRefCount(l);
+	Tcl_IncrRefCount(res);
+    }
+    for (k = 0; k < nf; k++) {
+	Tcl_DecrRefCount(cols[k]);
+    }
+    return res;
+}
+
+/*
+ * 23/11 : P(i.champ), i en chiffres, champ un nom simple, P une liste de
+ * produits dont le type a une opération elemField : le champ lu sans
+ * analyser le chemin (son texte change à chaque tour d'une boucle).
+ */
+static Tcl_Obj *
+OpsFieldNamed(TclType *lt, const TclTypeOps *ops, Tcl_Obj *v, Tcl_Size i,
+	const char *nm)
+{
+    Tcl_Size f;
+
+    for (f = 0; f < lt->elem->nfields; f++) {
+	if (lt->elem->fields[f].name != NULL
+		&& strcmp(Tcl_GetString(lt->elem->fields[f].name), nm) == 0) {
+	    return ops->elemField(lt, v, i, f);
+	}
+    }
+    return NULL;
+}
+
+static Tcl_Obj *
+OpsElemFieldRead(Tcl_Obj *a, Tcl_Obj *part2Ptr)
+{
+    Tcl_Obj *v;
+    TclType *lt;
+    const TclTypeOps *ops;
+    const char *s, *p, *nm;
+    Tcl_Size len, i = 0;
+
+    if (TclAnnotInfo(a, &v, &lt, NULL, NULL) != 1 || lt == NULL
+	    || lt->kind != TCLT_LIST || lt->elem == NULL
+	    || lt->elem->kind != TCLT_PRODUCT
+	    || (ops = TclTypeOpsOf(lt)) == NULL || ops->elemField == NULL) {
+	return NULL;
+    }
+    s = Tcl_GetStringFromObj(part2Ptr, &len);
+    for (p = s; *p >= '0' && *p <= '9'; p++) {
+	if (i > (TCL_SIZE_MAX - 9) / 10) {
+	    return NULL;
+	}
+	i = 10 * i + (*p - '0');
+    }
+    if (p == s || (p - s > 1 && s[0] == '0') || *p != '.') {
+	return NULL;
+    }
+    nm = ++p;
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '_')) {
+	return NULL;
+    }
+    for (; *p; p++) {
+	if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
+		|| (*p >= '0' && *p <= '9') || *p == '_')) {
+	    return NULL;
+	}
+    }
+    return OpsFieldNamed(lt, ops, v, i, nm);
+}
+
+/*
+ * 23/11 : la même lecture, pour le bytecode de $P($i.champ) (indexConcat
+ * suivi de loadArray) : IDX la valeur de $i, LIT le littéral ".champ".
+ * NULL : le chemin ordinaire.
+ */
+Tcl_Obj *
+TclTypedElemFieldFast(Tcl_Obj *a, Tcl_Obj *idx, Tcl_Obj *lit)
+{
+    Tcl_Obj *v;
+    TclType *lt;
+    const TclTypeOps *ops;
+    const char *p, *nm;
+    Tcl_WideInt w;
+
+    if (TclAnnotInfo(a, &v, &lt, NULL, NULL) != 1 || lt == NULL
+	    || lt->kind != TCLT_LIST || lt->elem == NULL
+	    || lt->elem->kind != TCLT_PRODUCT
+	    || (ops = TclTypeOpsOf(lt)) == NULL || ops->elemField == NULL) {
+	return NULL;
+    }
+    if (TclHasInternalRep(idx, &tclIntType)) {
+	w = idx->internalRep.wideValue;
+    } else {
+	const char *s = Tcl_GetString(idx);
+
+	for (w = 0, p = s; *p >= '0' && *p <= '9'; p++) {
+	    if (w > (WIDE_MAX - 9) / 10) {
+		return NULL;
+	    }
+	    w = 10 * w + (*p - '0');
+	}
+	if (p == s || *p != '\0' || (p - s > 1 && s[0] == '0')) {
+	    return NULL;
+	}
+    }
+    if (w < 0 || w > TCL_SIZE_MAX) {
+	return NULL;
+    }
+    p = Tcl_GetString(lit);
+    if (*p++ != '.') {
+	return NULL;
+    }
+    nm = p;
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '_')) {
+	return NULL;
+    }
+    for (; *p; p++) {
+	if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')
+		|| (*p >= '0' && *p <= '9') || *p == '_')) {
+	    return NULL;
+	}
+    }
+    return OpsFieldNamed(lt, ops, v, (Tcl_Size) w, nm);
+}
+
 int
 TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	Tcl_Obj **resultPtr)
@@ -4147,7 +5632,35 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (part2Ptr->typePtr == &typePathType
+    if (SpansHideSyntax(part2Ptr)) {
+	/* une valeur substituée qui ressemble à un chemin : un nom entier,
+	 * que seul le chemin général sait lire ainsi */
+	if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &res)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*resultPtr = res;
+	return TCL_OK;
+    }
+    if (part2Ptr->typePtr != &typePathType
+	    && (res = OpsElemFieldRead(varPtr->value.objPtr, part2Ptr))
+	    != NULL) {
+	/* 23/11 : P(i.champ) par la spécialisation du type */
+	if (TclTypeOpsMode() == TCL_TYPE_OPS_CHECK) {
+	    Tcl_Obj *g = NULL;
+
+	    Tcl_IncrRefCount(res);
+	    if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &g)
+		    != TCL_OK) {
+		Tcl_DecrRefCount(res);
+		return TCL_ERROR;
+	    }
+	    TclTypeOpsSame("elemField", res, g);
+	    Tcl_DecrRefCount(res);
+	    *resultPtr = g;
+	    return TCL_OK;
+	}
+    } else if (part2Ptr->typePtr == &typePathType
 	    && ((CompiledPath *) part2Ptr->internalRep.twoPtrValue.ptr1)->chain) {
 	/* a.b.c déjà compilé : la descente directe */
 	res = FastChain(interp, varPtr->value.objPtr, &((CompiledPath *)
@@ -4169,6 +5682,26 @@ TclTypedVarGetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part2Ptr,
     }
     if (res != NULL) {
 	Tcl_IncrRefCount(res);
+	*resultPtr = res;
+	return TCL_OK;
+    }
+    if (TclTypeOpsMode() != TCL_TYPE_OPS_OFF
+	    && ((res = CompactColumnsRead(interp, varPtr->value.objPtr,
+	    part2Ptr)) != NULL || (res = ScalarRangeRead(interp,
+	    varPtr->value.objPtr, part2Ptr)) != NULL)) {
+	/* (une référence) */
+	if (TclTypeOpsMode() == TCL_TYPE_OPS_CHECK) {
+	    Tcl_Obj *g = NULL;
+
+	    if (PathReadObj(interp, varPtr->value.objPtr, part2Ptr, &g)
+		    != TCL_OK) {
+		Tcl_DecrRefCount(res);
+		return TCL_ERROR;
+	    }
+	    TclTypeOpsSame("columns", res, g);
+	    Tcl_DecrRefCount(res);
+	    res = g;
+	}
 	*resultPtr = res;
 	return TCL_OK;
     }
@@ -4201,7 +5734,17 @@ TclTypedVarSetElementVar(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *part1Ptr,
 	    || !(varPtr->flags & VAR_TYPED) || varPtr->value.objPtr == NULL) {
 	return TCL_CONTINUE;
     }
-    if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)) {
+    if (SpansHideSyntax(part2Ptr)) {
+	if (PathWriteObj(interp, varPtr->value.objPtr, part2Ptr, 1,
+		&valuePtr, &newA) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    } else if (CompactPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)
+	    || BitsPathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)
+	    || RangePathWrite(varPtr->value.objPtr, part2Ptr, valuePtr)
+	    || (TclTypeOpsMode() == TCL_TYPE_OPS_ON
+		&& ColumnsPathWrite(varPtr->value.objPtr,
+		    Tcl_GetString(part2Ptr), 1, &valuePtr))) {
 	/* écrit dans la case : la variable garde sa valeur (traces) */
 	newA = varPtr->value.objPtr;
 	Tcl_IncrRefCount(newA);

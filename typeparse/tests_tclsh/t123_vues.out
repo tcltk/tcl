@@ -1,0 +1,26 @@
+vue : 1.0 3.0 5.0 7.0 9.0 list<double> llength 5 lindex 5.0 {double}5.0
+écriture dans une copie : B=99.0 3.0 5.0 7.0 9.0 A=1.0 3.0 5.0 7.0 9.0 L=0.0 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0
+tranche de vue : 1.0 5.0 9.0
+foreach : 25.0
+lsort : 9.0 7.0 5.0 3.0 1.0
+map : 10.0 30.0 50.0 70.0 90.0 somme 25.0
+colonne : 2.0 5.0 8.0 list<double>
+après écriture dans P : col=2.0 5.0 8.0 P={1.0 2.0 3.0} {4.0 50.0 6.0} {7.0 8.0 9.0}
+string : 19 eq 1
+cast : 1.0 3.0 5.0 7.0 9.0 1
+base libérée, vue : 1.0 3.0 5.0 7.0 9.0
+min {3 1 2} -> 1 / 1
+max {3 1 2} -> 3 / 3
+min {1.5 2 -0.5} -> -0.5 / -0.5
+max {1.5 2 -0.5} -> 2 / 2
+min {2 2.0} -> 2 / 2
+max {2 2.0} -> 2 / 2
+min {2.0 2} -> 2.0 / 2.0
+max {2.0 2} -> 2.0 / 2.0
+min {} -> ERR not enough arguments for math function "min" / ERR not enough arguments for math function "min"
+max {} -> ERR not enough arguments for math function "max" / ERR not enough arguments for math function "max"
+min {a b} -> ERR expected number but got "a" / ERR expected number but got "a"
+max {a b} -> ERR expected number but got "a" / ERR expected number but got "a"
+min {9223372036854775807 9223372036854775806} -> 9223372036854775806 / 9223372036854775806
+max {9223372036854775807 9223372036854775806} -> 9223372036854775807 / 9223372036854775807
+cases dans cases : 10.0 1.0 30.0 3.0 50.0 5.0 1

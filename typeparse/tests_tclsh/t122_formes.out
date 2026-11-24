@@ -1,0 +1,14 @@
+cast : poly 0 / polyc 1
+retour : poly 0 1.0 2.0 3.0
+{poly} reçoit polyc : polyc 1 ; poly : poly 0
+{polyc} reçoit polyc : polyc
+{polyc} reçoit poly : argument "p": type mismatch: expected polyc but got poly (use an explicit cast)
+réaffectation dans la famille : poly
+set {polyc} : type mismatch: expected polyc but got poly (use an explicit cast)
+set {poly} d'un polyc : polyc
+définition : list.double
+list.string : type def {-compact}ppc: only a list of fi...
+pp retiré : 1
+option : type def: a form takes only layout options ({-compact}), not {-strict}
+sans option : type def: the form rrc must say its layout, as {-compact}rrc
+famille : type def: forms are not yet possible for a type family (pa({type}T))
