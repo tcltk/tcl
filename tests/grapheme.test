@@ -280,6 +280,14 @@ namespace eval grapheme::test {
         }
     }
 
+    test grapheme-range-invalid-$intrep-1.0 {bad index} -body {
+        grapheme range abc notanint 1
+    } -result {bad index "notanint": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
+
+    test grapheme-range-invalid-$intrep-1.1 {bad index} -body {
+            grapheme range abc 1 notanint
+        } -result {bad index "notanint": must be integer?[+-]integer? or end?[+-]integer?} -returnCodes error
+
     ### grapheme reverse
 
     tcltests::testnumargs "grapheme reverse" "string" ""
@@ -333,11 +341,25 @@ namespace eval grapheme::test {
         test grapheme-split-listop-$intrep-3.0 {
             Verify lindex operation on grapheme lists
         } -constraints testintrep -setup {
-            set text [testintrep $intrep XA\u0308B]
+            set text [testintrep $intrep [string repeat Xa\u0308e\u0301Y 100]]
             set l [grapheme split $text]
         } -body {
-            list [lindex $l 1] [testintrep type $l]
-        } -result [list A\u0308 graphemeList]
+            # The abstract list implementation for grapheme split caches the last used
+            # index and iterates from the beginning, backward from the cache, forward
+            # from the cache based on closeness. The following sequence exercises all
+            # those code paths.
+            set result [list ]
+            lappend result [lindex $l -1];  # Negative index
+            lappend result [lindex $l 100]; # Initial index (X)
+            lappend result [lindex $l 101]; # Forward one from width 1 grapheme
+            lappend result [lindex $l 102]; # Forward one from width 2 grapheme
+            lappend result [lindex $l 105]; # Forward multiple steps
+            lappend result [lindex $l 104]; # Back one step
+            lappend result [lindex $l 97];  # Backward multiple steps
+            lappend result [lindex $l 6];   # Forward from the start
+            lappend result [lindex $l 400]; # Out of bounds
+            lappend result [testintrep type $l]
+        } -result [list {} X a\u0308 e\u0301 a\u0308 X a\u0308 e\u0301 {} graphemeList]
 
         test grapheme-split-listop-$intrep-4.0 {
             Verify llength operation on grapheme lists
