@@ -566,6 +566,7 @@ s'appuie sur `type map` et n'accepte que :
 
     lmap u $U v $V {($u*2 + $v)}              ;# ou {expr {$u*2 + $v}}
     foreach u $U v $V {(s = $s + $u*$v)}      ;# ou {set s [expr {...}]} : -fold
+    foreach v $L {incr c $v}                  ;# ou {incr c}, {incr c 5}, {incr c [expr {...}]}
 
 avec une variable par liste (ni tracée, ni typée, ni tableau), des listes de
 même longueur (au moins 16 éléments), un corps fait d'une expression pure
@@ -575,12 +576,27 @@ en cas d'erreur, la boucle ordinaire est refaite depuis le début, le corps
 étant pur) et les variables après la boucle sont ceux de la boucle
 ordinaire. `(s = E)` garde un opérande tel quel quand `E` en rend un (`$u`,
 `?:`, `min`, `max`...), sans le normaliser comme `expr` : ces corps-là
-restent à la boucle ordinaire. `TCL_TYPE_NOVECLOOP=1` désactive le registre.
+restent à la boucle ordinaire. `incr s ?E?` est un cumul d'entiers : `s`
+entière au départ, `E` un entier écrit, `$v` ou `[expr {…}]` ; si une
+valeur n'est pas entière, la boucle ordinaire refaite donne l'erreur
+d'`incr`. `TCL_TYPE_NOVECLOOP=1` désactive le registre.
 
-Aujourd'hui, le registre sert quand la boucle passe par la commande (corps
-venu d'une variable, appel dynamique) : 2 à 9 ns par élément au lieu de 1 à
-3 µs. Une boucle compilée en ligne (corps littéral dans une procédure, 70 à
-77 ns) ne change pas encore : c'est l'étape suivante.
+Le registre sert aussi aux boucles compilées en ligne (corps littéral dans
+une procédure) : quand le corps a l'une de ces formes, la compilation place
+devant la boucle un appel à `::tcl::unsupported::vecloop`, qui rend
+`{1 résultat}` ou `{0 L1 L2 …}` (les listes, déjà évaluées, pour la boucle
+ordinaire, qui suit). Les autres boucles ne changent pas. Un million
+d'éléments : `foreach v $s {incr c $v}` 34 → 2,5 ms (octets en cases),
+`foreach v $s {(c=$c+$v)}` 44 → 2,4 ms, `lmap v $s {($v*2)}` 73 → 19 ms,
+produit scalaire `set d [expr {$d + $u*$v}]` sur deux listes ordinaires
+84 → 10 ms ; une boucle courte (moins de 16 éléments) ne coûte rien de
+mesurable de plus.
+
+Avec `-sum`, `-min` et `-max`, des résultats entiers restent en cases
+(entiers de 64 bits) le temps du calcul : `type map -sum {v} $octets {($v)}`
+40 → 4,7 ms pour un million. `type map` lui-même rend toujours une
+`list.int` d'objets (un `int` peut être un grand entier : il n'a pas de
+forme en cases) ; les petits entiers y sont partagés (23 → 12 ms).
 
 **Typé.** Les variables peuvent se déclarer comme les paramètres d'une
 procédure, et le corps peut dire ce qu'il rend :

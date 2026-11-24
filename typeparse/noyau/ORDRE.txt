@@ -57,3 +57,4 @@ foreach-cases-sur-place.patch
 champ-indexe-specialise.patch
 lappend-liste-typee.patch
 boucles-vectorisables.patch
+boucles-vectorisables-compilees.patch

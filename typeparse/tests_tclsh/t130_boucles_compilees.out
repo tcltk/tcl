@@ -1,0 +1,20 @@
+incr $v : 120 3
+incr : 40
+incr -2 : -80
+incr [expr] : 240
+incr octets : 700 7
+incr grand entier : 92233720368547758080
+incr 1.5 (erreur) : ERR expected integer but got "1.5" | "uplevel 1 $script"
+incr abc (erreur) : ERR expected integer but got "abc" | "uplevel 1 $script"
+incr s non entier : ERR expected integer but got "1.5" | "uplevel 1 $script"
+incr 0x10 : 136
+produit scalaire : 60.0
+(c = $c + $v) : 120
+lmap (E) : 40
+lmap valeurs : 14 14 14 14
+lmap expr : 2.5 2.5 2.5
+lmap longueurs : ERR cannot use non-numeric string "" as right operand of "-" | "uplevel 1 $script"
+courte : 6
+break (non) : 12
+désassemblage : 1
+non vectorisable : 0

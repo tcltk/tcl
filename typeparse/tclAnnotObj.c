@@ -6684,11 +6684,23 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
     }
     b = NewCompactBuf(ltp->elem, lay, n);
     b->norm = wanted;
-    for (k = 0; k < n; k++) {
-	if (EncodeNode(lay->node, 0, ev[k], b->data + (size_t) k * lay->size,
-		b->norm) < 0) {
-	    ReleaseCompactBuf(b);
-	    return NULL;
+    {
+	/* 24/11 : un scalaire qui est le même objet que le précédent
+	 * (lrepeat) : sa case recopiée, sans le reconvertir */
+	int scalar = (lay->nnodes == 1 && (lay->node[0].kind == CN_INT
+		|| lay->node[0].kind == CN_UINT || lay->node[0].kind == CN_FLT));
+
+	for (k = 0; k < n; k++) {
+	    unsigned char *cell = b->data + (size_t) k * lay->size;
+
+	    if (scalar && k > 0 && ev[k] == ev[k - 1]) {
+		memcpy(cell, cell - lay->size, lay->size);
+		continue;
+	    }
+	    if (EncodeNode(lay->node, 0, ev[k], cell, b->norm) < 0) {
+		ReleaseCompactBuf(b);
+		return NULL;
+	    }
 	}
     }
     b->n = n;
