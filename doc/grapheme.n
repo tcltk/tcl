@@ -1,0 +1,161 @@
+'\"
+'\" Copyright (c) 2026 Ashok P. Nadkarni
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH grapheme n 9.2 Tcl "Tcl Built-In Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+grapheme \- Operations on extended grapheme clusters
+.SH SYNOPSIS
+.nf
+\fBgrapheme count \fIstring\fR
+\fBgrapheme index \fIstring grIndex\fR
+\fBgrapheme next \fIstring indexVar\fR
+\fBgrapheme offset \fIstring grIndex\fR
+\fBgrapheme prev \fIstring indexVar\fR
+\fBgrapheme range \fIstring grFirst grLast\fR
+\fBgrapheme reverse \fIstring\fR
+\fBgrapheme split \fIstring\fR
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBgrapheme\fR command operates on the \fIextended grapheme clusters\fR in
+a string, henceforth referred to simply as \fIgraphemes\fR. A grapheme is what
+a user perceives as a single character, and may consist of more than one
+Unicode code point. For example, a base letter followed by a combining accent,
+a CR LF sequence, or a multi-person emoji sequence joined by zero width
+joiners are each a single grapheme. See Unicode Standard Annex #29 (UAX #29)
+for a formal definition.
+.PP
+The \fBgrapheme\fR operations are analogous to those of the \fBstring\fR
+command but operate on graphemes instead of code points. They are more
+suitable in cases where the result should match the user's perception of
+a string, such as when computing displayed lengths, cursor movement, or
+text operations such as wrapping or reversing.
+.PP
+Several operations take a \fIgrapheme index\fR, which refers to the position
+of a grapheme within a \fIstring\fR counted in graphemes. Grapheme indices may
+be specified in the same forms accepted by the \fIindex\fR argument of the
+\fBstring index\fR command, including \fBend\fR, which denotes the index of
+the last grapheme in the string, and simple expressions.
+.PP
+The following operations are supported by the command:
+.\" METHOD: count
+.TP
+\fBgrapheme count \fIstring\fR
+.
+Returns the number of graphemes in \fIstring\fR.
+.\" METHOD: index
+.TP
+\fBgrapheme index \fIstring grIndex\fR
+.
+Returns the grapheme at grapheme index \fIgrIndex\fR in \fIstring\fR. If
+\fIgrIndex\fR is out of bounds, an empty string is returned.
+.\" METHOD: next
+.TP
+\fBgrapheme next \fIstring indexVar\fR
+.
+Returns the grapheme in \fIstring\fR that starts at the code point index
+stored in the variable \fIindexVar\fR. The value of \fIindexVar\fR may be in
+any of the forms accepted by the \fBstring index\fR command. If
+\fIindexVar\fR is not defined or its value is negative, the index is taken
+as 0. If the index is greater than the number of code points in
+\fIstring\fR, an empty string is returned.
+.RS
+.PP
+When the command returns, \fIindexVar\fR holds the code point index following
+the returned grapheme, or, if the empty string was returned, the length of
+\fIstring\fR in code points. The command can thus be called repeatedly to
+iterate over the graphemes in a string.
+.RE
+.\" METHOD: offset
+.TP
+\fBgrapheme offset \fIstring grIndex\fR
+.
+Maps the grapheme index \fIgrIndex\fR in \fIstring\fR to the corresponding
+code point index. Returns \-1 if \fIgrIndex\fR is out of bounds.
+.\" METHOD: prev
+.TP
+\fBgrapheme prev \fIstring indexVar\fR
+.
+Returns the grapheme in \fIstring\fR that precedes the code point index stored
+in the variable \fIindexVar\fR. The value of \fIindexVar\fR may be in any of
+the forms accepted by the \fBstring index\fR command. If \fIindexVar\fR is
+not defined, it defaults to the length of \fIstring\fR in code points, so
+that the last grapheme in the string is returned. If the value is negative,
+it is taken as 0 and an empty string is returned. If it is greater than the
+number of code points in \fIstring\fR, it is taken as the length of
+\fIstring\fR in code points.
+.RS
+.PP
+When the command returns a non-empty string, \fIindexVar\fR holds the code
+point index of the returned grapheme. If the command returns an empty string,
+\fIindexVar\fR is set to 0. The command can thus be called repeatedly to
+iterate backwards over the graphemes in a string.
+.RE
+.\" METHOD: range
+.TP
+\fBgrapheme range \fIstring grFirst grLast\fR
+.
+Returns the substring of \fIstring\fR between the grapheme indices
+\fIgrFirst\fR and \fIgrLast\fR, both inclusive. If \fIgrFirst\fR is negative,
+it is treated as 0. If \fIgrLast\fR is greater than or equal to the number of
+graphemes in \fIstring\fR, it is treated as the index of the last grapheme.
+If \fIgrLast\fR is less than \fIgrFirst\fR, an empty string is returned.
+.\" METHOD: reverse
+.TP
+\fBgrapheme reverse \fIstring\fR
+.
+Returns a string comprising the graphemes of \fIstring\fR in reverse order.
+.\" METHOD: split
+.TP
+\fBgrapheme split \fIstring\fR
+.
+Returns a list whose elements are the graphemes that comprise \fIstring\fR.
+.SH "PERFORMANCE NOTES"
+.PP
+Random access using grapheme indices requires the string to be scanned from
+the beginning and is therefore expensive. When iterating over the graphemes
+of a string, use \fBgrapheme next\fR and \fBgrapheme prev\fR, or use
+\fBforeach\fR in conjunction with \fBgrapheme split\fR, in preference to a
+loop that uses indices.
+.SH EXAMPLES
+.PP
+Iterating forwards over the graphemes of a string:
+.PP
+.CS
+set pos 0; # Or leave undefined
+while {[set gr [grapheme next $s pos]] ne ""} {
+    puts $gr
+}
+.CE
+.PP
+Or alternatively,
+.PP
+.CS
+foreach gr [grapheme split $s] {
+    puts $gr
+}
+.CE
+.PP
+Iterating backwards over the graphemes of a string.
+.PP
+.CS
+set pos end; # Or leave undefined
+while {[set gr [grapheme prev $s pos]] ne ""} {
+    puts $gr
+}
+.CE
+.SH "SEE ALSO"
+string(n), Tcl_Grapheme(3)
+.SH KEYWORDS
+extended grapheme cluster, grapheme, string, Unicode
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

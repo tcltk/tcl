@@ -1,0 +1,180 @@
+'\"
+'\" Copyright (c) 2026 Ashok P. Nadkarni
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH Tcl_Grapheme 3 9.2 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_GraphemeCount, Tcl_GraphemeNext, Tcl_GraphemePrev, Tcl_GraphemeIndex, Tcl_GraphemeRange, Tcl_GraphemeReverse, Tcl_GraphemeUniCount, Tcl_GraphemeUniNext, Tcl_GraphemeUniPrev, Tcl_GraphemeUniIndex, Tcl_GraphemeUniRange, Tcl_GraphemeUniReverse \- routines for operating on extended grapheme clusters
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_Size
+\fBTcl_GraphemeCount\fR(\fItutf8Ptr, numBytes\fR)
+.sp
+char *
+\fBTcl_GraphemeNext\fR(\fItutf8Ptr, numBytes, grWidthPtr\fR)
+.sp
+char *
+\fBTcl_GraphemePrev\fR(\fItutf8Ptr, numBytes, grWidthPtr\fR)
+.sp
+char *
+\fBTcl_GraphemeIndex\fR(\fItutf8Ptr, numBytes, grIndex, grWidthPtr, grNumBytesPtr\fR)
+.sp
+char *
+\fBTcl_GraphemeRange\fR(\fItutf8Ptr, numBytes, grFirst, grLast, endPtrPtr\fR)
+.sp
+Tcl_Size
+\fBTcl_GraphemeReverse\fR(\fItutf8Ptr, numBytes, outPtr, outCapacity\fR)
+.sp
+Tcl_Size
+\fBTcl_GraphemeUniCount\fR(\fIuniPtr, uniLen\fR)
+.sp
+Tcl_UniChar *
+\fBTcl_GraphemeUniNext\fR(\fIuniPtr, uniLen, grWidthPtr\fR)
+.sp
+Tcl_UniChar *
+\fBTcl_GraphemeUniPrev\fR(\fIuniPtr, uniLen, grWidthPtr\fR)
+.sp
+Tcl_UniChar *
+\fBTcl_GraphemeUniIndex\fR(\fIuniPtr, uniLen, grIndex, grWidthPtr, grNumBytesPtr\fR)
+.sp
+Tcl_UniChar *
+\fBTcl_GraphemeUniRange\fR(\fIuniPtr, uniLen, grFirst, grLast, uniEndPtrPtr\fR)
+.sp
+Tcl_Size
+\fBTcl_GraphemeUniReverse\fR(\fIuniPtr, uniLen, uniOutPtr, outCapacity\fR)
+.SH ARGUMENTS
+.AS "const Tcl_UniChar" *grNumBytesPtr in/out
+.AP "const char" *tutf8Ptr in
+Pointer to a sequence of bytes in Tcl's modified UTF-8 encoding (TUTF-8).
+Must not be NULL.
+.AP Tcl_Size numBytes in
+Length in bytes of the sequence pointed to by \fItutf8Ptr\fR. A negative
+value indicates that the sequence is terminated by a nul byte.
+.AP "const Tcl_UniChar" *uniPtr in
+Pointer to a sequence of \fBTcl_UniChar\fR values. Must not be NULL.
+.AP Tcl_Size uniLen in
+Length in \fBTcl_UniChar\fR units of the sequence pointed to by
+\fIuniPtr\fR. A negative value indicates that the sequence is terminated by
+a nul \fBTcl_UniChar\fR.
+.AP Tcl_Size *grWidthPtr out
+If not NULL, the number of code points comprising the returned grapheme is
+stored in the location pointed to.
+.AP Tcl_Size *grNumBytesPtr out
+If not NULL, the number of bytes comprising the returned grapheme is stored
+in the location pointed to.
+.AP Tcl_Size grIndex in
+Index of a grapheme in the input sequence, counted in graphemes from 0.
+.AP Tcl_Size grFirst in
+Index of the first grapheme in a range of graphemes.
+.AP Tcl_Size grLast in
+Index of the last grapheme in a range of graphemes.
+.AP char **endPtrPtr out
+Location in which to store a pointer to the byte following the last grapheme
+in a range.
+.AP Tcl_UniChar **uniEndPtrPtr out
+Location in which to store a pointer to the \fBTcl_UniChar\fR following the
+last grapheme in a range.
+.AP char *outPtr out
+Output buffer in which \fBTcl_GraphemeReverse\fR stores a TUTF-8 sequence.
+.AP Tcl_UniChar *uniOutPtr out
+Output buffer in which \fBTcl_GraphemeUniReverse\fR stores a
+\fBTcl_UniChar\fR sequence.
+.AP Tcl_Size outCapacity in
+Size of the output buffer in the units of the buffer: bytes for
+\fBTcl_GraphemeReverse\fR and \fBTcl_UniChar\fR values for
+\fBTcl_GraphemeUniReverse\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These functions operate on \fIextended grapheme clusters\fR, referred to
+simply as \fIgraphemes\fR in this manual page. A grapheme is what a user
+perceives as a single character and may consist of several Unicode code
+points, for example a base letter followed by a combining mark. See Unicode
+Standard Annex #29 for the formal definition. Only operations that are
+independent of locale are provided.
+.PP
+The functions form two analogous sets. The functions with names of the
+form \fBTcl_Grapheme\fIXxx\fR operate on strings in Tcl's modified UTF-8
+encoding (TUTF-8), and are passed a pointer and a length in bytes. The
+functions with names of the form \fBTcl_GraphemeUni\fIXxx\fR operate on
+sequences of \fBTcl_UniChar\fR values and are passed a pointer and a length
+in \fBTcl_UniChar\fR units. The two sets behave identically except for the
+units in which pointers, lengths and sizes are expressed.
+.PP
+Except where noted otherwise below:
+.IP \(bu 3
+\fItutf8Ptr\fR and \fIuniPtr\fR must not be NULL. This is not checked, and it
+is the caller's responsibility to pass valid pointers.
+.IP \(bu 3
+\fIgrWidthPtr\fR and \fIgrNumBytesPtr\fR may be NULL, in which case the
+corresponding value is not returned.
+.IP \(bu 3
+If \fInumBytes\fR or \fIuniLen\fR is negative, the input sequence is taken to
+be nul terminated.
+.PP
+\fBTcl_GraphemeCount\fR and \fBTcl_GraphemeUniCount\fR return the number of
+graphemes in a TUTF-8 or \fBTcl_UniChar\fR input sequence respectively.
+.PP
+\fBTcl_GraphemeNext\fR and \fBTcl_GraphemeUniNext\fR return a pointer to the
+location following the leading grapheme of the input sequence. If the
+sequence has zero length, the functions return NULL and, if \fIgrWidthPtr\fR
+is not NULL, store 0 in the location it points to.
+.PP
+\fBTcl_GraphemePrev\fR and \fBTcl_GraphemeUniPrev\fR return a pointer to the
+starting location of the grapheme preceding the end of the input sequence.
+The length of the sequence, passed in \fInumBytes\fR or \fIuniLen\fR, must be
+positive, otherwise the functions return NULL and store 0 in
+\fIgrWidthPtr\fR if it is not NULL.
+.PP
+The length of the grapheme in code points is returned through
+\fIgrWidthPtr\fR when it is not NULL. The caller can therefore step through a
+string grapheme by grapheme in either direction.
+.PP
+\fBTcl_GraphemeIndex\fR and \fBTcl_GraphemeUniIndex\fR return a pointer to the
+location of the grapheme at grapheme index \fIgrIndex\fR in the input
+sequence. If \fIgrIndex\fR is out of bounds, the functions return NULL and
+store 0 in the locations pointed to by \fIgrWidthPtr\fR and
+\fIgrNumBytesPtr\fR, if they are not NULL.
+.PP
+\fBTcl_GraphemeRange\fR and \fBTcl_GraphemeUniRange\fR identify the range of
+graphemes between the grapheme indices \fIgrFirst\fR and \fIgrLast\fR, both
+inclusive. The return value is a pointer to the location of the first grapheme
+in the range. The location pointed to by \fIendPtrPtr\fR and
+\fIuniEndPtrPtr\fR, respectively, is set to the location following the last
+grapheme in the range. A negative value of \fIgrFirst\fR is treated as 0. A
+negative value of \fIgrLast\fR is treated as the index of the last grapheme.
+.PP
+\fBTcl_GraphemeReverse\fR and \fBTcl_GraphemeUniReverse\fR store the
+graphemes of the input sequence in reverse order into the buffer pointed to
+by \fIoutPtr\fR or \fIuniOutPtr\fR respectively. \fIoutCapacity\fR is the
+size of that buffer in bytes or \fBTcl_UniChar\fR units respectively. The
+functions return the number of graphemes stored in the output buffer, or \-1
+if the buffer is too small.
+.SS "INVALID ENCODINGS"
+.PP
+In the TUTF-8 functions, invalid encoded sequences are treated as grapheme
+separators. The results of the functions are not guaranteed to be consistent
+with one another when invalid sequences are present. For example, reversing a
+sequence of invalid fragments may produce a valid encoded sequence. The code
+point(s) returned as the grapheme for an invalid sequence should not be relied
+upon, as they depend on how Tcl itself treats invalid encodings, which is not
+consistent even within Tcl. The width of such a grapheme, however, is
+consistent and may be used to continue iterating through the string.
+.PP
+Invalid sequences cannot occur in the \fBTcl_UniChar\fR based functions, as
+each \fBTcl_UniChar\fR is a complete Unicode code point.
+.SH "SEE ALSO"
+Tcl_Utf(3), grapheme(n), string(n)
+.SH KEYWORDS
+extended grapheme cluster, grapheme, Unicode
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
