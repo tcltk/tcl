@@ -11339,8 +11339,556 @@ TypeMapMinMax(Tcl_Interp *interp, Tcl_Obj *list, int isMax)
     }
 }
 
+/*
+ * 24/11 : type map typé.
+ *
+ *   type map ?-sum|-min|-max? {{double}x; {double}y} $cols ... {T}{(e1, e2)}
+ *
+ * Une signature d'entrée en produit : ses champs sont les variables, et
+ * chaque colonne est vérifiée (ou convertie) une fois à l'entrée, comme un
+ * argument de procédure. Un corps annoté donne le type de ce qu'il rend à
+ * chaque élément : un scalaire (une colonne), un produit écrit en ligne
+ * (une colonne par champ, le tuple du corps les remplit dans l'ordre), ou
+ * un produit nommé (une liste de ces produits). Un corps vide annoté
+ * projette par les noms. Sans annotation nulle part : type map comme avant.
+ */
+
+/* une signature typée ? (une annotation ou un ;) */
+static int
+MapSpecTyped(Tcl_Obj *spec)
+{
+    Tcl_Size len;
+    const char *s = Tcl_GetStringFromObj(spec, &len);
+
+    const char *e;
+    int depth = 0;
+
+    while (len > 0 && isspace(UCHAR(*s))) {
+	s++;
+	len--;
+    }
+    if (len == 0) {
+	return 0;
+    }
+    if (memchr(s, ';', len) != NULL) {
+	return 1;
+    }
+    if (*s != '{') {
+	return 0;
+    }
+    /* {T}nom : l'accolade fermante collée à un nom ; {x} {y}, une liste de
+     * noms, reste une liste de noms */
+    for (e = s; e < s + len; e++) {
+	if (*e == '{') {
+	    depth++;
+	} else if (*e == '}' && --depth == 0) {
+	    break;
+	}
+    }
+    return e + 1 < s + len && !isspace(UCHAR(e[1]));
+}
+
+/* le corps annoté : son type (résolu) et son texte ; 0 si pas annoté */
+static int
+MapBodyType(Tcl_Interp *interp, Tcl_Obj *body, TclType **tpPtr,
+	Tcl_Obj **contentPtr, int *inlinePtr, int *errPtr)
+{
+    Tcl_Obj *content = NULL, *raw = NULL;
+    TclType *tp = NULL;
+    int st = TclAnnotInfo(body, &content, &tp, NULL, &raw);
+    const char *name;
+
+    *errPtr = 0;
+    if (st == 0) {
+	return 0;
+    }
+    if (st == 2) {
+	if (raw == NULL) {
+	    return 0;
+	}
+	name = Tcl_GetString(raw);
+	tp = TclTypeParse(interp, name, (Tcl_Size) strlen(name));
+	if (tp == NULL) {
+	    *errPtr = 1;
+	    return 1;
+	}
+    } else {
+	name = tp->name;
+    }
+    while (isspace(UCHAR(*name))) {
+	name++;
+    }
+    *tpPtr = tp;
+    *contentPtr = content;
+    *inlinePtr = (tp->kind == TCLT_PRODUCT
+	    && (*name == '{' || strchr(name, ';') != NULL));
+    return 1;
+}
+
+/* (e1, e2, ...) au premier niveau : les composantes, chacune entre
+ * parenthèses ; NULL si le corps n'a pas cette forme */
+static Tcl_Obj *
+MapTupleSplit(const char *s, Tcl_Size len)
+{
+    const char *e = s + len, *p, *start;
+    int depth = 0, quote = 0;
+    Tcl_Obj *parts;
+
+    while (s < e && isspace(UCHAR(*s))) {
+	s++;
+    }
+    while (e > s && isspace(UCHAR(e[-1]))) {
+	e--;
+    }
+    if (e - s < 2 || *s != '(' || e[-1] != ')') {
+	return NULL;
+    }
+    /* la parenthèse ouvrante doit fermer à la fin */
+    for (p = s; p < e; p++) {
+	if (quote) {
+	    if (*p == '\\' && p + 1 < e) {
+		p++;
+	    } else if (*p == '"') {
+		quote = 0;
+	    }
+	    continue;
+	}
+	if (*p == '\\' && p + 1 < e) {
+	    p++;
+	} else if (*p == '"') {
+	    quote = 1;
+	} else if (*p == '(' || *p == '[' || *p == '{') {
+	    depth++;
+	} else if (*p == ')' || *p == ']' || *p == '}') {
+	    if (--depth == 0 && p != e - 1) {
+		return NULL;
+	    }
+	}
+    }
+    if (depth != 0 || quote) {
+	return NULL;
+    }
+    parts = Tcl_NewListObj(0, NULL);
+    depth = 0;
+    start = s + 1;
+    for (p = s + 1; p < e - 1; p++) {
+	if (quote) {
+	    if (*p == '\\' && p + 1 < e) {
+		p++;
+	    } else if (*p == '"') {
+		quote = 0;
+	    }
+	    continue;
+	}
+	if (*p == '\\' && p + 1 < e) {
+	    p++;
+	} else if (*p == '"') {
+	    quote = 1;
+	} else if (*p == '(' || *p == '[' || *p == '{') {
+	    depth++;
+	} else if (*p == ')' || *p == ']' || *p == '}') {
+	    depth--;
+	} else if (*p == ',' && depth == 0) {
+	    Tcl_ListObjAppendElement(NULL, parts,
+		    Tcl_ObjPrintf("(%.*s)", (int) (p - start), start));
+	    start = p + 1;
+	}
+    }
+    Tcl_ListObjAppendElement(NULL, parts,
+	    Tcl_ObjPrintf("(%.*s)", (int) (e - 1 - start), start));
+    return parts;
+}
+
+/* une colonne rangée dans list.T : telle quelle si elle y est déjà */
+static Tcl_Obj *
+MapColumnAs(Tcl_Interp *interp, TclType *et, Tcl_Obj *col, const char *what)
+{
+    TclType *lt = TclTypeListOf(interp, et), *at = NULL;
+    Tcl_Obj *c, *res;
+
+    if (lt == NULL) {
+	return NULL;
+    }
+    if (TclAnnotInfo(col, NULL, &at, NULL, NULL) == 1 && at != NULL
+	    && (at == lt || TclTypeEnters(lt, at))) {
+	return col;
+    }
+    c = TclTypedConform(interp, lt, col);
+    if (c == NULL) {
+	Tcl_Obj *m = Tcl_ObjPrintf("type map: %s: %s", what,
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+
+	Tcl_SetObjResult(interp, m);
+	return NULL;
+    }
+    Tcl_IncrRefCount(c);
+    res = TclNewAnnotated(interp, lt, -1, c);
+    Tcl_DecrRefCount(c);
+    return res;
+}
+
+static int TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
+
+static int
+TypeMapTyped(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	int optc)
+{
+    Tcl_Obj **av = NULL, *names = NULL, *keep = NULL, *body = objv[objc - 1];
+    Tcl_Obj *content = NULL, *parts = NULL, *res = NULL, *cols = NULL;
+    TclType *outT = NULL;
+    Tcl_Size k, j, nf, K = 1, ac;
+    int inl = 0, err = 0, annotated, rc = TCL_ERROR;
+
+    annotated = MapBodyType(interp, body, &outT, &content, &inl, &err);
+    if (err) {
+	return TCL_ERROR;
+    }
+    keep = Tcl_NewListObj(0, NULL);	/* les objets faits ici */
+    Tcl_IncrRefCount(keep);
+    names = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(names);
+    av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) (objc + 1));
+    av[0] = objv[0];
+    av[1] = objv[1];
+    ac = 2;
+    if (optc) {
+	av[ac++] = objv[2];
+    }
+    /* les entrées */
+    for (k = 2 + optc; k < objc - 1; k += 2) {
+	Tcl_Obj *spec = objv[k], *data = objv[k + 1];
+
+	if (!MapSpecTyped(spec)) {
+	    Tcl_Obj **vv;
+	    Tcl_Size nv;
+
+	    if (Tcl_ListObjGetElements(interp, spec, &nv, &vv) != TCL_OK) {
+		goto done;
+	    }
+	    for (j = 0; j < nv; j++) {
+		Tcl_ListObjAppendElement(NULL, names, vv[j]);
+	    }
+	    av[ac++] = spec;
+	    av[ac++] = data;
+	} else {
+	    const char *st = Tcl_GetString(spec);
+	    TclType *pt = TclTypeParse(interp, st, (Tcl_Size) strlen(st));
+	    Tcl_Obj *vl, *dl, **cv = NULL;
+	    Tcl_Size nc = 1;
+
+	    if (pt == NULL) {
+		goto done;
+	    }
+	    if (pt->kind != TCLT_PRODUCT || pt->nfields < 1) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: \"%s\" "
+			"is not a list of typed variables ({T}a; {T}b ...)",
+			st));
+		goto done;
+	    }
+	    nf = pt->nfields;
+	    if (nf > 1) {
+		if (Tcl_ListObjGetElements(interp, MListContent(data), &nc,
+			&cv) != TCL_OK) {
+		    goto done;
+		}
+		if (nc != nf) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: {%s} "
+			    "needs a list of %" TCL_SIZE_MODIFIER "d columns, "
+			    "not %" TCL_SIZE_MODIFIER "d", st, nf, nc));
+		    goto done;
+		}
+	    }
+	    vl = Tcl_NewListObj(0, NULL);
+	    dl = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, keep, vl);
+	    Tcl_ListObjAppendElement(NULL, keep, dl);
+	    for (j = 0; j < nf; j++) {
+		Tcl_Obj *fname = pt->fields[j].name, *c;
+		char what[200];
+
+		if (fname == NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: "
+			    "every variable of {%s} needs a name", st));
+		    goto done;
+		}
+		snprintf(what, sizeof(what), "column \"%s\"",
+			Tcl_GetString(fname));
+		c = MapColumnAs(interp, pt->fields[j].type,
+			(nf > 1) ? cv[j] : data, what);
+		if (c == NULL) {
+		    goto done;
+		}
+		Tcl_ListObjAppendElement(NULL, vl, fname);
+		Tcl_ListObjAppendElement(NULL, dl, c);
+		Tcl_ListObjAppendElement(NULL, names, fname);
+	    }
+	    av[ac++] = vl;
+	    if (nf == 1) {
+		Tcl_Obj *one;
+
+		Tcl_ListObjIndex(NULL, dl, 0, &one);
+		av[ac++] = one;
+	    } else {
+		av[ac++] = dl;
+	    }
+	}
+    }
+    /* le corps */
+    if (!annotated) {
+	av[ac++] = body;
+	rc = TypeMapPlain(interp, ac, av);
+	goto done;
+    }
+    if (outT->kind == TCLT_PRODUCT) {
+	K = outT->nfields;
+    }
+    if (Tcl_GetCharLength(content) == 0) {
+	/* la projection : les champs de la sortie, par leurs noms */
+	Tcl_Obj *b = Tcl_NewStringObj("(", 1);
+
+	Tcl_ListObjAppendElement(NULL, keep, b);
+	if (outT->kind != TCLT_PRODUCT) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("type map: an empty "
+		    "body projects onto a product: {{T}a; {T}b}{}", -1));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    Tcl_Obj *fn = outT->fields[j].name, **nv;
+	    Tcl_Size nn, q;
+	    int found = 0;
+
+	    Tcl_ListObjGetElements(NULL, names, &nn, &nv);
+	    for (q = 0; fn != NULL && q < nn; q++) {
+		found |= (strcmp(Tcl_GetString(nv[q]), Tcl_GetString(fn)) == 0);
+	    }
+	    if (!found) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: projection: "
+			"no input variable \"%s\"",
+			fn ? Tcl_GetString(fn) : "?"));
+		goto done;
+	    }
+	    Tcl_AppendPrintfToObj(b, "%s$%s", j ? ", " : "", Tcl_GetString(fn));
+	}
+	Tcl_AppendToObj(b, ")", 1);
+	content = b;
+    }
+    if (K == 1 && !(outT->kind == TCLT_PRODUCT)) {
+	/* un scalaire : une colonne de T (ou, avec -sum..., un T) */
+	Tcl_Obj *r;
+
+	av[ac++] = content;
+	if (TypeMapPlain(interp, ac, av) != TCL_OK) {
+	    goto done;
+	}
+	r = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(r);
+	Tcl_ResetResult(interp);
+	if (optc) {
+	    Tcl_Obj *c = TclTypedConform(interp, outT, r);
+
+	    if (c == NULL) {
+		Tcl_DecrRefCount(r);
+		goto done;
+	    }
+	    Tcl_IncrRefCount(c);
+	    res = TclNewAnnotated(interp, outT, -1, c);
+	    Tcl_DecrRefCount(c);
+	} else {
+	    res = MapColumnAs(interp, outT, r, "result");
+	}
+	if (res == NULL) {
+	    Tcl_DecrRefCount(r);
+	    goto done;
+	}
+	Tcl_IncrRefCount(res);		/* (peut être r lui-même) */
+	Tcl_DecrRefCount(r);
+	Tcl_SetObjResult(interp, res);
+	Tcl_DecrRefCount(res);
+	res = NULL;
+	rc = TCL_OK;
+	goto done;
+    }
+    /* un produit : K colonnes */
+    if (optc) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: %s needs a "
+		"scalar result, not a product", Tcl_GetString(objv[2])));
+	goto done;
+    }
+    cols = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(cols);
+    parts = MapTupleSplit(Tcl_GetString(content), Tcl_GetCharLength(content)
+	    ? (Tcl_Size) strlen(Tcl_GetString(content)) : 0);
+    if (parts != NULL) {
+	Tcl_Obj **pv;
+	Tcl_Size np;
+
+	Tcl_IncrRefCount(parts);
+	Tcl_ListObjGetElements(NULL, parts, &np, &pv);
+	if (np == K) {
+	    /* une composante à la fois, chacune compilée (et par blocs) */
+	    for (j = 0; j < K; j++) {
+		av[ac] = pv[j];
+		if (TypeMapPlain(interp, ac + 1, av) != TCL_OK) {
+		    break;
+		}
+		Tcl_ListObjAppendElement(NULL, cols, Tcl_GetObjResult(interp));
+		Tcl_ResetResult(interp);
+	    }
+	    if (j < K) {
+		/* l'erreur telle que l'élément par élément la donne */
+		Tcl_ResetResult(interp);
+		Tcl_SetListObj(cols, 0, NULL);
+	    }
+	}
+    }
+    {
+	Tcl_Size nc;
+
+	Tcl_ListObjLength(NULL, cols, &nc);
+	if (nc != K) {
+	    /* le corps entier, élément par élément, puis les colonnes */
+	    Tcl_Obj *r, **rv;
+	    Tcl_Size nr, i;
+
+	    av[ac] = content;
+	    if (TypeMapPlain(interp, ac + 1, av) != TCL_OK) {
+		goto done;
+	    }
+	    r = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(r);
+	    Tcl_ResetResult(interp);
+	    if (Tcl_ListObjGetElements(interp, r, &nr, &rv) != TCL_OK) {
+		Tcl_DecrRefCount(r);
+		goto done;
+	    }
+	    for (j = 0; j < K; j++) {
+		Tcl_ListObjAppendElement(NULL, cols, Tcl_NewListObj(0, NULL));
+	    }
+	    for (i = 0; i < nr; i++) {
+		Tcl_Obj **tv, *cj;
+		Tcl_Size nt;
+
+		if (Tcl_ListObjGetElements(interp, rv[i], &nt, &tv) != TCL_OK
+			|| nt != K) {
+		    if (nt != K) {
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: the "
+				"body gives %" TCL_SIZE_MODIFIER "d values for "
+				"element %" TCL_SIZE_MODIFIER "d, %s needs %"
+				TCL_SIZE_MODIFIER "d", nt, i, outT->name, K));
+		    }
+		    Tcl_DecrRefCount(r);
+		    goto done;
+		}
+		for (j = 0; j < K; j++) {
+		    Tcl_ListObjIndex(NULL, cols, j, &cj);
+		    if (Tcl_IsShared(cj)) {
+			cj = Tcl_DuplicateObj(cj);
+			Tcl_ListObjReplace(NULL, cols, j, 1, 1, &cj);
+		    }
+		    Tcl_ListObjAppendElement(NULL, cj, tv[j]);
+		}
+	    }
+	    Tcl_DecrRefCount(r);
+	}
+    }
+    /* chaque colonne dans le type de son champ */
+    {
+	Tcl_Obj **cv, *out = Tcl_NewListObj(0, NULL);
+
+	Tcl_IncrRefCount(out);
+	Tcl_ListObjGetElements(NULL, cols, &nf, &cv);
+	for (j = 0; j < K; j++) {
+	    char what[200];
+	    Tcl_Obj *c;
+
+	    snprintf(what, sizeof(what), "result \"%s\"",
+		    outT->fields[j].name ? Tcl_GetString(outT->fields[j].name)
+		    : "?");
+	    c = MapColumnAs(interp, outT->fields[j].type, cv[j], what);
+	    if (c == NULL) {
+		Tcl_DecrRefCount(out);
+		goto done;
+	    }
+	    Tcl_ListObjAppendElement(NULL, out, c);
+	}
+	if (inl) {
+	    res = out;		/* une colonne par champ */
+	} else {
+	    /* un produit nommé : la liste de ses valeurs */
+	    Tcl_Obj **ov, *rows = Tcl_NewListObj(0, NULL), *c;
+	    Tcl_Size n = 0, i;
+	    TclType *lt = TclTypeListOf(interp, outT);
+
+	    Tcl_IncrRefCount(rows);
+	    Tcl_ListObjGetElements(NULL, out, &nf, &ov);
+	    Tcl_ListObjLength(NULL, ov[0], &n);
+	    for (i = 0; i < n; i++) {
+		Tcl_Obj *row = Tcl_NewListObj(0, NULL), *e;
+
+		for (j = 0; j < K; j++) {
+		    Tcl_ListObjIndex(NULL, ov[j], i, &e);
+		    Tcl_ListObjAppendElement(NULL, row, e);
+		}
+		Tcl_ListObjAppendElement(NULL, rows, row);
+	    }
+	    Tcl_DecrRefCount(out);
+	    c = (lt != NULL) ? TclTypedConform(interp, lt, rows) : NULL;
+	    Tcl_DecrRefCount(rows);
+	    if (c == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(c);
+	    res = TclNewAnnotated(interp, lt, -1, c);
+	    Tcl_DecrRefCount(c);
+	    if (res == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(res);
+	    out = res;
+	}
+	Tcl_SetObjResult(interp, out);
+	Tcl_DecrRefCount(out);
+	res = NULL;
+	rc = TCL_OK;
+    }
+  done:
+    if (parts != NULL) {
+	Tcl_DecrRefCount(parts);
+    }
+    if (cols != NULL) {
+	Tcl_DecrRefCount(cols);
+    }
+    Tcl_DecrRefCount(names);
+    Tcl_DecrRefCount(keep);
+    Tcl_Free(av);
+    return rc;
+}
+
 static int
 TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    const char *opt = (objc > 2) ? Tcl_GetString(objv[2]) : "";
+    int optc = (strcmp(opt, "-sum") == 0 || strcmp(opt, "-min") == 0
+	    || strcmp(opt, "-max") == 0);
+    Tcl_Size k;
+
+    if (objc >= 4 + optc) {
+	int typed = (TclAnnotInfo(objv[objc - 1], NULL, NULL, NULL, NULL)
+		!= 0);
+
+	for (k = 2 + optc; !typed && k < objc - 1; k += 2) {
+	    typed = MapSpecTyped(objv[k]);
+	}
+	if (typed) {
+	    return TypeMapTyped(interp, objc, objv, optc);
+	}
+    }
+    return TypeMapPlain(interp, objc, objv);
+}
+
+static int
+TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     const char *opt = (objc > 2) ? Tcl_GetString(objv[2]) : "";
 

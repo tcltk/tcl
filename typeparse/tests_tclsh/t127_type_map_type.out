@@ -1,0 +1,24 @@
+entrée typée : 0.5 1.0 1.5
+sans type : 0 1 1
+deux colonnes : 1.5 3.5 5.5
+colonne fautive : ERR type map: column "x": expected floating-point number but got "abc"
+sortie scalaire : 2.0 4.0 6.0
+sortie int : 2 4 6
+int depuis double : ERR type map: result: type mismatch: expected list<int> but got list<double> (use an explicit cast)
+tuple : {1.5 3.5 5.5} {0.5 0.5 0.5}
+rotation : {0.6378697925882713 1.036026815874441 1.4341838391606108} {0.9182168195493894 2.275224920043965 3.632233020538541}
+projection : {0.5 1.5 2.5} {1.0 2.0 3.0}
+projection absente : ERR type map: projection: no input variable "z"
+somme typée : 6.0
+somme produit : ERR type map: -sum needs a scalar result, not a product
+nombre de valeurs : ERR type map: the body must be an expression in parentheses, {(...)}
+tuple imbriqué : {2 2.0 3.0} {2.0 3.0 4.0}
+produit nommé : {0.5 1.0} {1.5 2.0} {2.5 3.0}
+type du produit : list<point>
+types des colonnes : list<double> list<int>
+mêlé : 1.5 3.5 5.5
+variables après : 3.0
+noms entre accolades : 1.5 3.5 5.5
+erreur au milieu : {1.0 Inf 1.5} {1.0 2.0 3.0}
+erreur ordinaire : ERR divide by zero
+cases : {2.0 4.0 6.0} {-1.0 -2.0 -3.0}

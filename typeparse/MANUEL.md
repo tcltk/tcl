@@ -538,6 +538,38 @@ désactive les blocs, pour comparer. De 10 000 à 100 000 éléments : 3 à 5 ns
 par élément en cases, 9 à 10 ns en objets, contre 100 à 150 ns avec `lmap` ;
 un million : 7 à 8 ns en cases, 17 à 20 en objets.
 
+**Typé.** Les variables peuvent se déclarer comme les paramètres d'une
+procédure, et le corps peut dire ce qu'il rend :
+
+    type map {{double}x; {double}y} $pl((0,1)::2) \
+        {{double}u; {double}v}{($c*$x - $s*$y, $s*$x + $c*$y)}
+    type map {{double}x} $L {double}{($x * 2)}
+    type map {{double}x; {double}y} $cols {{double}y; {double}x}{}
+
+- Une signature d'entrée (un `{T}nom` ou un `;`) : ses champs sont les
+  variables ; chaque colonne est vérifiée, ou rangée dans `list.T`, une
+  fois à l'entrée, comme un argument (`type map: column "x": expected
+  floating-point number but got "abc"`). Le calcul suit alors les types
+  déclarés : avec `{double}`, `$x / 2` divise en flottants, et `$x / 0.0`
+  vaut `Inf` comme dans `expr`.
+- Un corps annoté `{T}{(…)}` : `T` est le type de ce que le corps rend à
+  chaque élément. Un scalaire : une colonne `list.T` (avec `-sum`, `-min`,
+  `-max`, un `T`). Un produit écrit en ligne (`{{double}u; {double}v}`) :
+  une colonne par champ, que le tuple du corps remplit dans l'ordre, prête
+  pour `set out((0,1)::2) {*}[…]`. Un produit nommé (`{point}`) : une
+  `list.point`. Chaque colonne est rangée dans le type de son champ (des
+  doubles dans un `{int}` : `type mismatch`, comme une affectation).
+- Un corps vide annoté `{T}{}` : la projection, par les noms ; les champs
+  de `T` sont pris parmi les variables d'entrée (choisis, réordonnés,
+  convertis ; pas renommés : un nom absent est une erreur).
+- Sans annotation nulle part : `type map` comme avant (le sens d'`expr`).
+
+Les composantes d'un tuple sont compilées chacune (et calculées par blocs)
+quand elles le peuvent ; sinon le corps entier est évalué par `expr`,
+élément par élément, puis ses tuples rangés en colonnes. Aujourd'hui,
+chaque composante fait sa passe : la rotation en un `type map` coûte ce que
+coûtaient deux.
+
 Exemple : `exemples/tcllib_geometry/vectorise.tcl` réécrit l'aire, la
 longueur, la translation, la rotation et la boîte englobante d'une
 polyligne (liste plate x1 y1 x2 y2 ...) avec des fenêtres

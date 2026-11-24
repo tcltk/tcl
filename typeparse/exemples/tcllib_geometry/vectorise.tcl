@@ -42,14 +42,14 @@ proc ::math::geometry::lengthOfPolylineV {{polyline}pl} {
 	    {(hypot($x0-$x1, $y0-$y1))}
 }
 
-# Translation et rotation : x et y lus par la fenêtre (0,1)::2, calculés
-# en colonnes, puis réentrelacés par une seule écriture de fenêtre
+# Translation et rotation : x et y lus par la fenêtre (0,1)::2, un seul
+# type map typé qui rend les deux colonnes (le tuple du corps), puis
+# réentrelacées par une seule écriture de fenêtre
 proc ::math::geometry::translateV {{vector}t; {polyline}pl} {
     set tx $t(x);  set ty $t(y)
-    lassign $pl((0,1)::2) X Y
     set {polyline}out [Vide $pl]
-    set out((0,1)::2) [type map {x} $X {($x + $tx)}] \
-	    [type map {y} $Y {($y + $ty)}]
+    set out((0,1)::2) {*}[type map {{coord}x; {coord}y} $pl((0,1)::2) \
+	    {{coord}u; {coord}v}{($x + $tx, $y + $ty)}]
     return $out
 }
 
@@ -67,10 +67,9 @@ proc ::math::geometry::Vide {pl} {
 proc ::math::geometry::rotateV {{coord}angle; {polyline}pl} {
     set a [expr {$::math::geometry::torad * $angle}]
     set c [expr {cos($a)}];  set s [expr {sin($a)}]
-    lassign $pl((0,1)::2) X Y
     set {polyline}out [Vide $pl]
-    set out((0,1)::2) [type map {x} $X {y} $Y {($c * $x - $s * $y)}] \
-	    [type map {x} $X {y} $Y {($s * $x + $c * $y)}]
+    set out((0,1)::2) {*}[type map {{coord}x; {coord}y} $pl((0,1)::2) \
+	    {{coord}u; {coord}v}{($c * $x - $s * $y, $s * $x + $c * $y)}]
     return $out
 }
 
