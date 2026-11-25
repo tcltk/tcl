@@ -548,6 +548,13 @@ test stringObj-17.4 {Tcl_StringIsEmpty, handle integer} testisempty {
     testisempty [expr {3+4}]
 } {0 pure int}
 
+# Crash will only show immediately with memdbg enabled
+test stringObj-bug-28de50dc {Crash on invalid code points} -body {
+    set u 0xef1401ef
+    teststringobj newunicode 0 $u
+    teststringobj newunicode 0 $u
+} -result \uFFFD
+
 
 if {[testConstraint testobj]} {
     testobj freeallvars
