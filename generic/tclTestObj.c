@@ -1614,6 +1614,9 @@ TeststringobjCmd(
 	    Tcl_SetObjResult(interp, varPtr[varIndex]);
 	    break;
 	case 13:			/* newunicode*/
+	    if (objc < 4) {
+		goto wrongNumArgs;
+	    }
 	    unicode = (Tcl_UniChar *)Tcl_Alloc((objc - 3) * sizeof(Tcl_UniChar));
 	    for (i = 0; i < (objc - 3); ++i) {
 		int val;

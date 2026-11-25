@@ -124,12 +124,16 @@ TclUtfCount(
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
     }
-    if (ch <= 0x7FF) {
+    if ((unsigned) ch <= 0x7FF) {
 	return 2;
     }
     if (((unsigned)(ch - 0x10000) <= 0xFFFFF)) {
 	return 4;
     }
+    /*
+     * In addition to valid code points that map to 3-byte UTF-8, also 
+     * assumes invalid code points will be encoded as U+FFFD 
+     */
     return 3;
 }
 
