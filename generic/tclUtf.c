@@ -131,8 +131,9 @@ TclUtfCount(
 	return 4;
     }
     /*
-     * In addition to valid code points that map to 3-byte UTF-8, also 
-     * assumes invalid code points will be encoded as U+FFFD 
+     * In addition to valid code points that map to 3-byte UTF-8, also
+     * assumes invalid code points will be encoded as U+FFFD as is done
+     * in Tcl_UniCharToUtf.
      */
     return 3;
 }
