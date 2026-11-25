@@ -10866,7 +10866,9 @@ TestGraphemeCmd(
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(count));
 	if (count >= 0) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj((char *) outBufPtr, lengthArg));
+		    Tcl_NewStringObj((char *)outBufPtr,
+			    lengthArg >= 0 ? lengthArg
+					   : (Tcl_Size)strlen(bytes)));
 	}
 	Tcl_Free(outBufPtr);
 	break;
@@ -10879,7 +10881,10 @@ TestGraphemeCmd(
 	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewWideIntObj(count));
 	if (count >= 0) {
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewUnicodeObj((Tcl_UniChar *)outBufPtr, lengthArg));
+		    Tcl_NewUnicodeObj((Tcl_UniChar *)outBufPtr,
+			    lengthArg >= 0
+				    ? lengthArg
+				    : Tcl_UniCharLen((Tcl_UniChar *)bytes)));
 	}
 	Tcl_Free(outBufPtr);
 	break;

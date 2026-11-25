@@ -915,6 +915,7 @@ namespace eval grapheme::test {
 
     test Tcl_GraphemeReverse-negative-length-0 {GraphemeReverse nul terminated} -body {
         set s [tutf8 XA\u0301Y]\0
+        set slen [string length $s]
         testgrapheme Tcl_GraphemeReverse $s -1 $slen
     } -result [list 3 YA\u0301X]
 
