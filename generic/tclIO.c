@@ -69,7 +69,7 @@ typedef struct GetsState {
     char **dstPtr;		/* Pointer into objPtr's string rep where
 				 * next character should be stored. */
     Tcl_Encoding encoding;	/* The encoding to use to convert raw bytes
-				 * to UTF-8.  */
+				 * to UTF-8. */
     ChannelBuffer *bufPtr;	/* The current buffer of raw bytes being
 				 * emptied. */
     Tcl_EncodingState state;	/* The encoding state just before the last
@@ -105,7 +105,7 @@ typedef struct CopyState {
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
     int bufSize;		/* Size of appended buffer. */
-    char buffer[TCLFLEXARRAY];		/* Copy buffer, this must be the last
+    char buffer[TCLFLEXARRAY];	/* Copy buffer, this must be the last
 				 * field. */
 } CopyState;
 
@@ -136,6 +136,12 @@ typedef struct ThreadSpecificData {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
+
+/*
+ * Key for looking up the channel table (a Tcl_HashTable indexed by channel
+ * name) in the interpreter's associated data table.
+ */
+#define ASSOC_KEY "tclIO"
 
 /*
  * Structure to record a close callback. One such record exists for
@@ -229,12 +235,12 @@ static int		Write(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
-static int	      WillRead(Channel *chanPtr);
+static int		WillRead(Channel *chanPtr);
 
 #define WriteChars(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
+	Write(chanPtr, src, srcLen, chanPtr->state->encoding)
 #define WriteBytes(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+	Write(chanPtr, src, srcLen, tclIdentityEncoding)
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -341,8 +347,8 @@ static const Tcl_ObjType chanObjType = {
 };
 
 #define BUSY_STATE(st, fl) \
-     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
-      (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
+    ((((st)->csPtrR) && ((fl) & TCL_READABLE)) ||			\
+     (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
 
@@ -605,7 +611,7 @@ TclFinalizeIOSubsystem(void)
 	    if (GotFlag(statePtr, CHANNEL_DEAD)) {
 		continue;
 	    }
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED )
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED)
 		    || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 		ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
@@ -662,6 +668,16 @@ TclFinalizeIOSubsystem(void)
 		 */
 
 		Tcl_Flush((Tcl_Channel) chanPtr);
+
+#ifdef _WIN32
+		/*
+		 * Bug  [06f19cc401] - Windows crash on thread exit with
+		 * active socket. TODO - not clear if this is required
+		 * on Unix. Don't want to make the change there without a
+		 * clear reason.
+		 */
+		CutChannel((Tcl_Channel) chanPtr);
+#endif
 
 		/*
 		 * Call the device driver to actually close the underlying
@@ -829,7 +845,7 @@ Tcl_CreateCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The callback routine to call when the
 				 * channel will be closed. */
-    void *clientData)	/* Arbitrary data to pass to the close
+    void *clientData)		/* Arbitrary data to pass to the close
 				 * callback. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -867,7 +883,7 @@ Tcl_DeleteCloseHandler(
 				 * callback. */
     Tcl_CloseProc *proc,	/* The procedure for the callback to
 				 * remove. */
-    void *clientData)	/* The callback data for the callback to
+    void *clientData)		/* The callback data for the callback to
 				 * remove. */
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
@@ -914,11 +930,11 @@ GetChannelTable(
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_Channel stdinChan, stdoutChan, stderrChan;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
 	hTblPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_STRING_KEYS);
-	Tcl_SetAssocData(interp, "tclIO",
+	Tcl_SetAssocData(interp, ASSOC_KEY,
 		(Tcl_InterpDeleteProc *) DeleteChannelTable, hTblPtr);
 
 	/*
@@ -966,7 +982,7 @@ GetChannelTable(
 
 static void
 DeleteChannelTable(
-    void *clientData,	/* The per-interpreter data structure. */
+    void *clientData,		/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
 {
     Tcl_HashTable *hTblPtr;	/* The hash table. */
@@ -1028,7 +1044,6 @@ DeleteChannelTable(
 		(void) Tcl_Close(interp, (Tcl_Channel) chanPtr);
 	    }
 	}
-
     }
     Tcl_DeleteHashTable(hTblPtr);
     ckfree(hTblPtr);
@@ -1354,7 +1369,7 @@ DetachChannel(
     statePtr = chanPtr->state;
 
     if (interp != NULL) {
-	hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
+	hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
 	if (hTblPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -1509,8 +1524,8 @@ TclGetChannelFromObj(
 
     if (objPtr->typePtr == &chanObjType) {
 	/*
- 	 * Confirm validity of saved lookup results.
- 	 */
+	 * Confirm validity of saved lookup results.
+	 */
 
 	resPtr = (ResolvedChanName *)objPtr->internalRep.twoPtrValue.ptr1;
 	statePtr = resPtr->statePtr;
@@ -1582,7 +1597,7 @@ Tcl_Channel
 Tcl_CreateChannel(
     const Tcl_ChannelType *typePtr, /* The channel type record. */
     const char *chanName,	/* Name of channel to record. */
-    void *instanceData,	/* Instance specific data. */
+    void *instanceData,		/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
 {
@@ -1639,7 +1654,7 @@ Tcl_CreateChannel(
      */
 
     if (chanName != NULL) {
-	unsigned len = strlen(chanName) + 1;
+	size_t len = strlen(chanName) + 1;
 
 	/*
 	 * Make sure we allocate at least 7 bytes, so it fits for "stdout"
@@ -1804,7 +1819,7 @@ Tcl_StackChannel(
     const Tcl_ChannelType *typePtr,
 				/* The channel type record for the new
 				 * channel. */
-    void *instanceData,	/* Instance specific data for the new
+    void *instanceData,		/* Instance specific data for the new
 				 * channel. */
     int mask,			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -2426,7 +2441,7 @@ int
 Tcl_GetChannelHandle(
     Tcl_Channel chan,		/* The channel to get file from. */
     int direction,		/* TCL_WRITABLE or TCL_READABLE. */
-    void **handlePtr)	/* Where to store handle */
+    void **handlePtr)		/* Where to store handle */
 {
     Channel *chanPtr;		/* The actual channel. */
     void *handle;
@@ -9319,7 +9334,8 @@ TclCopyChannel(
      * completed.
      */
 
-    csPtr = (CopyState *)ckalloc(TclOffset(CopyState, buffer) + 1U + !moveBytes * inStatePtr->bufSize);
+    csPtr = (CopyState *)
+	    ckalloc(TclOffset(CopyState, buffer) + 1U + !moveBytes * inStatePtr->bufSize);
     csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
@@ -10012,7 +10028,7 @@ DoRead(
 	 */
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
-		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(!IsBufferFull(bufPtr) &&	/* Our buffer has room AND */
 		(BytesLeft(bufPtr) < bytesToRead))) {
 						/* Not enough bytes in it yet
 						 * to fill the dst */
@@ -10039,8 +10055,7 @@ DoRead(
 	}
 
 	if (!bufPtr) {
-	  readErr:
-
+	readErr:
 	    UpdateInterest(chanPtr);
 	    TclChannelRelease((Tcl_Channel)chanPtr);
 	    return -1;
@@ -10427,7 +10442,7 @@ Tcl_GetChannelNames(
  *
  * Tcl_GetChannelNamesEx --
  *
- *	Return the names of open channels in the interp filtered filtered
+ *	Return the names of open channels in the interp filtered
  *	through a pattern. If pattern is NULL, it returns all the open
  *	channels.
  *
@@ -10543,7 +10558,7 @@ Tcl_IsChannelRegistered(
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
     statePtr = chanPtr->state;
 
-    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, "tclIO", NULL);
+    hTblPtr = (Tcl_HashTable *)Tcl_GetAssocData(interp, ASSOC_KEY, NULL);
     if (hTblPtr == NULL) {
 	return 0;
     }
@@ -10581,7 +10596,7 @@ Tcl_IsChannelShared(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return ((statePtr->refCount > 1) ? 1 : 0);
+    return statePtr->refCount > 1;
 }
 
 /*
@@ -10651,7 +10666,8 @@ Tcl_IsChannelExisting(
 
 const char *
 Tcl_ChannelName(
-    const Tcl_ChannelType *chanTypePtr) /* Pointer to channel type. */
+    const Tcl_ChannelType *chanTypePtr)
+				/* Pointer to channel type. */
 {
     return chanTypePtr->typeName;
 }
@@ -11126,7 +11142,7 @@ Tcl_SetChannelError(
  *	no problems.
  *
  * Results:
- *	A Tcl_Obj*
+ *	A Tcl_Obj *
  *
  * Side effects:
  *	None.
@@ -11379,9 +11395,9 @@ Tcl_ChannelTruncateProc(
 
 static void
 DupChannelInternalRep(
-    Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
 				 * an internal rep of type "Channel". */
-    Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
     ResolvedChanName *resPtr = (ResolvedChanName *)srcPtr->internalRep.twoPtrValue.ptr1;
@@ -11435,7 +11451,8 @@ DumpFlags(
     int i = 0;
     char buf[24];
 
-#define ChanFlag(chr, bit)      (buf[i++] = ((flags & (bit)) ? (chr) : '_'))
+#define ChanFlag(chr, bit) \
+	(buf[i++] = ((flags & (bit)) ? (chr) : '_'))
 
     ChanFlag('r', TCL_READABLE);
     ChanFlag('w', TCL_WRITABLE);
