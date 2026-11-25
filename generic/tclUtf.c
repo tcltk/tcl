@@ -129,9 +129,14 @@ UtfCount(
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
     }
-    if (ch <= 0x7FF) {
+    if ((unsigned)ch <= 0x7FF) {
 	return 2;
     }
+    /*
+     * In addition to valid code points that map to 3-byte UTF-8, also
+     * assumes invalid code points will be encoded as U+FFFD as is done
+     * in Tcl_UniCharToUtf.
+     */
     if (((unsigned)(ch - 0x10000) <= 0xFFFFF)) {
 	return (TCL_UTF_MAX > 3) ? 4 : 6;
     }
