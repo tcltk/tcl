@@ -104,6 +104,7 @@ to the userbase.
  - [Windows: "open" failed with an empty error message after dup2()](https://core.tcl-lang.org/tcl/tktview/91c9bc)
  - [Tcl_FSChdir crash on macos/macports after seteuid](https://core.tcl-lang.org/tcl/tktview/e2698b)
  - [Crash on invalid Unicode code points](https://core.tcl-lang.org/tcl/tktview/28de50)
+ - [Crash on use-after-free in Windows socket thread.](https://core.tcl-lang.org/tcl/tktview/06f19cc4)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
