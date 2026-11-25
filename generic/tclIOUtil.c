@@ -2259,11 +2259,17 @@ Tcl_FSUtime(
 				 * times to use. Should not be modified. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+    int err;
 
-    if (fsPtr != NULL && fsPtr->utimeProc != NULL) {
-	return fsPtr->utimeProc(pathPtr, tval);
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->utimeProc != NULL) {
+	    return fsPtr->utimeProc(pathPtr, tval);
+	}
+	err = ENOTSUP;
     }
-    /* TODO: set errno here? Tcl_SetErrno(ENOENT); */
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -3635,8 +3641,13 @@ Tcl_FSLink(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
-    if (fsPtr != NULL && fsPtr->linkProc != NULL) {
-	return fsPtr->linkProc(pathPtr, toPtr, linkAction);
+    if (fsPtr) {
+	if (fsPtr->linkProc == NULL) {
+	    Tcl_SetErrno(ENOTSUP);
+	    return NULL;
+	} else {
+	    return fsPtr->linkProc(pathPtr, toPtr, linkAction);
+	}
     }
 
     /*
@@ -4214,11 +4225,17 @@ Tcl_FSDeleteFile(
     Tcl_Obj *pathPtr)		/* Pathname of file to be removed (UTF-8). */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+    int err;
 
-    if (fsPtr != NULL && fsPtr->deleteFileProc != NULL) {
-	return fsPtr->deleteFileProc(pathPtr);
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->deleteFileProc != NULL) {
+	    return fsPtr->deleteFileProc(pathPtr);
+	}
+	err = ENOTSUP;
     }
-    Tcl_SetErrno(ENOENT);
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -4234,7 +4251,8 @@ Tcl_FSDeleteFile(
  *	A standard Tcl return code, or -1 if no createDirectoryProc is found.
  *
  * Side effects:
- *	A directory may be created.
+ *	A directory may be created.  POSIX error 'ENOENT' is set if no
+ *	createDirectoryProc is found.
  *
  *---------------------------------------------------------------------------
  */
@@ -4244,11 +4262,17 @@ Tcl_FSCreateDirectory(
     Tcl_Obj *pathPtr)		/* Pathname of directory to create (UTF-8). */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+    int err;
 
-    if (fsPtr != NULL && fsPtr->createDirectoryProc != NULL) {
-	return fsPtr->createDirectoryProc(pathPtr);
+    if (fsPtr == NULL) {
+	err = ENOENT;
+    } else {
+	if (fsPtr->createDirectoryProc != NULL) {
+	    return fsPtr->createDirectoryProc(pathPtr);
+	}
+	err = ENOTSUP;
     }
-    Tcl_SetErrno(ENOENT);
+    Tcl_SetErrno(err);
     return -1;
 }
 
@@ -4264,7 +4288,8 @@ Tcl_FSCreateDirectory(
  *	A standard Tcl return code, or -1 if no 'copyDirectoryProc' is found.
  *
  * Side effects:
- *	A directory may be copied.
+ *	A directory may be copied. POSIX error 'EXDEV' is set if no
+ *	copyDirectoryProc is found.
  *
  *---------------------------------------------------------------------------
  */
@@ -4307,7 +4332,8 @@ Tcl_FSCopyDirectory(
  *	A standard Tcl return code, or -1 if no removeDirectoryProc is found.
  *
  * Side effects:
- *	A directory may be removed.
+ *	A directory may be removed.  POSIX error 'ENOENT' is set if no
+ *	removeDirectoryProc is found.
  *
  *---------------------------------------------------------------------------
  */
@@ -4325,8 +4351,12 @@ Tcl_FSRemoveDirectory(
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
-    if (fsPtr == NULL || fsPtr->removeDirectoryProc == NULL) {
+    if (fsPtr == NULL) {
 	Tcl_SetErrno(ENOENT);
+	return -1;
+    }
+    if (fsPtr->removeDirectoryProc == NULL) {
+	Tcl_SetErrno(ENOTSUP);
 	return -1;
     }
 
