@@ -2070,7 +2070,7 @@ namespace eval test_ns_zipfs {
     } -body {
         lsort [glob -dir . *]
     } -result [list ./test2]
-    
+
 }
 
 

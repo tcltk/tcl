@@ -1285,7 +1285,7 @@ static int
 CmdProc0(
     void *clientData,		/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) 		/*objc*/,
+    TCL_UNUSED(int)		/*objc*/,
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     TestCommandTokenRef *refPtr = (TestCommandTokenRef *) clientData;
@@ -1297,7 +1297,7 @@ static int
 CmdProc1(
     void *clientData,		/* String to return. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) 		/*argc*/,
+    TCL_UNUSED(int)		/*argc*/,
     TCL_UNUSED(const char **)	/*argv*/)
 {
     Tcl_AppendResult(interp, "CmdProc1 ", (char *)clientData, (char *)NULL);
@@ -1680,7 +1680,7 @@ static int
 CreatedCommandProc(
     TCL_UNUSED(void *),
     Tcl_Interp *interp,		/* Current interpreter. */
-    TCL_UNUSED(int) 		/*objc*/,
+    TCL_UNUSED(int)		/*objc*/,
     TCL_UNUSED(Tcl_Obj *const *) /*objv*/)
 {
     Tcl_CmdInfo info;
@@ -7231,7 +7231,7 @@ TestGetIndexFromObjStructCmd(
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
     static const char *const ary[] = {
- 	"a", "b", "c", "d", "ee", "ff", NULL, NULL
+	"a", "b", "c", "d", "ee", "ff", NULL, NULL
     };
     int target, flags = 0;
     signed char idx[8];
