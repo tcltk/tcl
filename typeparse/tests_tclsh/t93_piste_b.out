@@ -29,7 +29,7 @@ type {int}"…": 44 int {}
 type {int}5: 5 int {}
 nom inconnu: 1 {unknown type "zz"}
 annotation locale: 1 {"-v" is not a type: "type" casts to a type}
-sans annotation: 1 {bad subcommand "5": must be def, alias, call, canonic, cast, convert, debug, deref, export, forget, get, is, map, meta, ops, parse, proc, variant or binary}
+sans annotation: 1 {bad subcommand "5": must be def, alias, call, canonic, cast, convert, debug, deref, export, forget, get, is, map, meta, ops, parse, proc, repeat, variant or binary}
 dans un catch: 1 {unmatched open brace in list}
 --- les boucles reçoivent leurs listes
 foreach {list}$p: 1.0/2.0

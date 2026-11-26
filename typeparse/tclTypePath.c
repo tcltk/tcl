@@ -5183,8 +5183,11 @@ RangePathWrite(Tcl_Obj *a, Tcl_Obj *part2Ptr, Tcl_Obj *value)
 	if (count > 0 && !TclCompactWriteScalar(v, first, 0, NULL, c)) {
 	    goto done;
 	}
-	for (k = 1, i = first + stride; k < count; k++, i += stride) {
-	    TclCompactWriteScalar(v, i, 0, NULL, c);
+	if (count > 1 && !TclCompactFillFrom(v, first, first + stride,
+		count - 1, stride)) {
+	    for (k = 1, i = first + stride; k < count; k++, i += stride) {
+		TclCompactWriteScalar(v, i, 0, NULL, c);
+	    }
 	}
 	TclInvalidateStringRep(v);
 	ok = 1;

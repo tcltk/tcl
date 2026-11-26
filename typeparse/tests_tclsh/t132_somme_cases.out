@@ -1,0 +1,36 @@
+u8 0 : 5180 7 | 5180 | 5180
+u8 -5 : 5175 7 | 5175 | 5175
+u8 9223372036854775000 : 9223372036854780180 7 | 9223372036854780180 | 9223372036854780180
+u8 -9223372036854775000 : -9223372036854769820 7 | -9223372036854769820 | -9223372036854769820
+u8 1.5 : ERR expected integer but got "1.5" | 5181.5 | 5181.5
+u8 abc : ERR expected integer but got "abc" | ERR cannot use non-numeric string "abc" as left operand of "+" | ERR cannot use non-numeric string "abc" as left operand of "+"
+i8 0 : 30 5 | 30 | 30
+i8 -5 : 25 5 | 25 | 25
+i8 9223372036854775000 : 9223372036854775030 5 | 9223372036854775030 | 9223372036854775030
+i8 -9223372036854775000 : -9223372036854774970 5 | -9223372036854774970 | -9223372036854774970
+i8 1.5 : ERR expected integer but got "1.5" | 31.5 | 31.5
+i8 abc : ERR expected integer but got "abc" | ERR cannot use non-numeric string "abc" as left operand of "+" | ERR cannot use non-numeric string "abc" as left operand of "+"
+u16 0 : 1310730 3 | 1310730 | 1310730
+u16 -5 : 1310725 3 | 1310725 | 1310725
+u16 9223372036854775000 : 9223372036856085730 3 | 9223372036856085730 | 9223372036856085730
+u16 -9223372036854775000 : -9223372036853464270 3 | -9223372036853464270 | -9223372036853464270
+u16 1.5 : ERR expected integer but got "1.5" | 1310731.5 | 1310731.5
+u16 abc : ERR expected integer but got "abc" | ERR cannot use non-numeric string "abc" as left operand of "+" | ERR cannot use non-numeric string "abc" as left operand of "+"
+i16 0 : -30 -2 | -30 | -30
+i16 -5 : -35 -2 | -35 | -35
+i16 9223372036854775000 : 9223372036854774970 -2 | 9223372036854774970 | 9223372036854774970
+i16 -9223372036854775000 : -9223372036854775030 -2 | -9223372036854775030 | -9223372036854775030
+i16 1.5 : ERR expected integer but got "1.5" | -28.5 | -28.5
+i16 abc : ERR expected integer but got "abc" | ERR cannot use non-numeric string "abc" as left operand of "+" | ERR cannot use non-numeric string "abc" as left operand of "+"
+u32 0 : 85899345910 1 | 85899345910 | 85899345910
+u32 -5 : 85899345905 1 | 85899345905 | 85899345905
+u32 9223372036854775000 : 9223372122754120910 1 | 9223372122754120910 | 9223372122754120910
+u32 -9223372036854775000 : -9223371950955429090 1 | -9223371950955429090 | -9223371950955429090
+u32 1.5 : ERR expected integer but got "1.5" | 85899345911.5 | 85899345911.5
+u32 abc : ERR expected integer but got "abc" | ERR cannot use non-numeric string "abc" as left operand of "+" | ERR cannot use non-numeric string "abc" as left operand of "+"
+i32 0 : -100 -9 | -100 | -100
+i32 -5 : -105 -9 | -105 | -105
+i32 9223372036854775000 : 9223372036854774900 -9 | 9223372036854774900 | 9223372036854774900
+i32 -9223372036854775000 : -9223372036854775100 -9 | -9223372036854775100 | -9223372036854775100
+i32 1.5 : ERR expected integer but got "1.5" | -98.5 | -98.5
+i32 abc : ERR expected integer but got "abc" | ERR cannot use non-numeric string "abc" as left operand of "+" | ERR cannot use non-numeric string "abc" as left operand of "+"

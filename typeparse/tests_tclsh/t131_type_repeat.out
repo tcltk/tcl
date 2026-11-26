@@ -1,0 +1,20 @@
+int(u,8) 5 1 : {1 1 1 1 1} list<int(u,8)>
+-into octets 4 : {0 0 0 0} octets
+double 3 : 0.0 0.0 0.0
+pt 2 {1 2} : {{1.0 2.0} {1.0 2.0}} list<pt>
+-into pts 2 {1 2} : {{1.0 2.0} {1.0 2.0}} pts
+list.int 3 {1 2} : {{1 2} {1 2} {1 2}} list<list<int>>
+-into list.int 3 7 : 7 7 7
+int 3 7 : {7 7 7} list<int>
+string 2 : ERR type repeat: a value is needed for elements of type string
+string 2 a : a a
+-into list(3).int 4 : ERR type repeat: 4 elements do not fit in list(3).int
+-into int 3 : ERR type repeat: "int" is not a list type
+int(u,8) 3 300 : ERR type repeat: value: value "300" does not fit in int(u,8)
+arguments : ERR wrong # args: should be "type repeat type count ?value?" or "type repeat -into listType count ?value?"
+arguments 2 : ERR wrong # args: should be "type repeat type count ?value?" or "type repeat -into listType count ?value?"
+inconnu : ERR unknown type "nope"
+{octets} signature : 10
+écriture : 1 1 0 1 0 1 0 1 0 1
+lmap après : 6 6 6
+somme : 300

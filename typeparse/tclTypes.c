@@ -10883,6 +10883,57 @@ MDRun(const MDProg *d, const MNum *vars, double *out)
 #   define MD_VECTORIZE
 #endif
 
+/* La somme de n cases d'entiers (8, 16, 32 bits), sur 64 bits. */
+static Tcl_WideInt MD_VECTORIZE
+MapCellSum(const unsigned char *p, size_t stride, int isU, int size,
+	Tcl_Size n)
+{
+    Tcl_WideInt s = 0;
+    Tcl_Size i;
+
+    if (size == 1 && stride == 1) {
+	if (isU) {
+	    const uint8_t *q = p;
+	    uint64_t u = 0;
+
+	    for (i = 0; i < n; i++) {
+		u += q[i];
+	    }
+	    return (Tcl_WideInt) u;
+	} else {
+	    const int8_t *q = (const int8_t *) p;
+
+	    for (i = 0; i < n; i++) {
+		s += q[i];
+	    }
+	    return s;
+	}
+    }
+    for (i = 0; i < n; i++, p += stride) {
+	switch (size) {
+	case 1:
+	    s += isU ? (Tcl_WideInt) *(const uint8_t *) p
+		    : (Tcl_WideInt) *(const int8_t *) p;
+	    break;
+	case 2: {
+	    uint16_t u;
+
+	    memcpy(&u, p, 2);
+	    s += isU ? (Tcl_WideInt) u : (Tcl_WideInt) (int16_t) u;
+	    break;
+	}
+	default: {
+	    uint32_t u;
+
+	    memcpy(&u, p, 4);
+	    s += isU ? (Tcl_WideInt) u : (Tcl_WideInt) (int32_t) u;
+	    break;
+	}
+	}
+    }
+    return s;
+}
+
 typedef struct MDEnt {
     const double *p;		/* NULL : la constante k */
     double k;
@@ -12558,6 +12609,8 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
     /* -fold : s, sa valeur (nombre fNum, ou objet fObj), et le découpage
      * (fA : ce qui dépend de s, fE : le reste, calculé par blocs) */
     int fSlot = -1, fIsNum = 0, fStale = 0, split = 0, fOp = 0, fFn = 0;
+    int eSumSlot = -1;		/* s + $v : la variable v (somme directe) */
+    Tcl_Size iStart = 0;
     int fSLeft = 0, fAIsS = 0, fAMul = 0;	/* A = s, ou A = c * s */
     double fC = 0.0;
     MNum fNum;
@@ -12831,6 +12884,11 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 		MICompile(&g, aSide ? L : R, &iE);
 		if (iE.maxDepth <= 32) {
 		    intSplit = 1;
+		    if (nd->kind == MN_ADD
+			    && g.n[aSide ? L : R].kind == MN_VAR
+			    && g.n[aSide ? L : R].slot != fSlot) {
+			eSumSlot = g.n[aSide ? L : R].slot;	/* s + $v */
+		    }
 		}
 	    }
 	    if (aSide >= 0 && okA && (dblOK || intSplit)) {
@@ -12906,7 +12964,42 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    }
 	}
     }
-    for (i = 0; i < n; i++) {
+    /*
+     * s + $v sur une colonne d'entiers en cases (8, 16, 32 bits) : la somme
+     * des n-1 premiers éléments d'un trait (le dernier passe par le chemin
+     * général, qui pose les variables). Même résultat que l'ordre élément
+     * par élément tant qu'aucune somme partielle ne dépasse 64 bits : non
+     * signés, les sommes partielles vont de s à la somme finale ; signés,
+     * |s| < 2^62 et moins de 2^30 éléments. Sinon le chemin par blocs.
+     */
+    if (split && intSplit && eSumSlot >= 0 && fIsNum && fNum.isD == 0
+	    && n > 1) {
+	Tcl_Size col = 0;
+
+	for (k = 0; k < npairs; k++) {
+	    const struct MapPair *pr = &pairs[k];
+	    Tcl_Size jj;
+
+	    for (jj = 0; jj < pr->nvars; jj++, col++) {
+		if (slotOf[col] == eSumSlot && pr->nvars == 1
+			&& pr->cdata != NULL && pr->ckind < 2
+			&& pr->csize <= 4 && n - 1 < ((Tcl_Size) 1 << 30)) {
+		    Tcl_WideInt sum = MapCellSum(pr->cdata, pr->cstride,
+			    pr->ckind, pr->csize, n - 1), r;
+		    Tcl_WideInt sw = fNum.w;
+		    int safe = pr->ckind == 1 || (sw < ((Tcl_WideInt) 1 << 62)
+			    && sw > -((Tcl_WideInt) 1 << 62));
+
+		    if (safe && !__builtin_add_overflow(sw, sum, &r)) {
+			fNum.w = r;
+			fStale = 1;
+			iStart = n - 1;
+		    }
+		}
+	    }
+	}
+    }
+    for (i = iStart; i < n; i++) {
 	MNum out;
 	int ok = fast;
 	Tcl_Size v = 0;
@@ -14101,6 +14194,164 @@ VecLoopObjCmd(TCL_UNUSED(void *), Tcl_Interp *interp, Tcl_Size objc,
     return TCL_OK;
 }
 
+/*
+ * type repeat T N ?valeur? (v17t) : une liste list.T de N fois la valeur ;
+ * type repeat -into L N ?valeur? : une valeur de type L (son élément ; une
+ * longueur fixée par L est vérifiée). Par défaut, le zéro de l'élément (0,
+ * ou 0.0 pour un flottant ; demandé sinon). La valeur est vérifiée une
+ * fois ; toujours en cases quand l'élément en a une forme : codée une fois
+ * et recopiée par blocs (TclCompactRepeat). Sinon la même valeur partagée.
+ */
+static int
+TypeRepeatCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    TclType *tp, *et;
+    Tcl_Size n, len, k;
+    const char *tn;
+    Tcl_Obj *v, *c = NULL, *content = NULL, *res = NULL, *z = NULL;
+    int rc = TCL_ERROR;
+
+    int into = (objc >= 3 && strcmp(Tcl_GetString(objv[2]), "-into") == 0);
+
+    if (into) {
+	objv++;
+	objc--;			/* -into L : L à la place de T */
+    }
+    if (objc != 4 && objc != 5) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("wrong # args: should be "
+		"\"type repeat type count ?value?\" or \"type repeat -into "
+		"listType count ?value?\"", -1));
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	return TCL_ERROR;
+    }
+    tn = Tcl_GetStringFromObj(objv[2], &len);
+    if ((tp = TclTypeParse(interp, tn, len)) == NULL) {
+	return TCL_ERROR;
+    }
+    if (!into) {
+	et = tp;
+	if ((tp = TclTypeListOf(interp, et)) == NULL) {
+	    return TCL_ERROR;
+	}
+    } else if (tp->kind != TCLT_LIST || (et = tp->elem) == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"type repeat: \"%s\" is not a list type", tn));
+	return TCL_ERROR;
+    }
+    if (Tcl_GetSizeIntFromObj(interp, objv[3], &n) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (n < 0) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"type repeat: bad count \"%s\"", Tcl_GetString(objv[3])));
+	return TCL_ERROR;
+    }
+    if ((tp->arity >= 0 && n != tp->arity) || (tp->lenRange
+	    && (n < tp->lenMin || (tp->lenMax >= 0 && n > tp->lenMax)))) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"type repeat: %" TCL_SIZE_MODIFIER "d elements do not fit "
+		"in %s", n, tn));
+	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	v = objv[4];
+    } else {
+	/* le zéro d'un élément numérique : refuse un mot, accepte 0 */
+	Tcl_Obj *w = Tcl_NewStringObj("x", 1), *h = Tcl_NewStringObj("0.5", 3);
+
+	Tcl_IncrRefCount(w);
+	Tcl_IncrRefCount(h);
+	z = Tcl_NewStringObj("0", 1);
+	Tcl_IncrRefCount(z);
+	if (TclTypeValidate(NULL, et, w, -1, NULL) == TCL_OK
+		|| TclTypeValidate(NULL, et, z, -1, NULL) != TCL_OK) {
+	    Tcl_DecrRefCount(w);
+	    Tcl_DecrRefCount(h);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "type repeat: a value is needed for elements of type %s",
+		    et->name));
+	    goto done;
+	}
+	if (TclTypeValidate(NULL, et, h, -1, NULL) == TCL_OK) {
+	    Tcl_DecrRefCount(z);
+	    z = Tcl_NewStringObj("0.0", 3);
+	    Tcl_IncrRefCount(z);
+	}
+	Tcl_DecrRefCount(w);
+	Tcl_DecrRefCount(h);
+	v = z;
+    }
+    if ((c = TclTypedConform(interp, et, v)) == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("type repeat: value: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp))));
+	goto done;
+    }
+    Tcl_IncrRefCount(c);
+    content = TclCompactRepeat(tp, c, n);
+    if (content != NULL) {
+	res = TclNewAnnotatedOwn(content, TclTypeRefFor(interp, tp, -1));
+    } else {
+	/* des objets : la même valeur partagée, la liste mise au type L
+	 * (éléments identiques : vérifiés une fois, ValidateG) */
+	Tcl_Obj **ev = NULL, *lst, *cc, *bare = NULL;
+	TclType *at = NULL;
+
+	if (TclIsAnnotated(c) && TclAnnotNotes(c) == NULL
+		&& TclAnnotInfo(c, &bare, &at, NULL, NULL) == 1 && at == et
+		&& bare != NULL && !TclIsAnnotated(bare)) {
+	    /* l'élément de son propre type, sans notes : son contenu nu,
+	     * comme dans une liste typée */
+	    Tcl_IncrRefCount(bare);
+	    Tcl_DecrRefCount(c);
+	    c = bare;
+	}
+	if (n > 0) {
+	    ev = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) n);
+	    for (k = 0; k < n; k++) {
+		ev[k] = c;
+	    }
+	}
+	lst = Tcl_NewListObj(n, ev);
+	if (ev != NULL) {
+	    Tcl_Free(ev);
+	}
+	Tcl_IncrRefCount(lst);
+	if (!TclIsAnnotated(c)) {
+	    /* un élément nu, déjà vérifié, et la longueur aussi : la liste
+	     * neuve prise telle quelle */
+	    res = TclNewAnnotatedOwn(lst, TclTypeRefFor(interp, tp, -1));
+	    Tcl_DecrRefCount(lst);
+	    goto set;
+	}
+	cc = TclTypedConform(interp, tp, lst);
+	if (cc == NULL) {
+	    Tcl_DecrRefCount(lst);
+	    goto done;
+	}
+	if (cc == lst && lst->refCount == 1 && TclIsAnnotated(cc) == 0) {
+	    /* la liste neuve, à nous seuls : prise telle quelle */
+	    res = TclNewAnnotatedOwn(lst, TclTypeRefFor(interp, tp, -1));
+	    Tcl_DecrRefCount(lst);
+	} else {
+	    Tcl_IncrRefCount(cc);
+	    res = TclNewAnnotated(interp, tp, -1, cc);
+	    Tcl_DecrRefCount(cc);
+	    Tcl_DecrRefCount(lst);
+	}
+    }
+  set:
+    Tcl_SetObjResult(interp, res);
+    rc = TCL_OK;
+  done:
+    if (c != NULL) {
+	Tcl_DecrRefCount(c);
+    }
+    if (z != NULL) {
+	Tcl_DecrRefCount(z);
+    }
+    return rc;
+}
+
 static int
 TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -14387,6 +14638,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "map") == 0) {
 	return TypeMapCmd(interp, objc, objv);	/* 23/11 */
     }
+    if (strcmp(sub, "repeat") == 0) {
+	return TypeRepeatCmd(interp, objc, objv);	/* v17t */
+    }
     if (strcmp(sub, "ops") == 0) {
 	/* 23/11 : type ops TYPE : la spécialisation choisie pour TYPE (son
 	 * nom), ou rien si TYPE n'a que le chemin général */
@@ -14445,7 +14699,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, map, meta, ops, parse, proc, variant "
+	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, map, meta, ops, parse, proc, repeat, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }

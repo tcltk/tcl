@@ -598,6 +598,37 @@ Avec `-sum`, `-min` et `-max`, des résultats entiers restent en cases
 `list.int` d'objets (un `int` peut être un grand entier : il n'a pas de
 forme en cases) ; les petits entiers y sont partagés (23 → 12 ms).
 
+Une tranche d'une liste en cases remplie d'une même valeur
+(`set s($j:end:$i) 0`) est vérifiée et codée une fois, puis recopiée de
+case en case : le crible d'Ératosthène sur un million d'octets en cases
+prend 2,5 ms en tout (créer 0,0, cribler 2,3, compter 0,2 : `s + $v`
+sur des entiers de 8 à 32 bits en cases se somme d'un trait), contre 125 à
+180 ms pour une liste ordinaire et `lset` ; comparaison avec d'autres
+langages : `exemples/crible/COMPARAISON.md`.
+
+**type repeat.** `type repeat T N ?valeur?` rend une liste `list.T` faite
+de `N` fois la valeur ; `type repeat -into L N ?valeur?` rend une valeur du
+type de liste `L` (son élément, sa longueur fixe vérifiée) :
+
+    set s [type repeat int(u,8) $N 1]          ;# 0,1 ms pour un million
+    type repeat double 3                       ;# 0.0 0.0 0.0
+    type repeat pt 2 {1 2}                     ;# {1.0 2.0} {1.0 2.0}
+    type repeat list.int 3 {1 2}               ;# list<list<int>>
+    type def {-compact}octets list.int(u,8)
+    set s [type repeat -into octets $N 1]      ;# de type octets, sans cast
+
+Sans `-into`, le premier argument est toujours le type de l'élément (comme
+`lrepeat`, qui prend un élément) ; avec, le type de la liste à remplir.
+La valeur est vérifiée une fois contre l'élément. Le résultat est toujours
+rangé en cases quand l'élément en a une forme (entiers et flottants de
+taille fixe, produits de ceux-ci), sans qu'il faille `-compact` : la
+valeur est codée dans la première case et les autres sont remplies d'un
+bloc, sans liste intermédiaire ; sinon la liste partage le même objet.
+Sans valeur : le zéro de l'élément (`0`, ou `0.0` pour un flottant) ; une
+valeur est demandée pour un autre élément (chaîne, produit).
+`type cast` d'une liste qui répète le même objet (`lrepeat`) code de même
+l'élément une fois.
+
 **Typé.** Les variables peuvent se déclarer comme les paramètres d'une
 procédure, et le corps peut dire ce qu'il rend :
 

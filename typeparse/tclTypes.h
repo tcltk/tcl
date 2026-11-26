@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17s"
+#define TCL_TYPES_VERSION "v17t"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -479,6 +479,9 @@ int TclCompactScalarWritable(Tcl_Obj *v);
 typedef int (TclVecEachloopProc)(Tcl_Interp *interp, int isLmap,
 	Tcl_Size objc, Tcl_Obj *const objv[]);
 int TclVecRegister(const char *name, TclVecEachloopProc *proc, int priority);
+Tcl_Obj *TclCompactRepeat(TclType *ltp, Tcl_Obj *value, Tcl_Size n);
+int TclCompactFillFrom(Tcl_Obj *v, Tcl_Size idx, Tcl_Size first,
+	Tcl_Size count, Tcl_Size step);
 int TclVecCompilable(Tcl_Interp *interp, int isLmap, const char *body,
 	Tcl_Size len);
 int TclVecEachloop(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
