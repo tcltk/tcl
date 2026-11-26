@@ -718,7 +718,7 @@ typé : aire ×5,9, longueur ×7,1, translation ×2,8, rotation ×3,9, boîte
 `exemples/tcllib_geometry/COMPARAISON.md` compare la chaîne entière en dix
 variantes (Tcl nu, typé scintillant ou de bout en bout, en Tcl, vectorisé
 ou en C, en objets ou en cases), un principe par variante : ×0,5 pour le
-Tcl typé élément par élément, ×20 pour le Tcl typé vectorisé en cases, ×41
+Tcl typé élément par élément, ×24 pour le Tcl typé vectorisé en cases, ×46
 pour le C en cases.
 
 ## Formes d'un type : `type def T DÉF {-compact}F`

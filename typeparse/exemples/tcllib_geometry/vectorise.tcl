@@ -58,7 +58,7 @@ proc ::math::geometry::translateV {{vector}t; {polyline}pl} {
 proc ::math::geometry::Vide {pl} {
     if {[namespace tail [type get $pl]] eq "polylinec"} {
 	# des zéros en cases, faits par type map, puis la forme en cases
-	return [type cast polylinec [type map {x} $pl {(0.0)}]]
+	return [type repeat -into polylinec [llength $pl] 0.0]
     }
     set {polyline}z {*}[lrepeat [llength $pl] 0.0]
     return $z

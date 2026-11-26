@@ -12509,6 +12509,37 @@ TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	int rc;
 	MapFold cells;
 
+	if (objc == 6) {
+	    /* -min {v} L {($v)} sur des cases : la liste elle-même, sans la
+	     * recopier (le cas des colonnes d'une boîte englobante) */
+	    Tcl_Obj **vv, *c;
+	    Tcl_Size nv, bl;
+	    const char *b = Tcl_GetStringFromObj(objv[5], &bl), *vn;
+	    const unsigned char *data;
+	    size_t stride;
+	    Tcl_Size cn;
+	    int ckind, csize;
+
+	    while (bl > 0 && isspace(UCHAR(*b))) {
+		b++;
+		bl--;
+	    }
+	    while (bl > 0 && isspace(UCHAR(b[bl - 1]))) {
+		bl--;
+	    }
+	    if (Tcl_ListObjGetElements(NULL, objv[3], &nv, &vv) == TCL_OK
+		    && nv == 1 && bl >= 3 && b[0] == '(' && b[1] == '$'
+		    && b[bl - 1] == ')'
+		    && (Tcl_Size) strlen(vn = Tcl_GetString(vv[0])) == bl - 3
+		    && memcmp(vn, b + 2, bl - 3) == 0
+		    && (c = MListContent(objv[4])) != NULL
+		    && TclCompactScalarInfo(c, &cn, &data, &stride, &ckind,
+			    &csize) && cn > 0) {
+		Tcl_Free(av);
+		return (opt[1] == 's') ? TypeMapSum(interp, objv[4])
+			: TypeMapMinMax(interp, objv[4], opt[2] == 'a');
+	    }
+	}
 	av[0] = objv[0];
 	av[1] = objv[1];
 	memcpy(av + 2, objv + 3, sizeof(Tcl_Obj *) * (size_t) (objc - 3));
