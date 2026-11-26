@@ -60,7 +60,7 @@ to the userbase.
  - [Windows: make distclean left tcl.pc behind](https://core.tcl-lang.org/tcl/tktview/59a9b9)
  - [Windows: native MSYS2/Cygwin builds no longer need an installed tclsh](https://core.tcl-lang.org/tcl/tktview/2ef343)
  - [build failure on Alpine Linux (musl): no sys/queue.h](https://core.tcl-lang.org/tcl/tktview/3ff2d7)
- - [exec hangs, iff stdin & stdout both were previously closed.](https://core.tcl-lang.org/tcl/tktview/21dbc6)
+ - [exec hangs, iff stdin & stdout both were previously closed](https://core.tcl-lang.org/tcl/tktview/21dbc6)
  - [viewport meta tag in the generated HTML pages for mobile browsers](https://core.tcl-lang.org/tcl/tktview/7f6005)
  - [no longer replace "::" in manual page with "_" on installation](https://core.tcl-lang.org/tcl/tktview/0ef68e)
  - [shimmer of abstract lists with linsert/lappend](https://core.tcl-lang.org/tcl/tktview/0c82728f)
@@ -104,7 +104,8 @@ to the userbase.
  - [Windows: "open" failed with an empty error message after dup2()](https://core.tcl-lang.org/tcl/tktview/91c9bc)
  - [Tcl_FSChdir crash on macos/macports after seteuid](https://core.tcl-lang.org/tcl/tktview/e2698b)
  - [Crash on invalid Unicode code points](https://core.tcl-lang.org/tcl/tktview/28de50)
- - [Crash on use-after-free in Windows socket thread.](https://core.tcl-lang.org/tcl/tktview/06f19cc4)
+ - [Crash on use-after-free in Windows socket thread](https://core.tcl-lang.org/tcl/tktview/06f19c)
+ - [AfterDelay overflow](https://core.tcl-lang.org/tcl/tktview/180289)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
@@ -132,7 +133,7 @@ to the userbase.
  - [nmake: rmdir and mkdir are picked from cygwin if available](https://core.tcl-lang.org/tcl/tktview/be40b7)
  - [lseq: has incorrect results in edge cases](https://core.tcl-lang.org/tcl/tktview/999b69)
  - [lseq: "count" error persists across calls](https://core.tcl-lang.org/tcl/tktview/8d1fc7)
- - [lseq: Remove the ability to pass expressions as numeric values in the lseq command.](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
+ - [lseq: Remove the ability to pass expressions as numeric values in the lseq command](https://core.tcl-lang.org/tips/doc/trunk/tip/746.md)
  - [Performance regression in expr in/ni operators](https://core.tcl-lang.org/tcl/info/8994c9)
  - [Uninitialized memory access in setting script limits](https://core.tcl-lang.org/tcl/info/f7495f)
  - [Crash when defining const if namespace does not exist](https://core.tcl-lang.org/tcl/info/4b22d8)
