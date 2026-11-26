@@ -22,7 +22,7 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 
 test subst-1.1 {basics} -returnCodes error -body {
     subst
-} -result {wrong # args: should be "subst ?-backslashes? ?-commands? ?-variables? ?-nobackslashes? ?-nocommands? ?-novariables? string"}
+} -result {wrong # args: should be "subst ?-backslashes? ?-commands? ?-variables? string" or "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
 } -result {bad option "a": must be -backslashes, -commands, -variables, -nobackslashes, -nocommands, or -novariables}

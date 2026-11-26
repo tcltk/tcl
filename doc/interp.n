@@ -214,7 +214,7 @@ Controls whether frame-level stack information is captured in the
 child interpreter identified by \fIpath\fR.  If no arguments are
 specified, the option and its current setting are returned.  If \fB\-frame\fR
 is specified, the current setting is returned. If \fIboolean\fR if provided as well,
-the debug setting is set to the specified value. 
+the debug setting is set to the specified value.
 This only affects the output of \fBinfo frame\fR, in that exact
 frame-level information for command invocation at the bytecode level
 is only captured with this setting on.

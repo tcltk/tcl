@@ -73,6 +73,10 @@ typedef struct ThreadSpecificData {
     EventSource *firstEventSourcePtr;
 				/* Pointer to first event source in list of
 				 * event sources for this thread. */
+    int sourceLoopLevel;	/* Number of active traversals of the event
+				 * source list. While it is nonzero, deleted
+				 * event sources are only marked (both procs
+				 * set to NULL) and unlinked later. */
     Tcl_ThreadId threadId;	/* Thread that owns this notifier instance. */
     void *clientData;		/* Opaque handle for platform specific
 				 * notifier. */
@@ -97,6 +101,7 @@ TCL_DECLARE_MUTEX(listLock)
  * Declarations for routines used only in this file.
  */
 
+static void		EndSourceTraversal(ThreadSpecificData *tsdPtr);
 static int		QueueEvent(ThreadSpecificData *tsdPtr,
 			    Tcl_Event *evPtr, int position);
 
@@ -361,6 +366,16 @@ Tcl_DeleteEventSource(
 		|| (sourcePtr->clientData != clientData)) {
 	    continue;
 	}
+	if (tsdPtr->sourceLoopLevel > 0) {
+	    /*
+	     * Called from a setup or check proc: the list is being traversed,
+	     * so don't free the entry now. [Bug 055240025a]
+	     */
+
+	    sourcePtr->setupProc = NULL;
+	    sourcePtr->checkProc = NULL;
+	    return;
+	}
 	if (prevPtr == NULL) {
 	    tsdPtr->firstEventSourcePtr = sourcePtr->nextPtr;
 	} else {
@@ -368,6 +383,38 @@ Tcl_DeleteEventSource(
 	}
 	Tcl_Free(sourcePtr);
 	return;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EndSourceTraversal --
+ *
+ *	Ends a traversal of the event source list and, if it was the
+ *	outermost one, frees the sources deleted during the traversal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+EndSourceTraversal(
+    ThreadSpecificData *tsdPtr)
+{
+    EventSource **linkPtr = &tsdPtr->firstEventSourcePtr;
+
+    if (--tsdPtr->sourceLoopLevel > 0) {
+	return;
+    }
+    while (*linkPtr != NULL) {
+	EventSource *sourcePtr = *linkPtr;
+
+	if (sourcePtr->setupProc == NULL && sourcePtr->checkProc == NULL) {
+	    *linkPtr = sourcePtr->nextPtr;
+	    Tcl_Free(sourcePtr);
+	} else {
+	    linkPtr = &sourcePtr->nextPtr;
+	}
     }
 }
 
@@ -1021,12 +1068,14 @@ Tcl_DoOneEvent(
 	 */
 
 	tsdPtr->inTraversal = true;
+	tsdPtr->sourceLoopLevel++;
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
 		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
+	EndSourceTraversal(tsdPtr);
 	tsdPtr->inTraversal = false;
 
 	if ((flags & TCL_DONT_WAIT) || tsdPtr->blockTimeSet) {
@@ -1050,12 +1099,14 @@ Tcl_DoOneEvent(
 	 * Check all the event sources for new events.
 	 */
 
+	tsdPtr->sourceLoopLevel++;
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->checkProc) {
 		sourcePtr->checkProc(sourcePtr->clientData, flags);
 	    }
 	}
+	EndSourceTraversal(tsdPtr);
 
 	/*
 	 * Check for events queued by the notifier or event sources.
@@ -1160,6 +1211,7 @@ Tcl_ServiceAll(void)
     tsdPtr->inTraversal = true;
     tsdPtr->blockTimeSet = false;
 
+    tsdPtr->sourceLoopLevel++;
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->setupProc) {
@@ -1172,6 +1224,7 @@ Tcl_ServiceAll(void)
 	    sourcePtr->checkProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
+    EndSourceTraversal(tsdPtr);
 
     while (Tcl_ServiceEvent(0)) {
 	result = 1;

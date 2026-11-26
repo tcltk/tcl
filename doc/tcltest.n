@@ -207,6 +207,13 @@ the last \fBcleanupTests\fR, but not created by
 to \fBoutputChannel\fR.  This command also restores the original
 shell environment, as described by the global \fBenv\fR
 array. Returns an empty string.
+.PP
+When Tk is loaded, the shell is not interactive and the test file is the
+main script of the application (as in \fBwish foo.test\fR),
+\fBcleanupTests\fR exits the application instead of returning, so that
+the test file does not wait in the event loop.  For the summary of
+\fBrunAllTests\fR, \fBrunAllTests\fR exits instead, see
+\fBRUNNING ALL TESTS\fR.
 .RE
 .\" COMMAND: runAllTests
 .TP
@@ -508,7 +515,9 @@ to the lists of string matching patterns returned by
 \fBconfigure \-match\fR, and \fBconfigure \-skip\fR.  The test
 will be run only if \fIname\fR matches any of the patterns from
 \fBconfigure \-match\fR and matches none of the patterns
-from \fBconfigure \-skip\fR.
+from \fBconfigure \-skip\fR.  Only top-level tests are compared;
+a test nested in the body of another test runs whenever the
+enclosing test runs.
 .PP
 The \fIdescription\fR should be a short textual description of the
 test.  The \fIdescription\fR is included in output produced by the
@@ -834,6 +843,14 @@ against the \fBconfigure \-relateddir\fR and
 many directories in a directory tree can have all their
 test files evaluated by a single \fBrunAllTests\fR
 command.
+.PP
+\fBrunAllTests\fR returns 1 if any test failed or any test file
+exited with an error, and 0 otherwise.  When Tk is loaded, the shell is
+not interactive and the file that calls \fBrunAllTests\fR is the main
+script of the application (as in \fBwish all.tcl\fR), \fBrunAllTests\fR
+instead exits the application with that value as the exit status, after
+printing the summary and before acting on subdirectories, so that it
+does not wait in the event loop.
 .SH "CONFIGURABLE OPTIONS"
 The \fBconfigure\fR command is used to set and query the configurable
 options of \fBtcltest\fR.  The valid options are:
@@ -875,7 +892,7 @@ harness are doing.
 \fB\-verbose \fIlevel\fR
 .
 Sets the type of output verbosity desired to \fIlevel\fR,
-a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
+a list of zero or more of the elements \fBbody\fR, \fBdesc\fR, \fBpass\fR,
 \fBskip\fR, \fBstart\fR, \fBerror\fR, \fBline\fR, \fBmsec\fR and \fBusec\fR.
 Default value is
 .QW "\fBbody error\fR" .
@@ -883,6 +900,8 @@ Levels are defined as:
 .RS
 .IP "body (\fBb\fR)"
 Display the body of failed tests
+.IP "desc (\fBd\fR)"
+Also print test description between parentheses
 .IP "pass (\fBp\fR)"
 Print output when a test passes
 .IP "skip (\fBs\fR)"

@@ -62,8 +62,48 @@
 
 #include "tclDate.h"
 
+/*
+ * The parser stores the year as a Tcl_WideInt. ClockFreeScan() checks that
+ * it fits into the int date.year. [f894a85b9a]
+ */
+
+#undef yyYear
+#define yyYear		(info->dateYear)
+
 #define YYMALLOC	Tcl_Alloc
 #define YYFREE(x)	(Tcl_Free((void *) (x)))
+
+/*
+ * Parsed numbers are Tcl_WideInt, but the date and time fields are int. A
+ * number that does not fit into an int is out of range for every field but
+ * the year (see yyYear above), so clamp it to a value that the range checks
+ * reject, instead of truncating it to a value that may be valid.
+ * [f894a85b9a]
+ */
+
+#define IntField(n) \
+    ((n) > INT_MAX ? INT_MAX : (n) < -INT_MAX ? -INT_MAX : (int)(n))
+
+/*
+ * Relative counts are clamped with RelClamp() (see tclDate.h).
+ */
+
+static inline void
+RelAdd(
+    Tcl_WideInt *relPtr,	/* Relative count to add to */
+    Tcl_WideInt n,		/* Number of units */
+    Tcl_WideInt unit)		/* Unit, positive */
+{
+    if (n > REL_MAX / unit) {
+	n = REL_MAX;
+    } else if (n < -REL_MAX / unit) {
+	n = -REL_MAX;
+    } else {
+	n *= unit;
+    }
+    n += *relPtr;
+    *relPtr = RelClamp(n);
+}
 
 #define EPOCH		1970
 #define START_OF_TIME	1902
@@ -216,18 +256,18 @@ item	: time {
 	;
 
 iextime : tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    yyHour = $1;
-	    yyMinutes = $3;
-	    yySeconds = $5;
+	    yyHour = IntField($1);
+	    yyMinutes = IntField($3);
+	    yySeconds = IntField($5);
 	}
 	| tUNUMBER ':' tUNUMBER {
-	    yyHour = $1;
-	    yyMinutes = $3;
+	    yyHour = IntField($1);
+	    yyMinutes = IntField($3);
 	    yySeconds = 0;
 	}
 	;
 time	: tUNUMBER tMERIDIAN {
-	    yyHour = $1;
+	    yyHour = IntField($1);
 	    yyMinutes = 0;
 	    yySeconds = 0;
 	    yyMeridian = $2;
@@ -281,15 +321,15 @@ day	: tDAY {
 	    yyDayOfWeek = $1;
 	}
 	| tUNUMBER tDAY {
-	    yyDayOrdinal = $1;
+	    yyDayOrdinal = RelClamp($1);
 	    yyDayOfWeek = $2;
 	}
 	| sign SP tUNUMBER tDAY {
-	    yyDayOrdinal = $1 * $3;
+	    yyDayOrdinal = RelClamp($1 * $3);
 	    yyDayOfWeek = $4;
 	}
 	| sign tUNUMBER tDAY {
-	    yyDayOrdinal = $1 * $2;
+	    yyDayOrdinal = RelClamp($1 * $2);
 	    yyDayOfWeek = $3;
 	}
 	| tNEXT tDAY {
@@ -299,38 +339,38 @@ day	: tDAY {
 	;
 
 iexdate	: tUNUMBER '-' tUNUMBER '-' tUNUMBER {
-	    yyMonth = $3;
-	    yyDay = $5;
+	    yyMonth = IntField($3);
+	    yyDay = IntField($5);
 	    yyYear = $1;
 	}
 	;
 date	: tUNUMBER '/' tUNUMBER {
-	    yyMonth = $1;
-	    yyDay = $3;
+	    yyMonth = IntField($1);
+	    yyDay = IntField($3);
 	}
 	| tUNUMBER '/' tUNUMBER '/' tUNUMBER {
-	    yyMonth = $1;
-	    yyDay = $3;
+	    yyMonth = IntField($1);
+	    yyDay = IntField($3);
 	    yyYear = $5;
 	}
 	| isodate
 	| tUNUMBER '-' tMONTH '-' tUNUMBER {
-	    yyDay = $1;
+	    yyDay = IntField($1);
 	    yyMonth = $3;
 	    yyYear = $5;
 	}
 	| tMONTH tUNUMBER {
 	    yyMonth = $1;
-	    yyDay = $2;
+	    yyDay = IntField($2);
 	}
 	| tMONTH tUNUMBER comma tUNUMBER {
 	    yyMonth = $1;
-	    yyDay = $2;
+	    yyDay = IntField($2);
 	    yyYear = $4;
 	}
 	| tUNUMBER tMONTH {
 	    yyMonth = $2;
-	    yyDay = $1;
+	    yyDay = IntField($1);
 	}
 	| tEPOCH {
 	    yyMonth = 1;
@@ -339,7 +379,7 @@ date	: tUNUMBER '/' tUNUMBER {
 	}
 	| tUNUMBER tMONTH tUNUMBER {
 	    yyMonth = $2;
-	    yyDay = $1;
+	    yyDay = IntField($1);
 	    yyYear = $3;
 	}
 	;
@@ -349,7 +389,7 @@ ordMonth: tNEXT tMONTH {
 	    yyMonthOrdinal = $2;
 	}
 	| tNEXT tUNUMBER tMONTH {
-	    yyMonthOrdinalIncr = $2;
+	    yyMonthOrdinalIncr = IntField($2);
 	    yyMonthOrdinal = $3;
 	}
 	;
@@ -405,7 +445,7 @@ trek	: tSTARDATE INTNUM '.' tUNUMBER {
 	    yyDay  = 1;
 	    yyMonth = 1;
 	    yyRelDay += (($2%1000)*(365 + IsLeapYear(yyYear)))/1000;
-	    yyRelSeconds += $4 * (144LL * 60LL);
+	    RelAdd(&yyRelSeconds, $4, 144 * 60);
 	    info->flags |= CLF_RELCONV;
 	}
 	;
@@ -419,19 +459,19 @@ relspec : relunits tAGO {
 	;
 
 relunits : sign SP INTNUM runit {
-	    *yyRelPointer += $1 * $3 * $4;
+	    RelAdd(yyRelPointer, $1 * $3, $4);
 	}
 	| sign INTNUM runit {
-	    *yyRelPointer += $1 * $2 * $3;
+	    RelAdd(yyRelPointer, $1 * $2, $3);
 	}
 	| INTNUM runit {
-	    *yyRelPointer += $1 * $2;
+	    RelAdd(yyRelPointer, $1, $2);
 	}
 	| tNEXT runit {
 	    *yyRelPointer += $2;
 	}
 	| tNEXT INTNUM runit {
-	    *yyRelPointer += $2 * $3;
+	    RelAdd(yyRelPointer, $2, $3);
 	}
 	| unit {
 	    *yyRelPointer += $1;
@@ -492,10 +532,10 @@ numitem	: tUNUMBER {
 	    } else {
 		yyIncrFlags(CLF_TIME);
 		if (yyDigitCount <= 2) {
-		    yyHour = $1;
+		    yyHour = IntField($1);
 		    yyMinutes = 0;
 		} else {
-		    yyHour = $1 / 100;
+		    yyHour = IntField($1 / 100);
 		    yyMinutes = $1 % 100;
 		}
 		yySeconds = 0;
@@ -601,9 +641,9 @@ static const TABLE TimezoneTable[] = {
     { "bst",	tZONE,	   HOUR( 3) },	    /* Brazil Standard */
     { "gst",	tZONE,	   HOUR( 3) },	    /* Greenland Standard */
 #endif
-    { "nft",	tZONE,	   HOUR( 7/2) },    /* Newfoundland */
-    { "nst",	tZONE,	   HOUR( 7/2) },    /* Newfoundland Standard */
-    { "ndt",	tDAYZONE,  HOUR( 7/2) },    /* Newfoundland Daylight */
+    { "nft",	tZONE,	   HOUR( 7)/2 },    /* Newfoundland */
+    { "nst",	tZONE,	   HOUR( 7)/2 },    /* Newfoundland Standard */
+    { "ndt",	tDAYZONE,  HOUR( 7)/2 },    /* Newfoundland Daylight */
     { "ast",	tZONE,	   HOUR( 4) },	    /* Atlantic Standard */
     { "adt",	tDAYZONE,  HOUR( 4) },	    /* Atlantic Daylight */
     { "est",	tZONE,	   HOUR( 5) },	    /* Eastern Standard */
@@ -635,27 +675,27 @@ static const TABLE TimezoneTable[] = {
     { "fst",	tDAYZONE, -HOUR( 1) },	    /* French Summer */
     { "eet",	tZONE,	  -HOUR( 2) },	    /* Eastern Europe, USSR Zone 1 */
     { "bt",	tZONE,	  -HOUR( 3) },	    /* Baghdad, USSR Zone 2 */
-    { "it",	tZONE,	  -HOUR( 7/2) },    /* Iran */
+    { "it",	tZONE,	  -HOUR( 7)/2 },    /* Iran */
     { "zp4",	tZONE,	  -HOUR( 4) },	    /* USSR Zone 3 */
     { "zp5",	tZONE,	  -HOUR( 5) },	    /* USSR Zone 4 */
-    { "ist",	tZONE,	  -HOUR(11/2) },    /* Indian Standard */
+    { "ist",	tZONE,	  -HOUR(11)/2 },    /* Indian Standard */
     { "zp6",	tZONE,	  -HOUR( 6) },	    /* USSR Zone 5 */
 #if	0
     /* For completeness.  NST is also Newfoundland Standard, and SST is
      * also Swedish Summer. */
-    { "nst",	tZONE,	  -HOUR(13/2) },    /* North Sumatra */
+    { "nst",	tZONE,	  -HOUR(13)/2 },    /* North Sumatra */
     { "sst",	tZONE,	  -HOUR( 7) },	    /* South Sumatra, USSR Zone 6 */
 #endif	/* 0 */
     { "wast",	tZONE,	  -HOUR( 7) },	    /* West Australian Standard */
     { "wadt",	tDAYZONE, -HOUR( 7) },	    /* West Australian Daylight */
-    { "jt",	tZONE,	  -HOUR(15/2) },    /* Java (3pm in Cronusland!) */
+    { "jt",	tZONE,	  -HOUR(15)/2 },    /* Java (3pm in Cronusland!) */
     { "cct",	tZONE,	  -HOUR( 8) },	    /* China Coast, USSR Zone 7 */
     { "jst",	tZONE,	  -HOUR( 9) },	    /* Japan Standard, USSR Zone 8 */
     { "jdt",	tDAYZONE, -HOUR( 9) },	    /* Japan Daylight */
     { "kst",	tZONE,	  -HOUR( 9) },	    /* Korea Standard */
     { "kdt",	tDAYZONE, -HOUR( 9) },	    /* Korea Daylight */
-    { "cast",	tZONE,	  -HOUR(19/2) },    /* Central Australian Standard */
-    { "cadt",	tDAYZONE, -HOUR(19/2) },    /* Central Australian Daylight */
+    { "cast",	tZONE,	  -HOUR(19)/2 },    /* Central Australian Standard */
+    { "cadt",	tDAYZONE, -HOUR(19)/2 },    /* Central Australian Daylight */
     { "east",	tZONE,	  -HOUR(10) },	    /* Eastern Australian Standard */
     { "eadt",	tDAYZONE, -HOUR(10) },	    /* Eastern Australian Daylight */
     { "gst",	tZONE,	  -HOUR(10) },	    /* Guam Standard, USSR Zone 9 */
@@ -742,22 +782,33 @@ TclDateerror(
     infoPtr->separatrix = "\n";
 }
 
-int
+/*
+ * Without validation the hours and minutes can be out of range, so calculate
+ * in Tcl_WideInt. [f894a85b9a]
+ */
+
+Tcl_WideInt
 TclToSeconds(
     int Hours,
     int Minutes,
     int Seconds,
     MERIDIAN Meridian)
 {
+    Tcl_WideInt h = Hours;
+
     switch (Meridian) {
     case MER24:
-	return (Hours * 60 + Minutes) * 60 + Seconds;
+	break;
     case MERam:
-	return (((Hours / 24) * 24 + (Hours % 12)) * 60 + Minutes) * 60 + Seconds;
+	h = (h / 24) * 24 + (h % 12);
+	break;
     case MERpm:
-	return (((Hours / 24) * 24 + (Hours % 12) + 12) * 60 + Minutes) * 60 + Seconds;
+	h = (h / 24) * 24 + (h % 12) + 12;
+	break;
+    default:
+	return -1;		/* Should never be reached */
     }
-    return -1;			/* Should never be reached */
+    return (h * 60 + Minutes) * 60 + Seconds;
 }
 
 static int

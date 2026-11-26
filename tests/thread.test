@@ -1463,6 +1463,44 @@ test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
     unset -nocomplain ::threadCount ::execCount ::threads ::thread
 } -result {}
 
+# A race: without the fix the child process panics in about a third of
+# the runs.
+test thread-9.1 {transfer of a channel from its own file event handler} -constraints {
+    thread stdio
+} -body {
+    exec [interpreter] << {
+	package require Thread
+	set handler {
+	    proc handle {chan} {
+		thread::transfer $::other $chan
+		thread::send $::other [list fileevent $chan writable [list handle $chan]]
+	    }
+	}
+	eval $handler
+	set other [thread::create]
+	thread::send $other [list set other [thread::id]]
+	thread::send $other $handler
+	handle [open [expr {$tcl_platform(platform) eq "windows" ? "NUL" : "/dev/null"}] w]
+	after 3000 {puts ok; exit}
+	vwait forever
+    }
+} -result ok
+test thread-9.2 {create a thread when stdin is closed} -constraints {
+    testthread stdio
+} -setup {
+    set script [makeFile {
+	catch {load tcltest91.dll};# On Windows, we run tclsh, not tcltest.
+	close stdin
+	set t [testthread create {testthread wait}]
+	puts [testthread send $t {expr {6 * 7}}]
+    } closedstdin.tcl]
+} -body {
+    exec [interpreter] $script
+} -cleanup {
+    removeFile closedstdin.tcl
+    unset -nocomplain script
+} -result 42
+
 # cleanup
 ::tcltest::cleanupTests
 return
