@@ -595,6 +595,41 @@ test timer-11.2 {Bug 1350293: [after] negative argument} -body {
     vwait done
     return $l
 } -result {-1 100}
+test timer-11.3 {Bug 1802895: blocking [after] overflowing time} -constraints {
+    unix
+} -setup {
+    set f [makeFile {
+	# The overflow needs a carry from the microseconds field
+	while {[clock microseconds] % 1000000 < 300000} {}
+	after 0x7fffffffffffffff
+	puts "after returned early"
+    } timer-11.3.tcl]
+    set chan [open |[list [interpreter] $f]]
+    fconfigure $chan -blocking 0
+} -body {
+    set x {}
+    fileevent $chan readable {
+	append x [read $chan]
+	if {[eof $chan]} {set done 1}
+    }
+    set a [after 1500 {set x ok; set done 1}]
+    vwait done
+    string trim $x
+} -cleanup {
+    after cancel $a
+    catch {exec kill [pid $chan]}
+    catch {close $chan}
+    removeFile timer-11.3.tcl
+} -result ok
+test timer-11.4 {Bug 1802895: [after] overflowing time} -body {
+    set b ok
+    set a [after 0x7fffffffffffffff {set b "after fired early"}]
+    after 100 set done 1
+    vwait done
+    return $b
+} -cleanup {
+    catch {after cancel $a}
+} -result ok
 
 # cleanup
 ::tcltest::cleanupTests
