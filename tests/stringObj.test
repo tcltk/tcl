@@ -555,6 +555,10 @@ test stringObj-bug-28de50dc {Crash on invalid code points} -body {
     teststringobj newunicode 0 $u
 } -result \uFFFD
 
+test stringObj-bug-28de50dc-2 {Crash on invalid code points} -body {
+    teststringobj newunicode 0 0x0100DC00
+} -result \uFFFD
+
 
 if {[testConstraint testobj]} {
     testobj freeallvars
