@@ -1588,7 +1588,7 @@ TclGetChannelFromObj(
     *channelPtr = (Tcl_Channel) statePtr->bottomChanPtr;
 
     if (modePtr != NULL) {
-	*modePtr = GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
+	*modePtr = Tcl_GetChannelMode(*channelPtr);
     }
 
     return TCL_OK;
@@ -1981,11 +1981,21 @@ Tcl_StackChannel(
     return (Tcl_Channel) chanPtr;
 }
 
+/*
+ * The reference count of a channel can be changed by two threads when a
+ * channel is transferred to another thread while one of its handlers runs,
+ * so it is protected by a mutex. [815e246806]
+ */
+
+TCL_DECLARE_MUTEX(channelRefMutex)
+
 void
 TclChannelPreserve(
     Tcl_Channel chan)
 {
+    Tcl_MutexLock(&channelRefMutex);
     ((Channel *)chan)->refCount++;
+    Tcl_MutexUnlock(&channelRefMutex);
 }
 
 void
@@ -1993,14 +2003,16 @@ TclChannelRelease(
     Tcl_Channel chan)
 {
     Channel *chanPtr = (Channel *) chan;
+    int doFree;
 
+    Tcl_MutexLock(&channelRefMutex);
     if (chanPtr->refCount == 0) {
+	Tcl_MutexUnlock(&channelRefMutex);
 	Tcl_Panic("Channel released more than preserved");
     }
-    if (--chanPtr->refCount) {
-	return;
-    }
-    if (chanPtr->typePtr == NULL) {
+    doFree = (--chanPtr->refCount == 0) && (chanPtr->typePtr == NULL);
+    Tcl_MutexUnlock(&channelRefMutex);
+    if (doFree) {
 	Tcl_Free(chanPtr);
     }
 }
@@ -2009,11 +2021,17 @@ static void
 ChannelFree(
     Channel *chanPtr)
 {
-    if (chanPtr->refCount == 0) {
-	Tcl_Free(chanPtr);
-	return;
+    int doFree;
+
+    Tcl_MutexLock(&channelRefMutex);
+    doFree = (chanPtr->refCount == 0);
+    if (!doFree) {
+	chanPtr->typePtr = NULL;
     }
-    chanPtr->typePtr = NULL;
+    Tcl_MutexUnlock(&channelRefMutex);
+    if (doFree) {
+	Tcl_Free(chanPtr);
+    }
 }
 
 /*
@@ -2366,8 +2384,17 @@ Tcl_GetChannelMode(
 {
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of actual channel. */
+    int mode = GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
 
-    return GotFlag(statePtr, TCL_READABLE|TCL_WRITABLE);
+    /*
+     * After a non-blocking [chan close $chan write] TCL_WRITABLE stays set
+     * until the queued output is flushed, but the write side is closed.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_CLOSEDWRITE)) {
+	mode &= ~TCL_WRITABLE;
+    }
+    return mode;
 }
 
 /*
@@ -4629,6 +4656,8 @@ Tcl_GetsObj(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     int inEofChar, skip, copiedTotal, oldFlags, oldRemoved;
+    bool skippedLF = false;	/* Was a "\n" after a "\r" from a previous
+				 * call skipped? */
     Tcl_Size oldLength;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
@@ -4809,8 +4838,15 @@ Tcl_GetsObj(
 	case TCL_TRANSLATE_AUTO:
 	    eol = dst;
 	    skip = 1;
-	    if (GotFlag(statePtr, INPUT_SAW_CR)) {
-		if ((eol < dstEnd) && (*eol == '\n')) {
+	    if (GotFlag(statePtr, INPUT_SAW_CR) && (eol < dstEnd)) {
+		/*
+		 * Only the first character after the "\r" may be skipped, so
+		 * reset the flag as soon as new data is seen, and set it again
+		 * if a skipped "\n" is pushed back below. [Bug 4c5a98f5a0]
+		 */
+
+		ResetFlag(statePtr, INPUT_SAW_CR);
+		if (*eol == '\n') {
 		    /*
 		     * Skip the raw bytes that make up the '\n'.
 		     */
@@ -4818,6 +4854,7 @@ Tcl_GetsObj(
 		    int rawRead;
 		    char tmp[TCL_UTF_MAX];
 
+		    skippedLF = true;
 		    bufPtr = gs.bufPtr;
 		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
 			    gs.rawRead, statePtr->inputEncodingFlags
@@ -4992,6 +5029,9 @@ Tcl_GetsObj(
 
     statePtr->inputEncodingState = oldState;
     statePtr->inputEncodingFlags = oldFlags;
+    if (skippedLF) {
+	SetFlag(statePtr, INPUT_SAW_CR);
+    }
     Tcl_SetObjLength(objPtr, oldLength);
 
     /*

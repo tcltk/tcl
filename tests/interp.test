@@ -2242,10 +2242,9 @@ test interp-26.7 {errorInfo transmission: regular interps} -setup {
 "test"}
 test interp-26.8 {errorInfo transmission: safe interps--bug 1637} -setup {
     set interp [interp create -safe]
-} -constraints knownBug -body {
-    # this test fails because the errorInfo is fully transmitted whether the
-    # interp is safe or not.  The errorInfo should never report data from the
-    # parent interpreter because it could contain sensitive information.
+} -body {
+    # The errorInfo should never report data from the parent interpreter
+    # because it could contain sensitive information.
     proc MyError {secret} {
 	return -code error "msg"
     }
@@ -2277,6 +2276,27 @@ test interp-26.9 {error transmission: body line number in info similar to eval-c
 "$interp eval "#1st line\n#2nd line\nexpr {1/0}""}
 
 # Interps & Namespaces
+test interp-26.10 {errorstack transmission: safe interps, bug [a63f5a4fed]} -setup {
+    set interp [interp create -safe]
+} -body {
+    proc MyError {secret} {
+	return -code error -errorcode {MY ERROR} "msg"
+    }
+    proc MyTestAlias {interp args} {
+	MyError "some secret"
+    }
+    interp alias $interp test {} MyTestAlias $interp
+    interp eval $interp {
+	catch {test arg} msg opts
+	list $msg [dict get $opts -errorcode] [dict get $opts -errorstack] \
+	    [dict get $opts -errorline]
+    }
+} -cleanup {
+    interp delete $interp
+    rename MyError {}
+    rename MyTestAlias {}
+} -result {msg {MY ERROR} {INNER {invokeStk test arg}} 1}
+
 test interp-27.1 {interp aliases & namespaces} -setup {
     set i [interp create]
 } -body {
@@ -3504,6 +3524,32 @@ test interp-34.14 {[Bug e3f4a8b78d]: interp limit and interp eval} -setup {
     interp delete $i
 } -result [lrepeat 6 1 {command count limit exceeded}]
 
+test interp-34.15 {time limit callback entering the event loop: Bug 3027822, 3048170} -setup {
+    proc cb1 {i} {
+	after 50 {set ::done 1}
+	vwait ::done
+	$i limit time {*}[_ms_limit_args 10000]
+    }
+    set i [interp create]
+    set ::result {}
+    interp alias $i bgerr {} lappend ::result
+    $i eval {interp bgerror {} bgerr}
+} -body {
+    $i limit time {*}[_ms_limit_args 20] -granularity 1 -command [list cb1 $i]
+    lappend ::result [catch {
+	$i eval {
+	    set t [expr {[clock milliseconds] + 100}]
+	    for {set n 0} {[clock milliseconds] < $t} {incr n} {
+		set r [expr {cos($n) * sin($n)}]
+	    }
+	    string is double -strict $r
+	}
+    } msg] $msg
+} -cleanup {
+    interp delete $i
+    rename cb1 {}
+} -result {0 1}
+
 test interp-35.1 {interp limit syntax} -body {
     interp limit
 } -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
@@ -3690,16 +3736,16 @@ test interp-36.7 {ChildBgerror sets error handler of child [1999035]} -setup {
 	set result [lindex $args 0]
     }
 } -body {
-    child eval {
-	variable done {}
-	after 0 error foo
-	after 10 [list ::set [namespace which -variable done] {}]
-	vwait [namespace which -variable done]
-    }
+    # Wait for the handler itself: a fixed delay loses the race on a loaded
+    # host, when both timers fire before the bgerror idle handler runs.
+    child eval {after 0 error foo}
+    set timeout [after 10000 [list set [namespace which -variable result] timeout]]
+    vwait [namespace which -variable result]
     set result
 } -cleanup {
+    after cancel $timeout
     variable result {}
-    unset -nocomplain result
+    unset -nocomplain result timeout
     interp delete child
 } -result foo
 

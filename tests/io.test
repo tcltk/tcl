@@ -42,6 +42,7 @@ testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
+testConstraint testdup2         [llength [info commands testdup2]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
 testConstraint testobj		[llength [info commands testobj]]
 testConstraint testservicemode  [llength [info commands testservicemode]]
@@ -3293,6 +3294,30 @@ test io-29.36.2 {gets on translation auto with "\r\n" in different buffers, bug 
     if {$c ne {}} { close $c }
     unset -nocomplain ::done ::cli ::cnt s c
 } -result [lrepeat 6 {<1 line>} {<2 line>} {<3 line>}]
+
+test io-29.36.3 {gets on translation auto, "\r" then a buffer without eol, bug [4c5a98f5a0]} -setup {
+    lassign [chan pipe] r w
+    fconfigure $r -blocking 0 -translation auto
+    fconfigure $w -translation binary -buffering none
+    set res {}
+} -body {
+    puts -nonewline $w "a\r"
+    lappend res [gets $r]
+    puts -nonewline $w "b"
+    lappend res [gets $r] [fblocked $r]
+    puts -nonewline $w "\nc\n"
+    lappend res [gets $r] [gets $r]
+    puts -nonewline $w "d\r"
+    lappend res [gets $r]
+    puts -nonewline $w "e"
+    lappend res [gets $r]
+    puts -nonewline $w "\n\rf\n"
+    lappend res [gets $r] [gets $r] [gets $r]
+} -cleanup {
+    close $w
+    close $r
+    unset -nocomplain r w res
+} -result {a {} 1 b c d {} e {} f}
 
 # Test end of line translations. Procedures tested are Tcl_Write, Tcl_Read.
 
@@ -10039,6 +10064,65 @@ test io-bug-73bb43fb-4 {
 } -cleanup {
     if {$f ne ""} {close $f}
 } -result "0 START-\u30B3-DONE 0 {}"
+
+test io-78.1 {writable event on pipe whose reader has exited} -setup {
+    set signal [makeFile {} io78signal]
+    file delete $signal
+    set script [makeFile {
+	# Keep the read end open until the parent has queued its output.
+	while {![file exists [lindex $argv 0]]} {after 10}
+	exit
+    } io78script]
+    set f [open "|[list [interpreter] $script $signal]" w]
+    set w {}
+} -constraints {stdio fileevent} -body {
+    fconfigure $f -blocking 0 -buffering full
+    puts -nonewline $f [string repeat x 300000]
+    catch {flush $f}
+    close [open $signal w]
+    chan event $f writable [list set [namespace which -variable w] writable]
+    set timer [after 5000 [list set [namespace which -variable w] timeout]]
+    vwait [namespace which -variable w]
+    after cancel $timer
+    # A non-blocking close with a background flush still scheduled is
+    # completed in the background and does not report the error.
+    fconfigure $f -blocking 1
+    list $w [catch {close $f} msg] $msg
+} -cleanup {
+    catch {close $f}
+    removeFile io78script
+    removeFile io78signal
+    unset -nocomplain w f script signal timer msg
+} -result {writable 1 {broken pipe}}
+
+test io-79.1 {open after dup2() replaced stdout behind Tcl's back [91c9bc1c45]} -setup {
+    set out [makeFile {} io79out]
+    set redirected [makeFile {} io79dup]
+    set result [makeFile {} io79res]
+    set script [makeFile {
+	lassign $argv redirected result
+	fconfigure stdout
+	catch {load tcltest91.dll};# On Windows, we run tclsh, not tcltest.
+	testdup2 $redirected 1
+	# On Windows, the next CreateFile() gets the value of the closed
+	# stdout handle.
+	set res [catch {close [open [info script]]} msg]
+	set f [open $result w]
+	puts -nonewline $f [list $res $msg]
+	close $f
+    } io79script]
+} -constraints {stdio testdup2} -body {
+    exec [interpreter] $script $redirected $result > $out
+    set f [open $result]
+    read $f
+} -cleanup {
+    catch {close $f}
+    removeFile io79script
+    removeFile io79res
+    removeFile io79dup
+    removeFile io79out
+    unset -nocomplain out redirected result script f
+} -result {0 {}}
 
 rename read_blocked {}
 

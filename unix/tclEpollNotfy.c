@@ -25,7 +25,32 @@
 #ifdef HAVE_EVENTFD
 #include <sys/eventfd.h>
 #endif /* HAVE_EVENTFD */
-#include <sys/queue.h>
+
+/*
+ * The list macros of the BSD <sys/queue.h> that are used here. That header is
+ * not available everywhere (e.g. musl). [Bug 3ff2d724d0]
+ */
+
+#ifndef LIST_HEAD
+#define LIST_HEAD(name, type)						\
+    struct name { struct type *lh_first; }
+#define LIST_ENTRY(type)						\
+    struct { struct type *le_next; struct type **le_prev; }
+#define LIST_INIT(head)	((head)->lh_first = NULL)
+#define LIST_INSERT_HEAD(head, elm, field) do {				\
+	if (((elm)->field.le_next = (head)->lh_first) != NULL)		\
+	    (head)->lh_first->field.le_prev = &(elm)->field.le_next;	\
+	(head)->lh_first = (elm);					\
+	(elm)->field.le_prev = &(head)->lh_first;			\
+    } while (0)
+#define LIST_REMOVE(elm, field) do {					\
+	if ((elm)->field.le_next != NULL)				\
+	    (elm)->field.le_next->field.le_prev = (elm)->field.le_prev;	\
+	*(elm)->field.le_prev = (elm)->field.le_next;			\
+    } while (0)
+#define LIST_FOREACH(var, head, field)					\
+    for ((var) = (head)->lh_first; (var); (var) = (var)->field.le_next)
+#endif /* LIST_HEAD */
 
 /*
  * This structure is used to keep track of the notifier info for a registered
@@ -268,8 +293,8 @@ PlatformEventsControl(
  *
  * Side effects:
  *	While tsdPtr->notifierMutex is held:
- *	- The per-thread eventfd(2) is closed, if non-zero, and set to -1.
- *	- The per-thread epoll(7) fd is closed, if non-zero, and set to 0.
+ *	- The per-thread eventfd(2) is closed and set to -1.
+ *	- The per-thread epoll(7) fd is closed and set to -1.
  *	- The per-thread epoll_event structs are freed, if any, and set to 0.
  *
  *	tsdPtr->notifierMutex is destroyed.
@@ -285,25 +310,25 @@ TclpFinalizeNotifier(
 
     pthread_mutex_lock(&tsdPtr->notifierMutex);
 #ifdef HAVE_EVENTFD
-    if (tsdPtr->triggerEventFd) {
+    if (tsdPtr->triggerEventFd >= 0) {
 	close(tsdPtr->triggerEventFd);
 	tsdPtr->triggerEventFd = -1;
     }
 #else /* !HAVE_EVENTFD */
-    if (tsdPtr->triggerPipe[0]) {
+    if (tsdPtr->triggerPipe[0] >= 0) {
 	close(tsdPtr->triggerPipe[0]);
 	tsdPtr->triggerPipe[0] = -1;
     }
-    if (tsdPtr->triggerPipe[1]) {
+    if (tsdPtr->triggerPipe[1] >= 0) {
 	close(tsdPtr->triggerPipe[1]);
 	tsdPtr->triggerPipe[1] = -1;
     }
 #endif /* HAVE_EVENTFD */
     Tcl_Free(tsdPtr->triggerFilePtr->pedPtr);
     Tcl_Free(tsdPtr->triggerFilePtr);
-    if (tsdPtr->eventsFd > 0) {
+    if (tsdPtr->eventsFd >= 0) {
 	close(tsdPtr->eventsFd);
-	tsdPtr->eventsFd = 0;
+	tsdPtr->eventsFd = -1;
     }
     if (tsdPtr->readyEvents) {
 	Tcl_Free(tsdPtr->readyEvents);
@@ -354,7 +379,7 @@ PlatformEventsInit(void)
     filePtr = (FileHandler *) Tcl_Alloc(sizeof(FileHandler));
 #ifdef HAVE_EVENTFD
     tsdPtr->triggerEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-    if (tsdPtr->triggerEventFd <= 0) {
+    if (tsdPtr->triggerEventFd < 0) {
 	Tcl_Panic("Tcl_InitNotifier: %s", "could not create trigger eventfd");
     }
     filePtr->fd = tsdPtr->triggerEventFd;
@@ -409,7 +434,11 @@ PlatformEventsTranslate(
 	mask |= TCL_WRITABLE;
     }
     if (eventPtr->events & EPOLLERR) {
-	mask |= TCL_EXCEPTION;
+	/*
+	 * Like select(), report an error as readable and writable.
+	 */
+
+	mask |= TCL_READABLE | TCL_WRITABLE | TCL_EXCEPTION;
     }
     return mask;
 }

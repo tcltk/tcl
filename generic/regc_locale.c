@@ -14,7 +14,7 @@
 
 static const struct cname {
     const char *name;
-    const char code;
+    char code;
 } cnames[] = {
     {"NUL",		'\x00'},
     {"SOH",		'\x01'},
@@ -930,11 +930,18 @@ range(
 
     /*
      * When case-independent, it's hard to decide when cvec ranges are usable,
-     * so for now at least, we won't try. We allocate enough space for two
-     * case variants plus a little extra for the two title case variants.
+     * so for now at least, we won't try. For each character the loop below
+     * stores the character itself plus up to three case variants (lower,
+     * upper and title), so reserve four slots per character. Four is the
+     * structural maximum (the number of addchr() calls per iteration) and so
+     * cannot be exceeded whatever the case tables contain. The previous
+     * estimate of two variants per character undercounted the Latin
+     * title-case digraphs (U+01C4-U+01CC and U+01F1-U+01F3), which each add
+     * three entries; a wide case-insensitive bracket range covering them,
+     * e.g. the range U+01C4 to U+01F4, overflowed the cvec during compilation.
      */
 
-    nchrs = (b - a + 1)*2 + 4;
+    nchrs = (b - a + 1)*4;
 
     cv = getcvec(v, nchrs, 0);
     NOERRN();

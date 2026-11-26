@@ -223,6 +223,22 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
     testasync delete $hm
 }
 
+test async-5.1 {async handler invoked from the event loop, without interp} -constraints {
+    testasync thread
+} -setup {
+    set hm [testasync create async1]
+} -body {
+    # The handler fires while waiting in [vwait], where Tcl_AsyncInvoke() is
+    # called with NULL interp.
+    testasync marklater $hm
+    after 500 {set ::done 1}
+    vwait ::done
+    return ok
+} -cleanup {
+    testasync delete $hm
+    unset -nocomplain ::done
+} -result ok
+
 # cleanup
 if {[testConstraint testasync]} {
     testasync delete

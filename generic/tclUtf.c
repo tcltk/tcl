@@ -124,12 +124,17 @@ TclUtfCount(
     if ((unsigned)(ch - 1) < (UNICODE_SELF - 1)) {
 	return 1;
     }
-    if (ch <= 0x7FF) {
+    if ((unsigned) ch <= 0x7FF) {
 	return 2;
     }
     if (((unsigned)(ch - 0x10000) <= 0xFFFFF)) {
 	return 4;
     }
+    /*
+     * In addition to valid code points that map to 3-byte UTF-8, also
+     * assumes invalid code points will be encoded as U+FFFD as is done
+     * in Tcl_UniCharToUtf.
+     */
     return 3;
 }
 
@@ -273,7 +278,7 @@ Tcl_UniCharToUtf(
 	    buf[3] = (char) (0x80 | (0x3F & ch));
 	    buf[2] = (char) (0x80 | (0x3F & (ch >> 6)));
 	    buf[1] = (char) (0x80 | (0x3F & (ch >> 12)));
-	    buf[0] = (char) (0xF0 |         (ch >> 18));
+	    buf[0] = (char) (0xF0 | (ch >> 18));
 	    return 4;
 	}
     } else if (ch == -1) {
@@ -295,7 +300,7 @@ Tcl_UniCharToUtf(
 three:
     buf[2] = (char) (0x80 | (0x3F & ch));
     buf[1] = (char) (0x80 | (0x3F & (ch >> 6)));
-    buf[0] = (char) (0xE0 |         (ch >> 12));
+    buf[0] = (char) (0xE0 | (ch >> 12));
     return 3;
 }
 
@@ -1697,7 +1702,7 @@ Tcl_UtfNcasecmp(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UtfCmp --
+ * TclUtfCmp --
  *
  *	Compare UTF chars of string cs to string ct case sensitively.
  *	Replacement for strcmp in Tcl core, in places where UTF-8 should
@@ -1709,7 +1714,7 @@ Tcl_UtfNcasecmp(
  * Side effects:
  *	None.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------
  */
 
 int
@@ -1717,16 +1722,47 @@ TclUtfCmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct)		/* UTF string cs is compared to. */
 {
-    Tcl_UniChar ch1 = 0, ch2 = 0;
+    const unsigned char *s = (const unsigned char *)cs;
+    const unsigned char *t = (const unsigned char *)ct;
 
-    while (*cs && *ct) {
-	cs += TclUtfToUniChar(cs, &ch1);
-	ct += TclUtfToUniChar(ct, &ch2);
-	if (ch1 != ch2) {
-	    return ch1 - ch2;
-	}
+    /* Step through the largest common initial prefix of the two strings. */
+    while (*s == *t) {
+	if (*s == '\0') return 0;
+	s++;
+	t++;
     }
-    return UCHAR(*cs) - UCHAR(*ct);
+
+    /*
+     * The chars *s and *t are different and all previous characters match. If
+     * we were dealing with a UTF8 string we could just return *s - *t now
+     * because the UTF8 encoding preserves string order.  But since it is
+     * TUTF8 we need to check whether one of s or t references a byte
+     * contained in the encoding of a null codepoint as \xc0\x80.  If not, then
+     * we can return *s - *t.
+     *
+     * If either of s or t references the byte \x80 of an \xc0\x80 pair then
+     * we can still return *s - *t, since the other pointer must reference the
+     * second byte of a 2-byte encoding of a non-null codepoint, and \x80 is
+     * the smallest possible continuation byte.
+     *
+     * So the only case where returning *s - *t may not work is when s or t
+     * references the byte \xc0 of a pair \xc0\x80.  In that case we know that
+     * the other pointer references either a sentinal null byte or the first
+     * byte of the encoding of some non-null codepoint.  Thus exactly one of
+     * the two pointers can reference the \xc0 byte of a \xc0\x80 pair, and if
+     * one does then the string containing that pair is the smaller one unless
+     * the other pointer references a sentinel null byte, in which case the
+     * string containing the sentinel null byte is a prefix of the other
+     * string and hence is smaller.
+     */
+
+    if (*s == 0xC0 && s[1] == 0x80) {
+	return (*t == '\0') ? 1 : -1;
+    }
+    if (*t == 0xC0 && t[1] == 0x80) {
+	return (*s == '\0') ? -1 : 1;
+    }
+    return (int)*s - (int)*t;
 }
 
 /*
@@ -2261,218 +2297,11 @@ Tcl_UniCharIsWordChar(
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharCaseMatch --
- *
- *	See if a particular Unicode string matches a particular pattern.
- *	Allows case insensitivity. This is the Unicode equivalent of the char*
- *	Tcl_StringCaseMatch. The UniChar strings must be NULL-terminated.
- *	This has no provision for counted UniChar strings, thus should not be
- *	used where NULLs are expected in the UniChar string. Use
- *	TclUniCharMatch where possible.
- *
- * Results:
- *	The return value is true if string matches pattern, and false otherwise. The
- *	matching operation permits the following special characters in the
- *	pattern: *?\[] (see the manual entry for details on what these mean).
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-/* Returns 1, 0 or -1 (string exhausted), see StringCaseMatch in tclUtil.c. */
-
-static int
-UniCharCaseMatch(
-    const Tcl_UniChar *uniStr,	/* Unicode String. */
-    const Tcl_UniChar *uniPattern,
-				/* Pattern, which may contain special
-				 * characters. */
-    int nocase)			/* 0 for case sensitive, 1 for insensitive */
-{
-    int result;
-    Tcl_UniChar ch1 = 0, p;
-
-    while (1) {
-	p = *uniPattern;
-
-	/*
-	 * See if we're at the end of both the pattern and the string. If so,
-	 * we succeeded. If we're at the end of the pattern but not at the end
-	 * of the string, we failed.
-	 */
-
-	if (p == 0) {
-	    return (*uniStr == 0);
-	}
-	if ((*uniStr == 0) && (p != '*')) {
-	    return -1;
-	}
-
-	/*
-	 * Check for a "*" as the next pattern character. It matches any
-	 * substring. We handle this by skipping all the characters up to the
-	 * next matching one in the pattern, and then calling ourselves
-	 * recursively for each postfix of string, until either we match or we
-	 * reach the end of the string.
-	 */
-
-	if (p == '*') {
-	    /*
-	     * Skip all successive *'s in the pattern
-	     */
-
-	    while (*(++uniPattern) == '*') {
-		/* empty body */
-	    }
-	    p = *uniPattern;
-	    if (p == 0) {
-		return true;
-	    }
-	    if (nocase) {
-		p = Tcl_UniCharToLower(p);
-	    }
-	    while (1) {
-		/*
-		 * Optimization for matching - cruise through the string
-		 * quickly if the next char in the pattern isn't a special
-		 * character
-		 */
-
-		if ((p != '[') && (p != '?') && (p != '\\')) {
-		    if (nocase) {
-			while (*uniStr && (p != *uniStr)
-				&& (p != Tcl_UniCharToLower(*uniStr))) {
-			    uniStr++;
-			}
-		    } else {
-			while (*uniStr && (p != *uniStr)) {
-			    uniStr++;
-			}
-		    }
-		}
-		result = UniCharCaseMatch(uniStr, uniPattern, nocase);
-		if (result != 0) {
-		    return result;
-		}
-		if (*uniStr == 0) {
-		    return -1;
-		}
-		uniStr++;
-	    }
-	}
-
-	/*
-	 * Check for a "?" as the next pattern character. It matches any
-	 * single character.
-	 */
-
-	if (p == '?') {
-	    uniPattern++;
-	    uniStr++;
-	    continue;
-	}
-
-	/*
-	 * Check for a "[" as the next pattern character. It is followed by a
-	 * list of characters that are acceptable, or by a range (two
-	 * characters separated by "-").
-	 */
-
-	if (p == '[') {
-	    Tcl_UniChar startChar, endChar;
-	    const Tcl_UniChar *setStart = ++uniPattern;
-
-	    ch1 = (nocase ? Tcl_UniCharToLower(*uniStr) : *uniStr);
-	    uniStr++;
-	    while (1) {
-		/* A "]" first in the set is a literal character. */
-		if (((*uniPattern == ']') && (uniPattern != setStart))
-			|| (*uniPattern == 0)) {
-		    return false;
-		}
-		startChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
-			: *uniPattern);
-		uniPattern++;
-		if ((*uniPattern == '-') && (uniPattern[1] != ']')) {
-		    uniPattern++;
-		    if (*uniPattern == 0) {
-			return false;
-		    }
-		    endChar = (nocase ? Tcl_UniCharToLower(*uniPattern)
-			    : *uniPattern);
-		    uniPattern++;
-		    if (((startChar <= ch1) && (ch1 <= endChar))
-			    || ((endChar <= ch1) && (ch1 <= startChar))) {
-			/*
-			 * Matches ranges of form [a-z] or [z-a].
-			 */
-			break;
-		    }
-		} else if (startChar == ch1) {
-		    break;
-		}
-	    }
-	    while (*uniPattern != ']') {
-		if (*uniPattern == 0) {
-		    uniPattern--;
-		    break;
-		}
-		uniPattern++;
-	    }
-	    uniPattern++;
-	    continue;
-	}
-
-	/*
-	 * If the next pattern character is '\', just strip off the '\' so we
-	 * do exact matching on the character that follows.
-	 */
-
-	if (p == '\\') {
-	    if (*(++uniPattern) == '\0') {
-		return false;
-	    }
-	}
-
-	/*
-	 * There's no special character. Just make sure that the next bytes of
-	 * each string match.
-	 */
-
-	if (nocase) {
-	    if (Tcl_UniCharToLower(*uniStr) !=
-		    Tcl_UniCharToLower(*uniPattern)) {
-		return false;
-	    }
-	} else if (*uniStr != *uniPattern) {
-	    return false;
-	}
-	uniStr++;
-	uniPattern++;
-    }
-}
-
-bool
-TclUniCharCaseMatch(
-    const Tcl_UniChar *uniStr,	/* Unicode String. */
-    const Tcl_UniChar *uniPattern,
-				/* Pattern, which may contain special
-				 * characters. */
-    int nocase)			/* 0 for case sensitive, 1 for insensitive */
-{
-    return UniCharCaseMatch(uniStr, uniPattern, nocase) == 1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclUniCharMatch --
  *
  *	See if a particular Unicode string matches a particular pattern.
  *	Allows case insensitivity. This is the Unicode equivalent of the char*
- *	Tcl_StringCaseMatch. This variant of TclUniCharCaseMatch uses counted
+ *	Tcl_StringCaseMatch. This function uses counted
  *	Strings, so embedded NULLs are allowed.
  *
  * Results:
@@ -2534,7 +2363,7 @@ UniCharMatch(
 		/* empty body */
 	    }
 	    if (pattern == patternEnd) {
-		return true;
+		return 1;
 	    }
 	    p = *pattern;
 	    if (nocase) {
@@ -2598,7 +2427,7 @@ UniCharMatch(
 		/* A "]" first in the set is a literal character. */
 		if (((*pattern == ']') && (pattern != setStart))
 			|| (pattern == patternEnd)) {
-		    return false;
+		    return 0;
 		}
 		startChar = (nocase ? Tcl_UniCharToLower(*pattern) : *pattern);
 		pattern++;
@@ -2606,7 +2435,7 @@ UniCharMatch(
 			|| (pattern[1] != ']'))) {
 		    pattern++;
 		    if (pattern == patternEnd) {
-			return false;
+			return 0;
 		    }
 		    endChar = (nocase ? Tcl_UniCharToLower(*pattern)
 			    : *pattern);
@@ -2640,7 +2469,7 @@ UniCharMatch(
 
 	if (p == '\\') {
 	    if (++pattern == patternEnd) {
-		return false;
+		return 0;
 	    }
 	}
 
@@ -2651,10 +2480,10 @@ UniCharMatch(
 
 	if (nocase) {
 	    if (Tcl_UniCharToLower(*string) != Tcl_UniCharToLower(*pattern)) {
-		return false;
+		return 0;
 	    }
 	} else if (*string != *pattern) {
-	    return false;
+	    return 0;
 	}
 	string++;
 	pattern++;

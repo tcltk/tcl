@@ -630,7 +630,8 @@ Adds a new transformation on top of the channel \fIchannel\fR. The
 \fIcmdPrefix\fR argument describes a list of one or more words which represent
 a handler that will be used to implement the transformation. The command
 prefix must provide the API described in the \fBtranschan\fR manual page.
-The result of this subcommand is a handle to the transformation. Note that it
+The result of this subcommand is the name of the channel \fIchannel\fR, which
+now refers to the channel with the new transformation on top of it. Note that it
 is important to make sure that the transformation is capable of supporting the
 channel mode that it is used with or this can make the channel neither
 readable nor writable.

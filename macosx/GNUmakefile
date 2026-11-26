@@ -95,7 +95,7 @@ install_make_args	:= INSTALL_BUILD=1
 
 ${targets}:
 	${MAKE} ${action}${PROJECT} \
-	$(foreach s,${styles} embedded install,$(if $(findstring $s,$@),${${s}_make_args}))
+		$(foreach s,${styles} embedded install,$(if $(findstring $s,$@),${${s}_make_args}))
 
 #-------------------------------------------------------------------------------------------------------
 # project specific settings
@@ -132,6 +132,9 @@ clean-${PROJECT} distclean-${PROJECT} test-${PROJECT}: \
 			target = $*
 
 DO_MAKE			= +${MAKE} -C "${OBJ_DIR}" ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
+# clean targets must not fail when this build style was never configured
+DO_MAKE_CLEAN		= +test ! -f "${OBJ_DIR}/Makefile" || \
+			  ${MAKE} -C "${OBJ_DIR}" ${target} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
 
 #-------------------------------------------------------------------------------------------------------
 # build rules
@@ -141,11 +144,16 @@ ${PROJECT}:
 
 ${objdir}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
 		     ${UNIX_DIR}/tclConfig.sh.in Tcl-Info.plist.in
-	mkdir -p "${OBJ_DIR}" && cd "${OBJ_DIR}" && \
-	if [ ${UNIX_DIR}/configure -nt config.status ]; then ${UNIX_DIR}/configure -C \
-	--prefix="${PREFIX}" --bindir="${BINDIR}" --libdir="${LIBDIR}" \
-	--mandir="${MANDIR}" --enable-framework --enable-dtrace --disable-zipfs \
-	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; else ./config.status; fi
+	@mkdir -p "${OBJ_DIR}"
+	cd "${OBJ_DIR}" && \
+	if [ ${UNIX_DIR}/configure -nt config.status ]; then \
+	    ${UNIX_DIR}/configure -C \
+		    --prefix="${PREFIX}" --bindir="${BINDIR}" --libdir="${LIBDIR}" \
+		    --mandir="${MANDIR}" --enable-framework --enable-dtrace --disable-zipfs \
+		    ${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; \
+	else \
+	    ./config.status; \
+	fi
 
 build-${PROJECT}: ${objdir}/Makefile
 	${DO_MAKE}
@@ -183,23 +191,20 @@ ifeq (${BUILD_STYLE}_${EMBEDDED_BUILD},Development_)
 # the debug library
 	@if [ -d "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}" ]; then \
 	    cd "${INSTALL_ROOT}${LIBDIR}/${PRODUCT_NAME}.framework/Versions/${VERSION}"; \
-	    if \
-		ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
-	    then : ; else \
-		cp "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
-	    fi; \
+	    ln -f "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug" || \
+	    cp "${PRODUCT_NAME}" "${PRODUCT_NAME}_debug"; \
 	fi
 endif
 
 clean-${PROJECT}: %-${PROJECT}:
-	${DO_MAKE}
+	${DO_MAKE_CLEAN}
 	rm -rf "${SYMROOT}"/{${PRODUCT_NAME}.framework,${TCLSH},tcltest}
 	rm -f "${OBJ_DIR}"{"${LIBDIR}","${BINDIR}"} && \
 	rmdir -p "${OBJ_DIR}"$(dir $(subst ${space},\ ,${LIBDIR})) 2>&- || true && \
 	rmdir -p "${OBJ_DIR}"$(dir $(subst ${space},\ ,${BINDIR})) 2>&- || true
 
 distclean-${PROJECT}: %-${PROJECT}: clean-${PROJECT}
-	${DO_MAKE}
+	${DO_MAKE_CLEAN}
 	rm -rf "${OBJ_DIR}"
 
 test-${PROJECT}: %-${PROJECT}: build-${PROJECT}

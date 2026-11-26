@@ -4671,7 +4671,7 @@ ExtendStringRepWithUnicode(
   copyBytes:
     dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
-	dst += Tcl_UniCharToUtf(unicode[i], dst);
+	dst += Tcl_UniCharToUtf(((unsigned)unicode[i] < 0x110000) ? unicode[i] : 0xFFFD, dst);
     }
     *dst = '\0';
     objPtr->length = dst - objPtr->bytes;
