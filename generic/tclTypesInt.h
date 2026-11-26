@@ -105,6 +105,10 @@ typedef struct TypeData {
     Tcl_HashTable lambdas;	/* v16z : "{T}lambda" -> la lambda (Tcl_Obj*,
 				 * comptée) qui garde sa Proc d'un appel à
 				 * l'autre : apply {T}{...} */
+    struct TclTypeSpec *specs;	/* 23/11 : spécialisations déclarées */
+    Tcl_Size nSpecs, capSpecs;
+    size_t opsGen;		/* +1 à chaque déclaration (>= 1) */
+    Tcl_Interp *interp;		/* pour les fonctions match */
 } TypeData;
 
 void	TclTypesSync(TypeData *d);
@@ -222,5 +226,9 @@ TclType *TclTypesFinishSum(Tcl_Interp *interp, TypeData *d,
 	const char *selfName, TclTypeKind kind, TclTypeField *fields,
 	Tcl_Size n, TclType *into, int isUnion);
 void	TclTypesFreeFields(TclTypeField *fields, Tcl_Size n);
+
+/* v17u : type restreint par un prédicat, T((expression sur $)) */
+TclType *TclTypesPredType(Tcl_Interp *interp, TypeData *d,
+			    TclType *base, const char *pred, Tcl_Size len);
 
 #endif /* TCLTYPESINT_H */

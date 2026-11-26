@@ -3156,7 +3156,27 @@ Tcl_LappendObjCmd(
 	}
 
 	result = TclListObjLength(interp, varValuePtr, &numElems);
-	if (result == TCL_OK) {
+	if (result == TCL_OK && (varPtr->flags & VAR_CONTRACT)) {
+	    /* v16m : lappend L {T}x sous contrat : lappend reçoit le mot et
+	     * résout l'annotation de chaque élément (elle expire ensuite). */
+	    Tcl_Obj *elems = Tcl_NewListObj(0, NULL), *e, **ev;
+	    Tcl_Size k, ne;
+
+	    Tcl_IncrRefCount(elems);
+	    for (k = 2; k < objc && result == TCL_OK; k++) {
+		result = TclAnnotSettleValueArg(interp, objv[k], &e);
+		if (result == TCL_OK) {
+		    Tcl_ListObjAppendElement(NULL, elems, e);
+		    Tcl_DecrRefCount(e);
+		}
+	    }
+	    if (result == TCL_OK) {
+		Tcl_ListObjGetElements(NULL, elems, &ne, &ev);
+		result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
+			ne, ev);
+	    }
+	    Tcl_DecrRefCount(elems);
+	} else if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
 	}

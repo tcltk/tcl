@@ -10,18 +10,17 @@ Chaque variante isole un principe. Lues dans l'ordre, elles en font le tour.
 
 | | 1 000 sommets | 100 000 sommets | par rapport au Tcl nu |
 |---|---:|---:|---:|
-| 1. Tcl nu (tcllib) | 1 141 µs | 119 ms | ×1 |
-| 2. Tcl nu + C | 172 µs | 19 ms | ×6,4 |
-| 3. Typé scintillant, Tcl | 2 248 µs | 260 ms | ×0,5 |
-| 4. Typé scintillant, vectorisé | 302 µs | 27 ms | ×4,4 |
-| 5. Typé scintillant, C | 62 µs | 5,8 ms | ×21 |
-| 6. Tout typé, Tcl | 2 227 µs | 254 ms | ×0,5 |
-| 7. Tout typé, vectorisé (objets) | 275 µs | 27 ms | ×4,4 |
-| 8. Tout typé, vectorisé (cases) | 79 µs | 3,6 ms | **×33** |
-| 9. Tout typé, C (cases) | 27 µs | 2,6 ms | **×45** |
-| 10. Tout typé, vectorisé + C (cases) | 50 µs | 2,7 ms | ×44 |
-
-Conditions : Linux, gcc -O2, typeparse v17w (v17o : ×20 en 8, ×41 en 9, ×29 en 10), coordonnées `double`. Chaque variante tourne
+| 1. Tcl nu (tcllib) | 1 138 µs | 122 ms | ×1 |
+| 2. Tcl nu + C | 172 µs | 19 ms | ×6,3 |
+| 3. Typé scintillant, Tcl | 2 247 µs | 253 ms | ×0,5 |
+| 4. Typé scintillant, vectorisé | 296 µs | 25 ms | ×4,8 |
+| 5. Typé scintillant, C | 61 µs | 5,9 ms | ×21 |
+| 6. Tout typé, Tcl | 2 221 µs | 251 ms | ×0,5 |
+| 7. Tout typé, vectorisé (objets) | 268 µs | 24 ms | ×5,2 |
+| 8. Tout typé, vectorisé (cases) | 64 µs | 2,6 ms | **×47** |
+| 9. Tout typé, C (cases) | 28 µs | 2,6 ms | **×47** |
+| 10. Tout typé, vectorisé + C (cases) | 35 µs | 2,1 ms | **×59** |
+Conditions : Linux, gcc -O2, typeparse v17x (v17w : ×33 en 8, ×45 en 9, ×44 en 10 ; v17o : ×20, ×41, ×29), coordonnées `double`. D'une série à l'autre, les rapports de 8 à 10 varient de ±10 % (×43 à ×47 en 8 et en 9, ×59 à ×64 en 10). Chaque variante tourne
 dans son propre processus ; le temps retenu est le meilleur de trois processus, chacun
 répétant la chaîne (200 fois à 1 000 sommets, 7 fois à 100 000). Les listes « ordinaires »
 sont faites de doubles déjà convertis (calculés par `expr`) : des données lues en texte
@@ -118,15 +117,20 @@ et rotation s'écrivent sur place, `type map -in pl((0,1)::2) {x y} {(…, …)}
 polyligne (un paramètre, donc partagée) est recopiée une fois, sans même la remplir
 puisque la fenêtre couvre chaque case, et chaque résultat est écrit à son pas ; et
 `type map -min {x} $X {($x)}` sur une colonne en cases lit les cases sans les recopier.
-**×33, en Tcl, avec des valeurs typées.**
+Les deux valeurs d'un tuple, `(…, …)`, sont calculées en une passe : chaque bloc de
+256 sommets est lu une fois, puis les deux expressions tournent dessus, et leurs
+résultats sont écrits aussitôt à leur pas dans les cases neuves de la polyligne,
+installées à la fin (v17x ; avant, une passe complète par valeur, puis des colonnes
+intermédiaires recopiées : translation et rotation coûtaient près de trois fois plus).
+**×47, en Tcl, avec des valeurs typées : autant que le tout en C.**
 
 **Principe : la représentation fait l'essentiel du gain. Le même type, déclaré une fois
 avec ses formes (`type def polyline list.coord {-compact}polylinec`), choisit la sienne.**
 
 ## 9. Tout typé, C, en cases : le plafond
 
-Les mêmes cases, traitées entièrement en C : lues en place, rendues en cases. ×46. C'est
-le plafond de cette chaîne. Comparé à la variante 2 (le même C sur des listes
+Les mêmes cases, traitées entièrement en C : lues en place, rendues en cases. ×47. C'était
+le plafond de cette chaîne, jusqu'à la variante suivante. Comparé à la variante 2 (le même C sur des listes
 d'objets), il montre que le C double l'apport des cases, mais seulement si ses données
 sont déjà en cases.
 
@@ -134,10 +138,10 @@ sont déjà en cases.
 
 ## 10. Tout typé, vectorisé + C : chaque chose à sa place
 
-Les transformations en Tcl vectorisé, les mesures en C, sur les mêmes cases. ×44 : à
-100 000 sommets, autant que le tout en C, translation et rotation écrites en
-`type map -in` coûtant à peu près ce que coûte leur version C. À 1 000 sommets, les
-coûts fixes d'une commande Tcl se voient davantage (50 contre 27 µs).
+Les transformations en Tcl vectorisé, les mesures en C, sur les mêmes cases. ×59 : à
+100 000 sommets, plus que le tout en C. Translation et rotation en `type map -in`
+écrivent sur place, en une passe, alors que leurs versions C rendent une liste neuve.
+À 1 000 sommets, les coûts fixes d'une commande Tcl se voient encore (35 contre 28 µs).
 
 **Principe : en cases, le Tcl vectorisé est assez proche du C pour qu'on n'écrive en C
 que ce qui le mérite, et les deux se passent les mêmes valeurs sans conversion.**
@@ -147,7 +151,8 @@ que ce qui le mérite, et les deux se passent les mêmes valeurs sans conversion
 - Le Tcl typé, écrit élément par élément, est plus lent que le Tcl nu (×0,5) : il vérifie
   ses types sans rien en tirer.
 - Le typage paie quand il change la façon de calculer (vectorisation) et la façon de
-  représenter (cases). Avec les deux, ×33 en Tcl, ×45 avec le C.
+  représenter (cases). Avec les deux, ×47 en Tcl, autant qu'en C, et ×59 en
+  confiant au C les seules mesures.
 - L'ordre des gains : la représentation d'abord, la vectorisation ensuite, le C en
   dernier.
 

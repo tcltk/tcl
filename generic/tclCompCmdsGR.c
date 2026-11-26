@@ -16,6 +16,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclTypes.h"
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -968,6 +969,11 @@ TclCompileLassignCmd(
      */
 
     if (numWords < 3) {
+	return TCL_ERROR;
+    }
+
+    /* v16m : lassign {list}$p a b : à l'exécution. */
+    if (TclHasAnnotatedWord(parsePtr)) {
 	return TCL_ERROR;
     }
 

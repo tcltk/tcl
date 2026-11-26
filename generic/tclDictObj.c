@@ -2783,11 +2783,25 @@ DictForNRCmd(
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "for", (char *)NULL);
 	return TCL_ERROR;
     }
-    searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp, sizeof(Tcl_DictSearch));
-    if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
-	    &done) != TCL_OK) {
-	TclStackFree(interp, searchPtr);
-	return TCL_ERROR;
+    {
+	/* v16m : dict for {k v} {dict}$p : résoudre l'annotation du mot. La
+	 * recherche tient le dict interne, l'objet peut partir ensuite. */
+	Tcl_Obj *dictArg;
+	int code;
+
+	if (TclAnnotSettleValueArg(interp, objv[2], &dictArg) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	searchPtr = (Tcl_DictSearch *)TclStackAlloc(interp,
+		sizeof(Tcl_DictSearch));
+	code = Tcl_DictObjFirst(interp, dictArg, searchPtr, &keyObj,
+		&valueObj, &done);
+	if (code != TCL_OK) {
+	    Tcl_DecrRefCount(dictArg);
+	    TclStackFree(interp, searchPtr);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(dictArg);
     }
     if (done) {
 	TclStackFree(interp, searchPtr);
@@ -2982,11 +2996,23 @@ DictMapNRCmd(
 	Tcl_SetErrorCode(interp, "TCL", "SYNTAX", "dict", "map", (char *)NULL);
 	return TCL_ERROR;
     }
-    storagePtr = (DictMapStorage *)TclStackAlloc(interp, sizeof(DictMapStorage));
-    if (Tcl_DictObjFirst(interp, objv[2], &storagePtr->search, &keyObj,
-	    &valueObj, &done) != TCL_OK) {
-	TclStackFree(interp, storagePtr);
-	return TCL_ERROR;
+    {
+	/* v16m : dict map {k v} {dict}$p : résoudre l'annotation du mot. */
+	Tcl_Obj *dictArg;
+	int code;
+
+	if (TclAnnotSettleValueArg(interp, objv[2], &dictArg) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	storagePtr = (DictMapStorage *)TclStackAlloc(interp,
+		sizeof(DictMapStorage));
+	code = Tcl_DictObjFirst(interp, dictArg, &storagePtr->search, &keyObj,
+		&valueObj, &done);
+	Tcl_DecrRefCount(dictArg);
+	if (code != TCL_OK) {
+	    TclStackFree(interp, storagePtr);
+	    return TCL_ERROR;
+	}
     }
     if (done) {
 	/*

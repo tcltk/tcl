@@ -2166,6 +2166,95 @@ MakeCtorType(Tcl_Interp *interp, TypeEnv *envPtr, TypeItem *ctor,
     return TCL_OK;
 }
 
+/*
+ * v17u : le dernier argument de T(a, b, (expr)) est-il un prédicat, une
+ * expression entre parenthèses ? *restLen : la longueur des arguments qui
+ * le précèdent (sans la virgule), [*pp, *pe) : le prédicat, parenthèses
+ * comprises.
+ */
+static int
+SplitPredicate(const char *a, Tcl_Size alen, Tcl_Size *restLen,
+	const char **pp, const char **pe)
+{
+    const char *p = a, *end = a + alen, *lastComma = NULL, *s, *e;
+    int par = 0, br = 0, bk = 0, dq = 0;
+
+    for (; p < end; p++) {
+	char c = *p;
+
+	if (c == '\\') {
+	    p++;
+	    continue;
+	}
+	if (dq) {
+	    if (c == '"') {
+		dq = 0;
+	    }
+	    continue;
+	}
+	switch (c) {
+	case '"': dq = 1; break;
+	case '(': par++; break;
+	case ')': par--; break;
+	case '{': br++; break;
+	case '}': br--; break;
+	case '[': bk++; break;
+	case ']': bk--; break;
+	case ',':
+	    if (par == 0 && br == 0 && bk == 0) {
+		lastComma = p;
+	    }
+	    break;
+	}
+    }
+    s = lastComma ? lastComma + 1 : a;
+    e = end;
+    while (s < e && isspace(UCHAR(*s))) {
+	s++;
+    }
+    while (e > s && isspace(UCHAR(e[-1]))) {
+	e--;
+    }
+    if (e - s < 2 || *s != '(' || e[-1] != ')') {
+	return 0;
+    }
+    /* la parenthèse ouvrante se ferme-t-elle au dernier caractère ? */
+    par = 0;
+    dq = 0;
+    for (p = s; p < e; p++) {
+	if (*p == '\\') {
+	    p++;
+	    continue;
+	}
+	if (dq) {
+	    if (*p == '"') {
+		dq = 0;
+	    }
+	    continue;
+	}
+	if (*p == '"') {
+	    dq = 1;
+	} else if (*p == '(') {
+	    par++;
+	} else if (*p == ')' && --par == 0 && p != e - 1) {
+	    return 0;
+	}
+    }
+    *pp = s;
+    *pe = e;
+    if (lastComma == NULL) {
+	*restLen = 0;
+    } else {
+	const char *r = lastComma;
+
+	while (r > a && isspace(UCHAR(r[-1]))) {
+	    r--;
+	}
+	*restLen = r - a;
+    }
+    return 1;
+}
+
 /* list(2) ou dict(x, y) SANS "." : les éléments sont des chaînes. */
 
 static int
@@ -2689,6 +2778,54 @@ TclCompileTypeTree(
 		ERR(interp, "PARAM", "\"%s\" is a parameter: it takes no "
 			"arguments", w);
 		return TCL_ERROR;
+	    }
+	    {
+		/* v17u : T(... ,(prédicat)) : le dernier argument entre
+		 * parenthèses restreint le type T(...) */
+		const char *pp, *pe;
+		Tcl_Size restLen;
+
+		if (SplitPredicate(a, alen, &restLen, &pp, &pe)) {
+		    TclType *base;
+
+		    if (restLen == 0) {
+			if ((g = TclTypesFindGeneric(interp, envPtr->d, w,
+				len)) != NULL) {
+			    base = TclTypesInstantiate(interp, envPtr->d, g,
+				    NULL, 0, envPtr);
+			} else {
+			    base = TclTypesResolve(interp, envPtr->d,
+				    envPtr->selfName, envPtr->self, w, len);
+			}
+		    } else if ((len == 3 && memcmp(w, "int", 3) == 0)
+			    || (len == 6 && (memcmp(w, "double", 6) == 0
+			    || memcmp(w, "string", 6) == 0))) {
+			base = TclTypesBinaryType(interp, envPtr->d, w, len, a,
+				restLen, envPtr->params);
+		    } else {
+			ERR(interp, "PARAM", "a predicate (...) follows a type "
+				"or the representation of int, double, string: "
+				"%s(...) does not take one yet", w);
+			return TCL_ERROR;
+		    }
+		    if (base == NULL) {
+			return TCL_ERROR;
+		    }
+		    if (base == envPtr->d->tList || base == envPtr->d->tDict
+			    || base->kind == TCLT_VAR) {
+			ERR(interp, "PARAM", "a predicate on a whole %s is "
+				"not supported yet: restrict each element "
+				"with %s.T((...)), for example list.int(($ > 0))",
+				w, w);
+			return TCL_ERROR;
+		    }
+		    tp = TclTypesPredType(interp, envPtr->d, base, pp, pe - pp);
+		    if (tp == NULL) {
+			return TCL_ERROR;
+		    }
+		    PushItem(envPtr, SK_TYPE)->type = tp;
+		    break;
+		}
 	    }
 	    if ((len == 3 && memcmp(w, "int", 3) == 0)
 		    || (len == 6 && (memcmp(w, "double", 6) == 0

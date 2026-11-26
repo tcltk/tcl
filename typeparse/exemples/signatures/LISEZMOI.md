@@ -11,6 +11,7 @@ qu'elle couvre l'essentiel de ce que ces TIP demandaient.
 | `chercher_classique.tcl` | la même procédure en Tcl classique, avec les mêmes contrôles écrits à la main |
 | `liens.tcl` | l'exemple de TIP 460 ; `echanger` ; un journal avec un défaut `[commande]` et une variable par défaut |
 | `variadiques.tcl` | `args...` n'importe où : `foreach` écrit en Tcl, `dict set`, `dict create`, des points à plat, une forme de `regexp` |
+| `lambdas.tcl` | `apply` typé (v16z) : la signature dans une lambda, l'annotation du mot lambda comme type de retour, `lsort -command`, une règle de `type convert` |
 | `bench_chercher.tcl` | le coût de l'analyse des arguments, signature contre analyse à la main |
 
 ## La signature
@@ -92,6 +93,8 @@ messages d'usage suivent la notation des manuels :
 
 ## Pas encore
 
-- `apply` et les méthodes TclOO n'acceptent pas encore de signature typée.
+- Les méthodes TclOO n'acceptent pas encore de signature typée. `apply` l'accepte
+  depuis la v16z : `apply {double}{{{double}a; {double}b} {( $a + $b )}} 5 10`,
+  l'annotation du mot lambda étant le type de retour.
 - Les commandes à deux formes d'appel (`switch string pattern body ...` ou
   `switch string {pattern body ...}`) demanderaient une union de signatures.

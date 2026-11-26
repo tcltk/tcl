@@ -728,9 +728,15 @@ procédure, et le corps peut dire ce qu'il rend :
 
 Les composantes d'un tuple sont compilées chacune (et calculées par blocs)
 quand elles le peuvent ; sinon le corps entier est évalué par `expr`,
-élément par élément, puis ses tuples rangés en colonnes. Aujourd'hui,
-chaque composante fait sa passe : la rotation en un `type map` coûte ce que
-coûtaient deux.
+élément par élément, puis ses tuples rangés en colonnes. Quand toutes les
+composantes se calculent en flottants (entrées en cases ou en objets
+doubles, valeurs fixes flottantes, aucun résultat non fini), le tuple se
+fait en une passe : chaque bloc de 256 éléments est lu une fois, puis les K
+expressions tournent dessus, chacune dans sa colonne (v17x). Sinon, une
+passe par composante, avec le même résultat. Avec `-in` sur une liste en
+cases de doubles, chaque bloc est écrit aussitôt à son pas dans des cases
+neuves, installées à la fin (rien n'a changé en cas d'erreur). La rotation
+d'une polyligne de 100 000 sommets en `type map -in` : 0,98 → 0,36 ms.
 
 Exemple : `exemples/tcllib_geometry/vectorise.tcl` réécrit l'aire, la
 longueur, la translation, la rotation et la boîte englobante d'une

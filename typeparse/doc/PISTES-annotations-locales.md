@@ -255,3 +255,15 @@ constructeurs.
   (2.5 refusé). Deux incohérences : `set {dict.int}D $d` (un dict en un seul argument) est
   refusé (`a dict needs an even number of elements`) ; et `dict get $D x` d'un `dict.int` rend un
   élément **sans** type, alors que `dict map` en rend de typés.
+
+## Des annotations locales lues par une procédure (4 novembre)
+
+Cas d'usage venu du texte enrichi : du texte balisé sans guillemets. Une écriture naturelle serait
+`te::para Un {gras:}texte avec un {lien@cible=…}{passage}` : avec la piste B, c'est exactement le
+rôle d'une annotation locale (elle s'adresse à la commande qui reçoit le mot, puis disparaît). Mais
+seule une commande C sait lire les annotations locales de ses arguments (`type binary {sizeof?}…`) ;
+une procédure qui reçoit `args` ne les voit pas, et une étiquette passée à `args` n'a pas de
+constructeur pour la lire. Piste : une lecture des annotations locales d'un argument depuis une
+procédure (par exemple `note get` étendu, ou une liaison d'argument `{local}a` qui les garde). En
+attendant, l'exemple passe par un gabarit (`te::p {Un [gras -- texte] …}`), un seul argument
+découpé par l'exemple.

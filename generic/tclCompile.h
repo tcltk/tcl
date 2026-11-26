@@ -861,6 +861,15 @@ enum TclInstruction {
      * path of the names list receives the element at the same path */
     INST_TUPLE_ASSIGN,
 
+    /* v16m, piste B: an annotation expires after the command that receives
+     * the word. annotMark pushes the mark, annotExpire expires what was
+     * annotated since, annotSettle resolves the annotation of a value
+     * argument (foreach, lmap, dict for, dict map compiled inline) */
+    INST_ANNOT_MARK,
+    INST_ANNOT_EXPIRE,
+    INST_ANNOT_SETTLE,
+    INST_ANNOT_CAST,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };

@@ -486,6 +486,7 @@ TclTypesFreeKeys(TclDictKey *keys, Tcl_Size n)
     Tcl_Free(keys);
 }
 
+static void PredProgFree(TclType *tp);
 static void FreeTypeData(TypeData *d);
 
 void
@@ -588,6 +589,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
 	    tp->familyArgs = NULL;
 	    Tcl_DecrRefCount(o);
 	}
+	tp->predInterp = NULL;		/* v17u : plus d'évaluation */
     }
     for (i = 0; i < d->nNs; i++) {	/* v16u : les espaces de noms */
 	TclNsDecrRefCount(d->nss[i].nsPtr);
@@ -626,6 +628,10 @@ FreeTypeData(TypeData *d)
 	if (d->all[i]->familyArgs != NULL) {
 	    Tcl_DecrRefCount(d->all[i]->familyArgs);
 	}
+	if (d->all[i]->pred != NULL) {
+	    Tcl_DecrRefCount(d->all[i]->pred);
+	}
+	PredProgFree(d->all[i]);
 	if (d->all[i]->compact != NULL) {
 	    TclCompactLayoutRelease(d->all[i]->compact);
 	}
@@ -926,6 +932,9 @@ TclTypeAssignable(const TclType *expected, const TclType *got)
 
     if (TclTypeSame(expected, got)) {
 	return 1;
+    }
+    if (expected->pred != NULL) {
+	return 0;	/* v17u : un prédicat se vérifie sur la valeur */
     }
     if (expected->binLink != NULL && expected->binLink->ref == got) {
 	return 1;			/* l'adresse d'un lien de frontière */
@@ -2305,6 +2314,7 @@ typedef struct ValGuard {
 
 static int ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	int variantHint, int *variantOut, const ValGuard *up);
+static int PredCheck(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value);
 
 static int
 VariantAccepts(const TclTypeField *f, Tcl_Obj *v, const ValGuard *up)
@@ -2511,6 +2521,14 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	}
     }
     value = TCL_ANNOT_CONTENT(value);	/* une valeur annotée : son contenu */
+    if (tp->pred != NULL && tp->predBase != NULL) {
+	/* v17u : le type restreint, puis le prédicat */
+	if (ValidateG(interp, tp->predBase, value, variantHint, variantOut,
+		up) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	return PredCheck(interp, tp, value);
+    }
     me.tp = tp;
     me.value = value;
     me.up = up;
@@ -2599,6 +2617,11 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	}
 	if (tp->elem->kind != TCLT_STRING || tp->elem->nominal) {
 	    for (i = 0; i < n; i++) {
+		/* 24/11 : le même objet que le précédent (lrepeat) : déjà
+		 * vérifié, la vérification ne dépend que de la valeur */
+		if (i > 0 && elems[i] == elems[i - 1]) {
+		    continue;
+		}
 		if (ValidateG(interp, tp->elem, elems[i], -1, NULL, &me)
 			!= TCL_OK) {
 		    return TCL_ERROR;
@@ -5718,6 +5741,13 @@ CopyInto(TclType *into, const TclType *res)
     into->binLink = res->binLink;
     into->binTag = res->binTag;
     into->sumMode = res->sumMode;
+    if (res->pred != NULL && into->pred == NULL) {
+	/* v17u : type def pair int(($%2==0)) : le prédicat suit */
+	into->pred = res->pred;
+	Tcl_IncrRefCount(into->pred);
+	into->predBase = res->predBase;
+	into->predInterp = res->predInterp;
+    }
     if (into->family == NULL && res->family != NULL) {
 	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
 	 * paramètres de l'instance (règles de famille de type convert). */
@@ -9795,6 +9825,10 @@ typedef struct MNum {
     };
 } MNum;
 
+/* type map : petits entiers partagés dans un résultat en objets */
+#define MAP_SMALL_LO (-256)
+#define MAP_SMALL_HI 1023
+
 enum {
     MN_CONST, MN_VAR, MN_NEG, MN_POS, MN_NOT, MN_ADD, MN_SUB, MN_MUL, MN_DIV,
     MN_MOD, MN_POW, MN_LT, MN_LE, MN_GT, MN_GE, MN_EQ, MN_NE, MN_AND, MN_OR,
@@ -10574,6 +10608,7 @@ enum {
 typedef struct MDOp {
     int op, arg;
     double k;
+    Tcl_WideInt w;		/* constante du programme entier */
 } MDOp;
 
 typedef struct MDProg {
@@ -10633,6 +10668,7 @@ MDEmit(MDProg *d, int op, int arg, double k, int delta)
     d->ops[d->nops].op = op;
     d->ops[d->nops].arg = arg;
     d->ops[d->nops].k = k;
+    d->ops[d->nops].w = 0;
     d->nops++;
     d->depth += delta;
     if (d->depth > d->maxDepth) {
@@ -10676,6 +10712,102 @@ MDCompile(const MProg *g, int i, MDProg *d)
 		: MD_POW, 0, 0, -1);
 	return;
     }
+}
+
+/*
+ * 24/11 : le programme entier. Sur des entiers 64 bits, + - * et la
+ * négation donnent exactement le résultat d'expr tant qu'ils ne débordent
+ * pas ; un dépassement marque l'élément (expr en fait un grand entier).
+ * Les constantes doivent être entières (un double rendrait le calcul
+ * flottant).
+ */
+static int
+MIType(const MProg *g, int i)
+{
+    const MNode *nd = &g->n[i];
+
+    switch (nd->kind) {
+    case MN_VAR:
+	return 1;
+    case MN_CONST:
+	return !nd->k.isD;
+    case MN_NEG: case MN_POS:
+	return MIType(g, nd->a);
+    case MN_ADD: case MN_SUB: case MN_MUL:
+	return MIType(g, nd->a) && MIType(g, nd->b);
+    default:
+	return 0;
+    }
+}
+
+static void
+MICompile(const MProg *g, int i, MDProg *d)
+{
+    const MNode *nd = &g->n[i];
+
+    switch (nd->kind) {
+    case MN_VAR:
+	MDEmit(d, MD_VAR, nd->slot, 0, 1);
+	return;
+    case MN_CONST:
+	MDEmit(d, MD_CONST, 0, 0, 1);
+	d->ops[d->nops - 1].w = nd->k.w;
+	return;
+    case MN_POS:
+	MICompile(g, nd->a, d);
+	return;
+    case MN_NEG:
+	MICompile(g, nd->a, d);
+	MDEmit(d, MD_NEG, 0, 0, 0);
+	return;
+    default:
+	MICompile(g, nd->a, d);
+	MICompile(g, nd->b, d);
+	MDEmit(d, nd->kind == MN_ADD ? MD_ADD : nd->kind == MN_SUB ? MD_SUB
+		: MD_MUL, 0, 0, -1);
+	return;
+    }
+}
+
+/* une opération entière ; 0 si elle déborde */
+static inline int
+MIOp(int op, Tcl_WideInt x, Tcl_WideInt y, Tcl_WideInt *r)
+{
+#if defined(__GNUC__)
+    switch (op) {
+    case MD_ADD: return !__builtin_add_overflow(x, y, r);
+    case MD_SUB: return !__builtin_sub_overflow(x, y, r);
+    default: return !__builtin_mul_overflow(x, y, r);
+    }
+#else
+    switch (op) {
+    case MD_ADD:
+	if ((y > 0 && x > WIDE_MAX - y) || (y < 0 && x < WIDE_MIN - y)) {
+	    return 0;
+	}
+	*r = x + y;
+	return 1;
+    case MD_SUB:
+	if ((y < 0 && x > WIDE_MAX + y) || (y > 0 && x < WIDE_MIN + y)) {
+	    return 0;
+	}
+	*r = x - y;
+	return 1;
+    default:
+	if (x != 0 && y != 0) {
+	    Tcl_WideInt q = x * y;	/* (contrôlé par la division) */
+
+	    if ((x == -1 && y == WIDE_MIN) || (y == -1 && x == WIDE_MIN)
+		    || q / y != x) {
+		return 0;
+	    }
+	    *r = q;
+	    return 1;
+	}
+	*r = 0;
+	return 1;
+    }
+#endif
 }
 
 /* 1 et *out ; 0 : l'élément passe par le chemin général (comme MEval) */
@@ -10775,6 +10907,57 @@ MDRun(const MDProg *d, const MNum *vars, double *out)
 #else
 #   define MD_VECTORIZE
 #endif
+
+/* La somme de n cases d'entiers (8, 16, 32 bits), sur 64 bits. */
+static Tcl_WideInt MD_VECTORIZE
+MapCellSum(const unsigned char *p, size_t stride, int isU, int size,
+	Tcl_Size n)
+{
+    Tcl_WideInt s = 0;
+    Tcl_Size i;
+
+    if (size == 1 && stride == 1) {
+	if (isU) {
+	    const uint8_t *q = p;
+	    uint64_t u = 0;
+
+	    for (i = 0; i < n; i++) {
+		u += q[i];
+	    }
+	    return (Tcl_WideInt) u;
+	} else {
+	    const int8_t *q = (const int8_t *) p;
+
+	    for (i = 0; i < n; i++) {
+		s += q[i];
+	    }
+	    return s;
+	}
+    }
+    for (i = 0; i < n; i++, p += stride) {
+	switch (size) {
+	case 1:
+	    s += isU ? (Tcl_WideInt) *(const uint8_t *) p
+		    : (Tcl_WideInt) *(const int8_t *) p;
+	    break;
+	case 2: {
+	    uint16_t u;
+
+	    memcpy(&u, p, 2);
+	    s += isU ? (Tcl_WideInt) u : (Tcl_WideInt) (int16_t) u;
+	    break;
+	}
+	default: {
+	    uint32_t u;
+
+	    memcpy(&u, p, 4);
+	    s += isU ? (Tcl_WideInt) u : (Tcl_WideInt) (int32_t) u;
+	    break;
+	}
+	}
+    }
+    return s;
+}
 
 typedef struct MDEnt {
     const double *p;		/* NULL : la constante k */
@@ -10974,6 +11157,93 @@ MDRunBlock(const MDProg *d, double *const *cols, const MNum *vals, int nb,
     }
 }
 
+/* le programme entier sur un bloc ; bad : déjà marqué (entrées), marqué
+ * en plus pour un dépassement */
+typedef struct MIEnt {
+    const Tcl_WideInt *p;		/* NULL : la constante k */
+    Tcl_WideInt k;
+} MIEnt;
+
+static void
+MIRunBlock(const MDProg *d, Tcl_WideInt *const *cols, const MNum *vals,
+	int nb, Tcl_WideInt *scratch, unsigned char *bad, Tcl_WideInt *out)
+{
+    MIEnt st[32];
+    int sp = 0, k, e;
+
+    for (k = 0; k < d->nops; k++) {
+	const MDOp *o = &d->ops[k];
+	MIEnt *x, *y;
+	Tcl_WideInt *dst;
+
+	switch (o->op) {
+	case MD_VAR:
+	    st[sp].p = cols[o->arg];
+	    st[sp++].k = cols[o->arg] ? 0 : vals[o->arg].w;
+	    continue;
+	case MD_CONST:
+	    st[sp].p = NULL;
+	    st[sp++].k = o->w;
+	    continue;
+	case MD_NEG:
+	    x = &st[sp - 1];
+	    if (x->p == NULL) {
+		if (x->k == WIDE_MIN) {
+		    memset(bad, 1, nb);
+		} else {
+		    x->k = -x->k;
+		}
+	    } else {
+		const Tcl_WideInt *p = x->p;
+
+		dst = scratch + (size_t) (sp - 1) * MD_BLK;
+		for (e = 0; e < nb; e++) {
+		    if (p[e] == WIDE_MIN) {
+			bad[e] = 1;
+			dst[e] = 0;
+		    } else {
+			dst[e] = -p[e];
+		    }
+		}
+		x->p = dst;
+	    }
+	    continue;
+	default:
+	    break;
+	}
+	y = &st[--sp];
+	x = &st[sp - 1];
+	dst = scratch + (size_t) (sp - 1) * MD_BLK;
+	if (x->p == NULL && y->p == NULL) {
+	    Tcl_WideInt r;
+
+	    if (!MIOp(o->op, x->k, y->k, &r)) {
+		memset(bad, 1, nb);
+		r = 0;
+	    }
+	    x->k = r;
+	    continue;
+	}
+	for (e = 0; e < nb; e++) {
+	    Tcl_WideInt a = x->p ? x->p[e] : x->k, b = y->p ? y->p[e] : y->k, r;
+
+	    if (!MIOp(o->op, a, b, &r)) {
+		bad[e] = 1;
+		r = 0;
+	    }
+	    dst[e] = r;
+	}
+	x->p = dst;
+    }
+    if (st[0].p == NULL) {
+	for (e = 0; e < nb; e++) {
+	    out[e] = st[0].k;
+	}
+    } else if (st[0].p != out) {
+	memcpy(out, st[0].p, nb * sizeof(Tcl_WideInt));
+    }
+}
+
 static void
 MProgFree(MProg *g)
 {
@@ -11028,6 +11298,306 @@ MNumOf(Tcl_Obj *o, MNum *out)
     return 0;
 }
 
+/*
+ * v17u : les prédicats de type, T((expression)). « $ » seul (suivi d'un
+ * caractère qui ne commence pas un nom) désigne la valeur.
+ *
+ * PredRewrite rend le texte où chaque $ seul est remplacé par repl, hors
+ * des chaînes "..." et des {...} (des littéraux pour expr).
+ */
+static Tcl_Obj *
+PredRewrite(Tcl_Obj *pred, const char *repl, Tcl_Size rlen)
+{
+    Tcl_Size len, i;
+    const char *p = Tcl_GetStringFromObj(pred, &len);
+    Tcl_Obj *r = Tcl_NewObj();
+    int dq = 0, br = 0;
+    Tcl_Size from = 0;
+
+    for (i = 0; i < len; i++) {
+	char c = p[i];
+
+	if (c == '\\') {
+	    i++;
+	    continue;
+	}
+	if (c == '"' && br == 0) {
+	    dq = !dq;
+	} else if (!dq && c == '{') {
+	    br++;
+	} else if (!dq && c == '}' && br > 0) {
+	    br--;
+	} else if (c == '$' && !dq && br == 0) {
+	    char nc = (i + 1 < len) ? p[i + 1] : ' ';
+
+	    if (!(isalnum(UCHAR(nc)) || nc == '_' || nc == ':' || nc == '{'
+		    || nc == '(')) {
+		Tcl_AppendToObj(r, p + from, i - from);
+		Tcl_AppendToObj(r, repl, rlen);
+		from = i + 1;
+	    }
+	}
+    }
+    Tcl_AppendToObj(r, p + from, len - from);
+    return r;
+}
+
+typedef struct PredNum {
+    MProg g;
+    int root;
+    Tcl_Obj **gnames;		/* __gK : la variable qualifiée lue (::max) */
+    int ng;
+} PredNum;
+
+/* Les $::nom (hors chaînes et accolades) remplacés par $__gK : le
+ * sous-ensemble numérique ne lit que des noms simples. */
+static Tcl_Obj *
+PredGlobals(Tcl_Obj *text, Tcl_Obj ***namesPtr, int *nPtr)
+{
+    Tcl_Size len, i, from = 0;
+    const char *p = Tcl_GetStringFromObj(text, &len);
+    Tcl_Obj *r = Tcl_NewObj();
+    int dq = 0, br = 0;
+
+    *namesPtr = NULL;
+    *nPtr = 0;
+    for (i = 0; i < len; i++) {
+	char c = p[i];
+
+	if (c == '\\') {
+	    i++;
+	    continue;
+	}
+	if (c == '"' && br == 0) {
+	    dq = !dq;
+	} else if (!dq && c == '{') {
+	    br++;
+	} else if (!dq && c == '}' && br > 0) {
+	    br--;
+	} else if (c == '$' && !dq && br == 0 && i + 2 < len
+		&& p[i + 1] == ':' && p[i + 2] == ':') {
+	    Tcl_Size j = i + 1;
+	    char buf[32];
+
+	    while (j < len && (isalnum(UCHAR(p[j])) || p[j] == '_'
+		    || p[j] == ':')) {
+		j++;
+	    }
+	    *namesPtr = (Tcl_Obj **) Tcl_Realloc(*namesPtr,
+		    (*nPtr + 1) * sizeof(Tcl_Obj *));
+	    (*namesPtr)[*nPtr] = Tcl_NewStringObj(p + i + 1, j - i - 1);
+	    Tcl_IncrRefCount((*namesPtr)[*nPtr]);
+	    snprintf(buf, sizeof(buf), "$__g%d", *nPtr);
+	    (*nPtr)++;
+	    Tcl_AppendToObj(r, p + from, i - from);
+	    Tcl_AppendToObj(r, buf, -1);
+	    from = j;
+	    i = j - 1;
+	}
+    }
+    Tcl_AppendToObj(r, p + from, len - from);
+    return r;
+}
+
+static void
+PredProgFree(TclType *tp)
+{
+    if (tp->predProg != NULL && tp->predProg != (void *) 1) {
+	PredNum *pn = (PredNum *) tp->predProg;
+	int k;
+
+	MProgFree(&pn->g);
+	for (k = 0; k < pn->ng; k++) {
+	    Tcl_DecrRefCount(pn->gnames[k]);
+	}
+	if (pn->gnames != NULL) {
+	    Tcl_Free(pn->gnames);
+	}
+	Tcl_Free(pn);
+    }
+    tp->predProg = NULL;
+}
+
+/* La forme numérique (le sous-ensemble de type map), ou NULL. */
+static PredNum *
+PredNumOf(const TclType *tp)
+{
+    TclType *mt = (TclType *) tp;
+
+    if (mt->predProg == NULL) {
+	Tcl_Obj *t0 = PredRewrite(tp->pred, "$__v", 4), *t;
+	PredNum *pn = (PredNum *) Tcl_Alloc(sizeof(PredNum));
+	int k, bad = 0;
+
+	memset(pn, 0, sizeof(*pn));
+	Tcl_IncrRefCount(t0);
+	t = PredGlobals(t0, &pn->gnames, &pn->ng);
+	Tcl_DecrRefCount(t0);
+	Tcl_IncrRefCount(t);
+	pn->g.p = Tcl_GetString(t);
+	pn->root = MExpr(&pn->g);
+	MSkip(&pn->g);
+	for (k = 0; k < pn->g.nnames; k++) {
+	    const char *nm = Tcl_GetString(pn->g.names[k]);
+
+	    if (strcmp(nm, "__v") != 0 && strncmp(nm, "__g", 3) != 0) {
+		bad = 1;
+	    }
+	}
+	if (bad || pn->g.bad || pn->root < 0 || *pn->g.p != '\0'
+		|| pn->g.nnames > 8) {
+	    MProgFree(&pn->g);
+	    for (k = 0; k < pn->ng; k++) {
+		Tcl_DecrRefCount(pn->gnames[k]);
+	    }
+	    if (pn->gnames != NULL) {
+		Tcl_Free(pn->gnames);
+	    }
+	    Tcl_Free(pn);
+	    mt->predProg = (void *) 1;
+	} else {
+	    pn->g.p = NULL;
+	    mt->predProg = pn;
+	}
+	Tcl_DecrRefCount(t);
+    }
+    return (mt->predProg == (void *) 1) ? NULL : (PredNum *) mt->predProg;
+}
+
+/* Les valeurs des variables de la forme numérique : la valeur, et les
+ * variables qualifiées lues à l'instant ; 0 si l'une n'est pas un nombre. */
+static int
+PredVars(Tcl_Interp *pi, const PredNum *pn, Tcl_Obj *value, MNum *vars)
+{
+    int k;
+
+    for (k = 0; k < pn->g.nnames; k++) {
+	const char *nm = Tcl_GetString(pn->g.names[k]);
+	Tcl_Obj *v;
+
+	if (nm[2] == 'v') {
+	    v = value;
+	} else {
+	    int gi = atoi(nm + 3);
+
+	    if (gi < 0 || gi >= pn->ng) {
+		return 0;
+	    }
+	    v = Tcl_ObjGetVar2(pi, pn->gnames[gi], NULL, 0);
+	}
+	if (v == NULL || !MNumOf(v, &vars[k])) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/* La valeur, en littéral d'expr : "..." où chaque caractère spécial est
+ * précédé d'une barre oblique inverse. */
+static void
+PredQuote(Tcl_DString *ds, Tcl_Obj *value)
+{
+    Tcl_Size len, i;
+    const char *v = Tcl_GetStringFromObj(value, &len);
+
+    Tcl_DStringAppend(ds, "\"", 1);
+    for (i = 0; i < len; i++) {
+	switch (v[i]) {
+	case '\\': case '"': case '$': case '[': case ']': case '{': case '}':
+	    Tcl_DStringAppend(ds, "\\", 1);
+	    Tcl_DStringAppend(ds, v + i, 1);
+	    break;
+	case '\n':
+	    Tcl_DStringAppend(ds, "\\n", 2);
+	    break;
+	default:
+	    Tcl_DStringAppend(ds, v + i, 1);
+	}
+    }
+    Tcl_DStringAppend(ds, "\"", 1);
+}
+
+/*
+ * Vérifie le prédicat de tp sur value (son contenu). Évalué dans
+ * l'interpréteur du type, son résultat et son état d'erreur gardés ; une
+ * erreur de l'expression vaut refus (le message la cite).
+ */
+static Tcl_ThreadDataKey predTrustKey;
+
+/* v17u : une valeur qui a déjà le visa (déjà de ce type) n'est pas
+ * revérifiée pendant qu'on la recopie : TclTypePredTrust(+1) ... (-1). */
+void
+TclTypePredTrust(int delta)
+{
+    int *tr = (int *) Tcl_GetThreadData(&predTrustKey, sizeof(int));
+
+    *tr += delta;
+}
+
+static int
+PredCheck(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value)
+{
+    Tcl_Interp *pi = tp->predInterp;
+    PredNum *pn;
+    MNum vars[8], out;
+    int ok = 0, rc;
+    Tcl_Obj *why = NULL;
+
+    if (pi == NULL || (tp->owner != NULL && tp->owner->dead)) {
+	return TCL_OK;			/* l'interpréteur n'est plus */
+    }
+    if (*(int *) Tcl_GetThreadData(&predTrustKey, sizeof(int)) > 0) {
+	return TCL_OK;			/* le visa : déjà de ce type */
+    }
+    value = TCL_ANNOT_CONTENT(value);
+    if ((pn = PredNumOf(tp)) != NULL && PredVars(pi, pn, value, vars)
+	    && MEval(&pn->g, pn->root, vars, &out)
+	    && !(out.isD && isnan(out.d))) {
+	ok = out.isD ? (out.d != 0.0) : (out.w != 0);
+    } else {
+	/* la valeur en littéral, à la place de $ */
+	Tcl_DString lit;
+	Tcl_Obj *t;
+	Tcl_InterpState st;
+	int b = 0;
+
+	Tcl_DStringInit(&lit);
+	PredQuote(&lit, value);
+	t = PredRewrite(tp->pred, Tcl_DStringValue(&lit),
+		Tcl_DStringLength(&lit));
+	Tcl_DStringFree(&lit);
+	Tcl_IncrRefCount(t);
+	st = Tcl_SaveInterpState(pi, TCL_OK);
+	rc = Tcl_ExprBooleanObj(pi, t, &b);
+	if (rc != TCL_OK) {
+	    why = Tcl_DuplicateObj(Tcl_GetObjResult(pi));
+	    Tcl_IncrRefCount(why);
+	}
+	Tcl_RestoreInterpState(pi, st);
+	Tcl_DecrRefCount(t);
+	ok = (rc == TCL_OK && b);
+    }
+    if (ok) {
+	return TCL_OK;
+    }
+    if (interp != NULL) {
+	if (why != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" is not of type %s: "
+		    "its predicate %s fails: %s", Tcl_GetString(value),
+		    tp->name, Tcl_GetString(tp->pred), Tcl_GetString(why)));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" is not of type %s: "
+		    "%s is false", Tcl_GetString(value), tp->name,
+		    Tcl_GetString(tp->pred)));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PRED", (char *) NULL);
+    }
+    if (why != NULL) {
+	Tcl_DecrRefCount(why);
+    }
+    return TCL_ERROR;
+}
+
 static Tcl_Obj *
 MListContent(Tcl_Obj *o)
 {
@@ -11039,10 +11609,16 @@ MListContent(Tcl_Obj *o)
     return o;
 }
 
+/* 24/11 : -fold {s init} : le corps donne la nouvelle valeur de s */
+typedef struct MapFold {
+    Tcl_Obj *name;
+    Tcl_Obj *init;
+} MapFold;
+
 static int TypeMapCore(Tcl_Interp *interp, Tcl_Size objc,
-	Tcl_Obj *const objv[]);
+	Tcl_Obj *const objv[], const MapFold *fold);
 static int TypeMapList(Tcl_Interp *interp, Tcl_Size objc,
-	Tcl_Obj *const objv[]);
+	Tcl_Obj *const objv[], const MapFold *fold);
 
 /*
  * {x y z} $P(*.(a,b,c)) : à une liste de K variables répond une liste de K
@@ -11207,6 +11783,25 @@ TypeMapSum(Tcl_Interp *interp, Tcl_Obj *list)
 	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
 	    return TCL_OK;
 	}
+    } else if (TclCompactScalarInfo(c, &cn, &data, &stride, &ckind, &csize)
+	    && ckind == 0 && csize == 8 && cn > 0) {
+	/* 24/11 : des entiers en cases, sans un objet par élément ; un
+	 * dépassement : le cas général (un grand entier) */
+	Tcl_WideInt w = 0, e;
+	int ok = 1;
+
+	for (i = 0; i < cn && ok; i++) {
+	    memcpy(&e, data + (size_t) i * stride, 8);
+	    if (i == 0) {
+		w = e;
+	    } else {
+		ok = MIOp(MD_ADD, w, e, &w);
+	    }
+	}
+	if (ok) {
+	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w));
+	    return TCL_OK;
+	}
     } else if (Tcl_ListObjGetElements(NULL, c, &n, &ev) == TCL_OK) {
 	int ok = 1;
 
@@ -11292,6 +11887,20 @@ TypeMapMinMax(Tcl_Interp *interp, Tcl_Obj *list, int isMax)
 	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
 	    return TCL_OK;
 	}
+    } else if (TclCompactScalarInfo(c, &cn, &data, &stride, &ckind, &csize)
+	    && ckind == 0 && csize == 8 && cn > 0) {
+	/* des entiers de 64 bits en cases */
+	Tcl_WideInt w, e;
+
+	memcpy(&w, data, 8);
+	for (i = 1; i < cn; i++) {
+	    memcpy(&e, data + (size_t) i * stride, 8);
+	    if (isMax ? e > w : e < w) {
+		w = e;
+	    }
+	}
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(w));
+	return TCL_OK;
     } else if (Tcl_ListObjGetElements(NULL, c, &n, &ev) == TCL_OK && n > 0) {
 	int ok = MNumOf(ev[0], &best);
 
@@ -11339,8 +11948,915 @@ TypeMapMinMax(Tcl_Interp *interp, Tcl_Obj *list, int isMax)
     }
 }
 
+/*
+ * 24/11 : type map typé.
+ *
+ *   type map ?-sum|-min|-max? {{double}x; {double}y} $cols ... {T}{(e1, e2)}
+ *
+ * Une signature d'entrée en produit : ses champs sont les variables, et
+ * chaque colonne est vérifiée (ou convertie) une fois à l'entrée, comme un
+ * argument de procédure. Un corps annoté donne le type de ce qu'il rend à
+ * chaque élément : un scalaire (une colonne), un produit écrit en ligne
+ * (une colonne par champ, le tuple du corps les remplit dans l'ordre), ou
+ * un produit nommé (une liste de ces produits). Un corps vide annoté
+ * projette par les noms. Sans annotation nulle part : type map comme avant.
+ */
+
+/* une signature typée ? (une annotation ou un ;) */
+static int
+MapSpecTyped(Tcl_Obj *spec)
+{
+    Tcl_Size len;
+    const char *s = Tcl_GetStringFromObj(spec, &len);
+
+    const char *e;
+    int depth = 0;
+
+    while (len > 0 && isspace(UCHAR(*s))) {
+	s++;
+	len--;
+    }
+    if (len == 0) {
+	return 0;
+    }
+    if (memchr(s, ';', len) != NULL) {
+	return 1;
+    }
+    if (*s != '{') {
+	return 0;
+    }
+    /* {T}nom : l'accolade fermante collée à un nom ; {x} {y}, une liste de
+     * noms, reste une liste de noms */
+    for (e = s; e < s + len; e++) {
+	if (*e == '{') {
+	    depth++;
+	} else if (*e == '}' && --depth == 0) {
+	    break;
+	}
+    }
+    return e + 1 < s + len && !isspace(UCHAR(e[1]));
+}
+
+/* le corps annoté : son type (résolu) et son texte ; 0 si pas annoté */
+static int
+MapBodyType(Tcl_Interp *interp, Tcl_Obj *body, TclType **tpPtr,
+	Tcl_Obj **contentPtr, int *inlinePtr, int *errPtr)
+{
+    Tcl_Obj *content = NULL, *raw = NULL;
+    TclType *tp = NULL;
+    int st = TclAnnotInfo(body, &content, &tp, NULL, &raw);
+    const char *name;
+
+    *errPtr = 0;
+    if (st == 0) {
+	return 0;
+    }
+    if (st == 2) {
+	if (raw == NULL) {
+	    return 0;
+	}
+	name = Tcl_GetString(raw);
+	tp = TclTypeParse(interp, name, (Tcl_Size) strlen(name));
+	if (tp == NULL) {
+	    *errPtr = 1;
+	    return 1;
+	}
+    } else {
+	name = tp->name;
+    }
+    while (isspace(UCHAR(*name))) {
+	name++;
+    }
+    *tpPtr = tp;
+    *contentPtr = content;
+    *inlinePtr = (tp->kind == TCLT_PRODUCT
+	    && (*name == '{' || strchr(name, ';') != NULL));
+    return 1;
+}
+
+/* (e1, e2, ...) au premier niveau : les composantes, chacune entre
+ * parenthèses ; NULL si le corps n'a pas cette forme */
+static Tcl_Obj *
+MapTupleSplit(const char *s, Tcl_Size len)
+{
+    const char *e = s + len, *p, *start;
+    int depth = 0, quote = 0;
+    Tcl_Obj *parts;
+
+    while (s < e && isspace(UCHAR(*s))) {
+	s++;
+    }
+    while (e > s && isspace(UCHAR(e[-1]))) {
+	e--;
+    }
+    if (e - s < 2 || *s != '(' || e[-1] != ')') {
+	return NULL;
+    }
+    /* la parenthèse ouvrante doit fermer à la fin */
+    for (p = s; p < e; p++) {
+	if (quote) {
+	    if (*p == '\\' && p + 1 < e) {
+		p++;
+	    } else if (*p == '"') {
+		quote = 0;
+	    }
+	    continue;
+	}
+	if (*p == '\\' && p + 1 < e) {
+	    p++;
+	} else if (*p == '"') {
+	    quote = 1;
+	} else if (*p == '(' || *p == '[' || *p == '{') {
+	    depth++;
+	} else if (*p == ')' || *p == ']' || *p == '}') {
+	    if (--depth == 0 && p != e - 1) {
+		return NULL;
+	    }
+	}
+    }
+    if (depth != 0 || quote) {
+	return NULL;
+    }
+    parts = Tcl_NewListObj(0, NULL);
+    depth = 0;
+    start = s + 1;
+    for (p = s + 1; p < e - 1; p++) {
+	if (quote) {
+	    if (*p == '\\' && p + 1 < e) {
+		p++;
+	    } else if (*p == '"') {
+		quote = 0;
+	    }
+	    continue;
+	}
+	if (*p == '\\' && p + 1 < e) {
+	    p++;
+	} else if (*p == '"') {
+	    quote = 1;
+	} else if (*p == '(' || *p == '[' || *p == '{') {
+	    depth++;
+	} else if (*p == ')' || *p == ']' || *p == '}') {
+	    depth--;
+	} else if (*p == ',' && depth == 0) {
+	    Tcl_ListObjAppendElement(NULL, parts,
+		    Tcl_ObjPrintf("(%.*s)", (int) (p - start), start));
+	    start = p + 1;
+	}
+    }
+    Tcl_ListObjAppendElement(NULL, parts,
+	    Tcl_ObjPrintf("(%.*s)", (int) (e - 1 - start), start));
+    return parts;
+}
+
+/* une colonne rangée dans list.T : telle quelle si elle y est déjà */
+static Tcl_Obj *
+MapColumnAs(Tcl_Interp *interp, TclType *et, Tcl_Obj *col, const char *what)
+{
+    TclType *lt = TclTypeListOf(interp, et), *at = NULL;
+    Tcl_Obj *c, *res;
+
+    if (lt == NULL) {
+	return NULL;
+    }
+    if (TclAnnotInfo(col, NULL, &at, NULL, NULL) == 1 && at != NULL
+	    && (at == lt || TclTypeEnters(lt, at))) {
+	return col;
+    }
+    c = TclTypedConform(interp, lt, col);
+    if (c == NULL) {
+	Tcl_Obj *m = Tcl_ObjPrintf("type map: %s: %s", what,
+		Tcl_GetString(Tcl_GetObjResult(interp)));
+
+	Tcl_SetObjResult(interp, m);
+	return NULL;
+    }
+    Tcl_IncrRefCount(c);
+    res = TclNewAnnotated(interp, lt, -1, c);
+    Tcl_DecrRefCount(c);
+    return res;
+}
+
+static int MapTupleFast(Tcl_Interp *interp, Tcl_Size ac,
+	Tcl_Obj *const av[], Tcl_Obj *const parts[], Tcl_Size K,
+	Tcl_Obj **outCols, Tcl_Obj *sinkName, const char *sinkPath);
+static int TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
+
+static int
+TypeMapTyped(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	int optc)
+{
+    Tcl_Obj **av = NULL, *names = NULL, *keep = NULL, *body = objv[objc - 1];
+    Tcl_Obj *content = NULL, *parts = NULL, *res = NULL, *cols = NULL;
+    TclType *outT = NULL;
+    Tcl_Size k, j, nf, K = 1, ac;
+    int inl = 0, err = 0, annotated, rc = TCL_ERROR;
+
+    annotated = MapBodyType(interp, body, &outT, &content, &inl, &err);
+    if (err) {
+	return TCL_ERROR;
+    }
+    keep = Tcl_NewListObj(0, NULL);	/* les objets faits ici */
+    Tcl_IncrRefCount(keep);
+    names = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(names);
+    av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) (objc + 1));
+    av[0] = objv[0];
+    av[1] = objv[1];
+    ac = 2;
+    for (k = 0; k < optc; k++) {
+	av[ac++] = objv[2 + k];
+    }
+    /* les entrées */
+    for (k = 2 + optc; k < objc - 1; k += 2) {
+	Tcl_Obj *spec = objv[k], *data = objv[k + 1];
+
+	if (!MapSpecTyped(spec)) {
+	    Tcl_Obj **vv;
+	    Tcl_Size nv;
+
+	    if (Tcl_ListObjGetElements(interp, spec, &nv, &vv) != TCL_OK) {
+		goto done;
+	    }
+	    for (j = 0; j < nv; j++) {
+		Tcl_ListObjAppendElement(NULL, names, vv[j]);
+	    }
+	    av[ac++] = spec;
+	    av[ac++] = data;
+	} else {
+	    const char *st = Tcl_GetString(spec);
+	    TclType *pt = TclTypeParse(interp, st, (Tcl_Size) strlen(st));
+	    Tcl_Obj *vl, *dl, **cv = NULL;
+	    Tcl_Size nc = 1;
+
+	    if (pt == NULL) {
+		goto done;
+	    }
+	    if (pt->kind != TCLT_PRODUCT || pt->nfields < 1) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: \"%s\" "
+			"is not a list of typed variables ({T}a; {T}b ...)",
+			st));
+		goto done;
+	    }
+	    nf = pt->nfields;
+	    if (nf > 1) {
+		if (Tcl_ListObjGetElements(interp, MListContent(data), &nc,
+			&cv) != TCL_OK) {
+		    goto done;
+		}
+		if (nc != nf) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: {%s} "
+			    "needs a list of %" TCL_SIZE_MODIFIER "d columns, "
+			    "not %" TCL_SIZE_MODIFIER "d", st, nf, nc));
+		    goto done;
+		}
+	    }
+	    vl = Tcl_NewListObj(0, NULL);
+	    dl = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, keep, vl);
+	    Tcl_ListObjAppendElement(NULL, keep, dl);
+	    for (j = 0; j < nf; j++) {
+		Tcl_Obj *fname = pt->fields[j].name, *c;
+		char what[200];
+
+		if (fname == NULL) {
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: "
+			    "every variable of {%s} needs a name", st));
+		    goto done;
+		}
+		snprintf(what, sizeof(what), "column \"%s\"",
+			Tcl_GetString(fname));
+		c = MapColumnAs(interp, pt->fields[j].type,
+			(nf > 1) ? cv[j] : data, what);
+		if (c == NULL) {
+		    goto done;
+		}
+		Tcl_ListObjAppendElement(NULL, vl, fname);
+		Tcl_ListObjAppendElement(NULL, dl, c);
+		Tcl_ListObjAppendElement(NULL, names, fname);
+	    }
+	    av[ac++] = vl;
+	    if (nf == 1) {
+		Tcl_Obj *one;
+
+		Tcl_ListObjIndex(NULL, dl, 0, &one);
+		av[ac++] = one;
+	    } else {
+		av[ac++] = dl;
+	    }
+	}
+    }
+    /* le corps */
+    if (!annotated) {
+	av[ac++] = body;
+	rc = TypeMapPlain(interp, ac, av);
+	goto done;
+    }
+    if (outT->kind == TCLT_PRODUCT) {
+	K = outT->nfields;
+    }
+    if (Tcl_GetCharLength(content) == 0) {
+	/* la projection : les champs de la sortie, par leurs noms */
+	Tcl_Obj *b = Tcl_NewStringObj("(", 1);
+
+	Tcl_ListObjAppendElement(NULL, keep, b);
+	if (outT->kind != TCLT_PRODUCT) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("type map: an empty "
+		    "body projects onto a product: {{T}a; {T}b}{}", -1));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    Tcl_Obj *fn = outT->fields[j].name, **nv;
+	    Tcl_Size nn, q;
+	    int found = 0;
+
+	    Tcl_ListObjGetElements(NULL, names, &nn, &nv);
+	    for (q = 0; fn != NULL && q < nn; q++) {
+		found |= (strcmp(Tcl_GetString(nv[q]), Tcl_GetString(fn)) == 0);
+	    }
+	    if (!found) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: projection: "
+			"no input variable \"%s\"",
+			fn ? Tcl_GetString(fn) : "?"));
+		goto done;
+	    }
+	    Tcl_AppendPrintfToObj(b, "%s$%s", j ? ", " : "", Tcl_GetString(fn));
+	}
+	Tcl_AppendToObj(b, ")", 1);
+	content = b;
+    }
+    if (K == 1 && !(outT->kind == TCLT_PRODUCT)) {
+	/* un scalaire : une colonne de T (ou, avec -sum..., un T) */
+	Tcl_Obj *r;
+
+	av[ac++] = content;
+	if (TypeMapPlain(interp, ac, av) != TCL_OK) {
+	    goto done;
+	}
+	r = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(r);
+	Tcl_ResetResult(interp);
+	if (optc) {
+	    Tcl_Obj *c = TclTypedConform(interp, outT, r);
+
+	    if (c == NULL) {
+		Tcl_DecrRefCount(r);
+		goto done;
+	    }
+	    Tcl_IncrRefCount(c);
+	    res = TclNewAnnotated(interp, outT, -1, c);
+	    Tcl_DecrRefCount(c);
+	} else {
+	    res = MapColumnAs(interp, outT, r, "result");
+	}
+	if (res == NULL) {
+	    Tcl_DecrRefCount(r);
+	    goto done;
+	}
+	Tcl_IncrRefCount(res);		/* (peut être r lui-même) */
+	Tcl_DecrRefCount(r);
+	Tcl_SetObjResult(interp, res);
+	Tcl_DecrRefCount(res);
+	res = NULL;
+	rc = TCL_OK;
+	goto done;
+    }
+    /* un produit : K colonnes */
+    if (optc) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: %s needs a "
+		"scalar result, not a product", Tcl_GetString(objv[2])));
+	goto done;
+    }
+    cols = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(cols);
+    parts = MapTupleSplit(Tcl_GetString(content), Tcl_GetCharLength(content)
+	    ? (Tcl_Size) strlen(Tcl_GetString(content)) : 0);
+    if (parts != NULL) {
+	Tcl_Obj **pv;
+	Tcl_Size np;
+
+	Tcl_IncrRefCount(parts);
+	Tcl_ListObjGetElements(NULL, parts, &np, &pv);
+	Tcl_Obj *fo[64];
+
+	if (np == K && K <= 64
+		&& MapTupleFast(interp, ac, av, pv, K, fo, NULL, NULL)) {
+	    /* v17x : les K composantes en une passe */
+	    for (j = 0; j < K; j++) {
+		Tcl_ListObjAppendElement(NULL, cols, fo[j]);
+		Tcl_DecrRefCount(fo[j]);
+	    }
+	} else if (np == K) {
+	    /* une composante à la fois, chacune compilée (et par blocs) */
+	    for (j = 0; j < K; j++) {
+		av[ac] = pv[j];
+		if (TypeMapPlain(interp, ac + 1, av) != TCL_OK) {
+		    break;
+		}
+		Tcl_ListObjAppendElement(NULL, cols, Tcl_GetObjResult(interp));
+		Tcl_ResetResult(interp);
+	    }
+	    if (j < K) {
+		/* l'erreur telle que l'élément par élément la donne */
+		Tcl_ResetResult(interp);
+		Tcl_SetListObj(cols, 0, NULL);
+	    }
+	}
+    }
+    {
+	Tcl_Size nc;
+
+	Tcl_ListObjLength(NULL, cols, &nc);
+	if (nc != K) {
+	    /* le corps entier, élément par élément, puis les colonnes */
+	    Tcl_Obj *r, **rv;
+	    Tcl_Size nr, i;
+
+	    av[ac] = content;
+	    if (TypeMapPlain(interp, ac + 1, av) != TCL_OK) {
+		goto done;
+	    }
+	    r = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(r);
+	    Tcl_ResetResult(interp);
+	    if (Tcl_ListObjGetElements(interp, r, &nr, &rv) != TCL_OK) {
+		Tcl_DecrRefCount(r);
+		goto done;
+	    }
+	    for (j = 0; j < K; j++) {
+		Tcl_ListObjAppendElement(NULL, cols, Tcl_NewListObj(0, NULL));
+	    }
+	    for (i = 0; i < nr; i++) {
+		Tcl_Obj **tv, *cj;
+		Tcl_Size nt;
+
+		if (Tcl_ListObjGetElements(interp, rv[i], &nt, &tv) != TCL_OK
+			|| nt != K) {
+		    if (nt != K) {
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: the "
+				"body gives %" TCL_SIZE_MODIFIER "d values for "
+				"element %" TCL_SIZE_MODIFIER "d, %s needs %"
+				TCL_SIZE_MODIFIER "d", nt, i, outT->name, K));
+		    }
+		    Tcl_DecrRefCount(r);
+		    goto done;
+		}
+		for (j = 0; j < K; j++) {
+		    Tcl_ListObjIndex(NULL, cols, j, &cj);
+		    if (Tcl_IsShared(cj)) {
+			cj = Tcl_DuplicateObj(cj);
+			Tcl_ListObjReplace(NULL, cols, j, 1, 1, &cj);
+		    }
+		    Tcl_ListObjAppendElement(NULL, cj, tv[j]);
+		}
+	    }
+	    Tcl_DecrRefCount(r);
+	}
+    }
+    /* chaque colonne dans le type de son champ */
+    {
+	Tcl_Obj **cv, *out = Tcl_NewListObj(0, NULL);
+
+	Tcl_IncrRefCount(out);
+	Tcl_ListObjGetElements(NULL, cols, &nf, &cv);
+	for (j = 0; j < K; j++) {
+	    char what[200];
+	    Tcl_Obj *c;
+
+	    snprintf(what, sizeof(what), "result \"%s\"",
+		    outT->fields[j].name ? Tcl_GetString(outT->fields[j].name)
+		    : "?");
+	    c = MapColumnAs(interp, outT->fields[j].type, cv[j], what);
+	    if (c == NULL) {
+		Tcl_DecrRefCount(out);
+		goto done;
+	    }
+	    Tcl_ListObjAppendElement(NULL, out, c);
+	}
+	if (inl) {
+	    res = out;		/* une colonne par champ */
+	} else {
+	    /* un produit nommé : la liste de ses valeurs */
+	    Tcl_Obj **ov, *rows = Tcl_NewListObj(0, NULL), *c;
+	    Tcl_Size n = 0, i;
+	    TclType *lt = TclTypeListOf(interp, outT);
+
+	    Tcl_IncrRefCount(rows);
+	    Tcl_ListObjGetElements(NULL, out, &nf, &ov);
+	    Tcl_ListObjLength(NULL, ov[0], &n);
+	    for (i = 0; i < n; i++) {
+		Tcl_Obj *row = Tcl_NewListObj(0, NULL), *e;
+
+		for (j = 0; j < K; j++) {
+		    Tcl_ListObjIndex(NULL, ov[j], i, &e);
+		    Tcl_ListObjAppendElement(NULL, row, e);
+		}
+		Tcl_ListObjAppendElement(NULL, rows, row);
+	    }
+	    Tcl_DecrRefCount(out);
+	    c = (lt != NULL) ? TclTypedConform(interp, lt, rows) : NULL;
+	    Tcl_DecrRefCount(rows);
+	    if (c == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(c);
+	    res = TclNewAnnotated(interp, lt, -1, c);
+	    Tcl_DecrRefCount(c);
+	    if (res == NULL) {
+		goto done;
+	    }
+	    Tcl_IncrRefCount(res);
+	    out = res;
+	}
+	Tcl_SetObjResult(interp, out);
+	Tcl_DecrRefCount(out);
+	res = NULL;
+	rc = TCL_OK;
+    }
+  done:
+    if (parts != NULL) {
+	Tcl_DecrRefCount(parts);
+    }
+    if (cols != NULL) {
+	Tcl_DecrRefCount(cols);
+    }
+    Tcl_DecrRefCount(names);
+    Tcl_DecrRefCount(keep);
+    Tcl_Free(av);
+    return rc;
+}
+
+/*
+ * type map -in VAR(CHEMIN) varList ?varList liste ...? corps (v17w)
+ *
+ * Calcule comme type map, la première varList liée à ce que désigne le
+ * chemin dans la variable, et écrit le résultat au même endroit : une
+ * valeur par colonne du chemin (un tuple pour une fenêtre). Le type de la
+ * sortie est celui de la cible ; une annotation du corps est vérifiée une
+ * fois (elle doit y entrer). Tout ou rien : les colonnes sont calculées,
+ * puis écrites d'un coup par le chemin. Rend la nouvelle valeur.
+ */
+static int TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
+
+static TclType *
+MapInElemType(Tcl_Obj *col)
+{
+    TclType *tp = NULL;
+
+    if (TclAnnotInfo(col, NULL, &tp, NULL, NULL) != 1 || tp == NULL) {
+	return NULL;
+    }
+    while (tp->kind != TCLT_LIST && tp->under != NULL) {
+	tp = tp->under;
+    }
+    return (tp->kind == TCLT_LIST) ? tp->elem : NULL;
+}
+
+/* Des éléments qui ne vérifient rien de plus qu'un nombre : int ou double
+ * (ou un nominal sur eux, sans règle de validation), sans prédicat. */
+static int
+MapInPlainCells(Tcl_Interp *interp, TclType *const *tt, Tcl_Size K)
+{
+    Tcl_Size j;
+
+    for (j = 0; j < K; j++) {
+	TclType *t = tt[j];
+
+	if (t == NULL || (t->kind != TCLT_INT && t->kind != TCLT_DOUBLE)
+		|| t->pred != NULL || t->binLink != NULL || t->bitWidth > 0
+		|| (t->nominal && t->under != NULL
+		    && FindRule(GetData(interp), t->under->name, t->name))) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+static int
+TypeMapIn(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *target, *nameObj = NULL, *pathObj = NULL, *cur = NULL;
+    Tcl_Obj *body, *content = NULL, *cols = NULL, **av = NULL, **cv;
+    Tcl_Obj *parts = NULL, **wv = NULL;
+    TclType *outT = NULL, *tt[64];
+    Tcl_Size K, j, ac, tlen, nc;
+    const char *t, *par;
+    int annotated, inl = 0, err = 0, rc = TCL_ERROR;
+
+    if (objc < 6 || (objc % 2) != 0) {
+	Tcl_WrongNumArgs(interp, 2, objv, "-in varName(path) varList "
+		"?varList list ...? body");
+	return TCL_ERROR;
+    }
+    target = objv[3];
+    body = objv[objc - 1];
+    t = Tcl_GetStringFromObj(target, &tlen);
+    par = (const char *) memchr(t, '(', (size_t) tlen);
+    if (par != NULL && tlen > 0 && t[tlen - 1] == ')' && par > t) {
+	nameObj = Tcl_NewStringObj(t, par - t);
+	pathObj = Tcl_NewStringObj(par + 1, tlen - (par - t) - 2);
+    } else {
+	nameObj = Tcl_NewStringObj(t, tlen);
+    }
+    Tcl_IncrRefCount(nameObj);
+    if (pathObj != NULL) {
+	Tcl_IncrRefCount(pathObj);
+    }
+    cur = Tcl_ObjGetVar2(interp, nameObj, pathObj, TCL_LEAVE_ERR_MSG);
+    if (cur == NULL) {
+	goto done;
+    }
+    Tcl_IncrRefCount(cur);
+
+    /* le nombre de colonnes : les variables de la première varList */
+    if (MapSpecTyped(objv[4])) {
+	const char *st = Tcl_GetString(objv[4]);
+	TclType *pt = TclTypeParse(interp, st, (Tcl_Size) strlen(st));
+
+	if (pt == NULL) {
+	    goto done;
+	}
+	K = (pt->kind == TCLT_PRODUCT) ? pt->nfields : 1;
+    } else if (Tcl_ListObjLength(interp, objv[4], &K) != TCL_OK) {
+	goto done;
+    }
+    if (K < 1 || K > 64) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("type map -in: the first "
+		"varList names the columns of the target (1 to 64)", -1));
+	goto done;
+    }
+    /* le type des éléments de chaque colonne de la cible (NULL : libre) */
+    if (K == 1) {
+	tt[0] = MapInElemType(cur);
+    } else {
+	if (Tcl_ListObjGetElements(interp, MListContent(cur), &nc, &cv)
+		!= TCL_OK) {
+	    goto done;
+	}
+	if (nc != K) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: %s has %"
+		    TCL_SIZE_MODIFIER "d columns, and the first varList "
+		    "names %" TCL_SIZE_MODIFIER "d", t, nc, K));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    tt[j] = MapInElemType(cv[j]);
+	}
+    }
+
+    /* une annotation du corps : vérifiée une fois contre la cible */
+    annotated = MapBodyType(interp, body, &outT, &content, &inl, &err);
+    if (err) {
+	goto done;
+    }
+    if (annotated) {
+	Tcl_Size Kd = (outT->kind == TCLT_PRODUCT) ? outT->nfields : 1;
+
+	if (Kd != K) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: the body "
+		    "gives %s, %s needs %" TCL_SIZE_MODIFIER "d value%s",
+		    outT->name, t, K, K > 1 ? "s" : ""));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    TclType *dj = (outT->kind == TCLT_PRODUCT)
+		    ? outT->fields[j].type : outT;
+
+	    if (tt[j] != NULL && dj != NULL && !TclTypeEnters(tt[j], dj)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: the "
+			"body gives %s, which does not enter %s (column %"
+			TCL_SIZE_MODIFIER "d of %s)", dj->name, tt[j]->name,
+			j, t));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "MISMATCH",
+			(char *) NULL);
+		goto done;
+	    }
+	}
+    }
+
+    /* les colonnes, calculées comme type map */
+    av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) objc);
+    av[0] = objv[0];
+    av[1] = objv[1];
+    av[2] = objv[4];
+    av[3] = cur;
+    ac = 4;
+    for (j = 5; j < objc - 1; j++) {
+	av[ac++] = objv[j];
+    }
+    cols = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(cols);
+    if (pathObj != NULL && TclTypeOpsMode() == TCL_TYPE_OPS_ON
+	    && MapInPlainCells(interp, tt, K)) {
+	/* v17x : des doubles en cases ; calculés et écrits bloc par bloc,
+	 * à leur pas, dans des cases neuves installées à la fin */
+	int direct = 1;
+	Tcl_Obj *txt = annotated ? content : body, *pl = NULL, **pv;
+	Tcl_Size np;
+
+	for (j = 0; j < K; j++) {
+	    direct &= !tt[j]->refine && tt[j]->kind == TCLT_DOUBLE;
+	}
+	if (direct && annotated) {
+	    /* une annotation de doubles seulement (sinon sa conversion) */
+	    for (j = 0; j < K; j++) {
+		TclType *dj = (outT->kind == TCLT_PRODUCT)
+			? outT->fields[j].type : outT;
+
+		direct &= (dj != NULL && dj->kind == TCLT_DOUBLE
+			&& !dj->refine && MapInPlainCells(interp, &dj, 1));
+	    }
+	}
+	if (direct && txt != NULL) {
+	    if (K == 1) {
+		pl = Tcl_NewListObj(1, &txt);
+	    } else {
+		Tcl_Size bl;
+		const char *bt = Tcl_GetStringFromObj(txt, &bl);
+
+		pl = MapTupleSplit(bt, bl);
+	    }
+	}
+	if (pl != NULL) {
+	    Tcl_IncrRefCount(pl);
+	    Tcl_ListObjGetElements(NULL, pl, &np, &pv);
+	    if (np == K && MapTupleFast(interp, ac, av, pv, K, NULL, nameObj,
+		    Tcl_GetString(pathObj))) {
+		Tcl_Obj *nv = Tcl_ObjGetVar2(interp, nameObj, NULL,
+			TCL_LEAVE_ERR_MSG);
+
+		Tcl_DecrRefCount(pl);
+		if (nv != NULL) {
+		    Tcl_SetObjResult(interp, nv);
+		    rc = TCL_OK;
+		}
+		goto done;
+	    }
+	    Tcl_DecrRefCount(pl);
+	}
+    }
+    if (K == 1 || annotated) {
+	av[ac] = body;
+	if (TypeMapCmd(interp, ac + 1, av) != TCL_OK) {
+	    goto done;
+	}
+	if (K == 1) {
+	    Tcl_ListObjAppendElement(NULL, cols, Tcl_GetObjResult(interp));
+	} else {
+	    Tcl_SetListObj(cols, 0, NULL);
+	    if (Tcl_ListObjGetElements(interp, Tcl_GetObjResult(interp), &nc,
+		    &wv) != TCL_OK) {
+		goto done;
+	    }
+	    Tcl_ListObjReplace(NULL, cols, 0, 0, nc, wv);
+	}
+	Tcl_ResetResult(interp);
+    } else {
+	/* un tuple sans annotation : une composante à la fois */
+	Tcl_Obj **pv, *fo[64];
+	Tcl_Size np, bl;
+	const char *bt = Tcl_GetStringFromObj(body, &bl);
+
+	parts = MapTupleSplit(bt, bl);
+	if (parts == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: %s has %"
+		    TCL_SIZE_MODIFIER "d columns: the body must give as many "
+		    "values, ($a, $b ...)", t, K));
+	    goto done;
+	}
+	Tcl_IncrRefCount(parts);
+	Tcl_ListObjGetElements(NULL, parts, &np, &pv);
+	if (np != K) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: the body "
+		    "gives %" TCL_SIZE_MODIFIER "d value%s, %s needs %"
+		    TCL_SIZE_MODIFIER "d", np, np > 1 ? "s" : "", t, K));
+	    goto done;
+	}
+	if (MapTupleFast(interp, ac, av, pv, K, fo, NULL, NULL)) {
+	    /* v17x : les K composantes en une passe */
+	    for (j = 0; j < K; j++) {
+		Tcl_ListObjAppendElement(NULL, cols, fo[j]);
+		Tcl_DecrRefCount(fo[j]);
+	    }
+	} else for (j = 0; j < K; j++) {
+	    av[ac] = pv[j];
+	    if (TypeMapCmd(interp, ac + 1, av) != TCL_OK) {
+		goto done;
+	    }
+	    Tcl_ListObjAppendElement(NULL, cols, Tcl_GetObjResult(interp));
+	    Tcl_ResetResult(interp);
+	}
+    }
+
+    /* l'écriture, d'un coup, par le chemin (ou la variable entière) */
+    {
+	Tcl_Obj **sv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
+		* (size_t) (K + 2)), *setCmd = Tcl_NewStringObj("::set", -1);
+
+	Tcl_Obj *held = Tcl_NewListObj(0, NULL);
+
+	Tcl_IncrRefCount(setCmd);
+	Tcl_IncrRefCount(held);
+	Tcl_ListObjGetElements(NULL, cols, &nc, &cv);
+	sv[0] = setCmd;
+	sv[1] = target;
+	for (j = 0; j < nc; j++) {
+	    /* le contenu nu : c'est la cible qui le range dans son type
+	     * (validation, cases, prédicats), comme une affectation ; des
+	     * nombres sans autre règle : la colonne déjà dans le type des
+	     * éléments (le chemin d'écriture n'a rien à revérifier) */
+	    if (pathObj != NULL && j < K && MapInPlainCells(interp, &tt[j], 1)
+		    && !tt[j]->refine) {
+		Tcl_Obj *cj = MapColumnAs(interp, tt[j], cv[j], "result");
+
+		if (cj == NULL) {
+		    Tcl_DecrRefCount(setCmd);
+		    Tcl_DecrRefCount(held);
+		    Tcl_Free(sv);
+		    goto done;
+		}
+		Tcl_ListObjAppendElement(NULL, held, cj);
+		sv[2 + j] = cj;
+	    } else {
+		sv[2 + j] = TCL_ANNOT_CONTENT(cv[j]);
+	    }
+	}
+	cv = sv + 2;
+	if (pathObj != NULL && MapInPlainCells(interp, tt, K)
+		&& TclTypeOpsMode() == TCL_TYPE_OPS_ON
+		&& TclTypePathWriteCellColumns(interp, nameObj,
+			Tcl_GetString(pathObj), nc, cv)) {
+	    rc = TCL_OK;		/* écrit dans les cases */
+	} else if (pathObj == NULL && nc == 1) {
+	    rc = (Tcl_ObjSetVar2(interp, nameObj, NULL, cv[0],
+		    TCL_LEAVE_ERR_MSG) != NULL) ? TCL_OK : TCL_ERROR;
+	} else {
+	    rc = Tcl_EvalObjv(interp, (int) (nc + 2), sv, 0);
+	}
+	Tcl_DecrRefCount(setCmd);
+	Tcl_Free(sv);
+	Tcl_DecrRefCount(held);
+	if (rc == TCL_OK) {
+	    Tcl_Obj *nv = Tcl_ObjGetVar2(interp, nameObj, NULL,
+		    TCL_LEAVE_ERR_MSG);
+
+	    if (nv == NULL) {
+		rc = TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, nv);
+	    }
+	}
+    }
+
+  done:
+    if (parts != NULL) {
+	Tcl_DecrRefCount(parts);
+    }
+    if (cols != NULL) {
+	Tcl_DecrRefCount(cols);
+    }
+    if (av != NULL) {
+	Tcl_Free(av);
+    }
+    if (cur != NULL) {
+	Tcl_DecrRefCount(cur);
+    }
+    Tcl_DecrRefCount(nameObj);
+    if (pathObj != NULL) {
+	Tcl_DecrRefCount(pathObj);
+    }
+    return rc;
+}
+
 static int
 TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    const char *opt = (objc > 2) ? Tcl_GetString(objv[2]) : "";
+    int optc = (strcmp(opt, "-sum") == 0 || strcmp(opt, "-min") == 0
+	    || strcmp(opt, "-max") == 0) ? 1 : (strcmp(opt, "-fold") == 0
+	    && objc > 3) ? 2 : 0;
+    Tcl_Size k;
+
+    if (strcmp(opt, "-in") == 0) {
+	return TypeMapIn(interp, objc, objv);	/* v17w */
+    }
+    if (objc >= 4 + optc) {
+	int typed = (TclAnnotInfo(objv[objc - 1], NULL, NULL, NULL, NULL)
+		!= 0);
+
+	for (k = 2 + optc; !typed && k < objc - 1; k += 2) {
+	    typed = MapSpecTyped(objv[k]);
+	}
+	if (typed) {
+	    return TypeMapTyped(interp, objc, objv, optc);
+	}
+    }
+    return TypeMapPlain(interp, objc, objv);
+}
+
+static int
+TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
     const char *opt = (objc > 2) ? Tcl_GetString(objv[2]) : "";
 
@@ -11349,11 +12865,45 @@ TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_Obj **av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
 		* (size_t) objc), *r;
 	int rc;
+	MapFold cells;
 
+	if (objc == 6) {
+	    /* -min {v} L {($v)} sur des cases : la liste elle-même, sans la
+	     * recopier (le cas des colonnes d'une boîte englobante) */
+	    Tcl_Obj **vv, *c;
+	    Tcl_Size nv, bl;
+	    const char *b = Tcl_GetStringFromObj(objv[5], &bl), *vn;
+	    const unsigned char *data;
+	    size_t stride;
+	    Tcl_Size cn;
+	    int ckind, csize;
+
+	    while (bl > 0 && isspace(UCHAR(*b))) {
+		b++;
+		bl--;
+	    }
+	    while (bl > 0 && isspace(UCHAR(b[bl - 1]))) {
+		bl--;
+	    }
+	    if (Tcl_ListObjGetElements(NULL, objv[3], &nv, &vv) == TCL_OK
+		    && nv == 1 && bl >= 3 && b[0] == '(' && b[1] == '$'
+		    && b[bl - 1] == ')'
+		    && (Tcl_Size) strlen(vn = Tcl_GetString(vv[0])) == bl - 3
+		    && memcmp(vn, b + 2, bl - 3) == 0
+		    && (c = MListContent(objv[4])) != NULL
+		    && TclCompactScalarInfo(c, &cn, &data, &stride, &ckind,
+			    &csize) && cn > 0) {
+		Tcl_Free(av);
+		return (opt[1] == 's') ? TypeMapSum(interp, objv[4])
+			: TypeMapMinMax(interp, objv[4], opt[2] == 'a');
+	    }
+	}
 	av[0] = objv[0];
 	av[1] = objv[1];
 	memcpy(av + 2, objv + 3, sizeof(Tcl_Obj *) * (size_t) (objc - 3));
-	rc = TypeMapList(interp, objc - 1, av);
+	cells.name = NULL;		/* (pas un cumul : des cases) */
+	cells.init = NULL;
+	rc = TypeMapList(interp, objc - 1, av, &cells);
 	Tcl_Free(av);
 	if (rc != TCL_OK) {
 	    return rc;
@@ -11366,11 +12916,55 @@ TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_DecrRefCount(r);
 	return rc;
     }
-    return TypeMapList(interp, objc, objv);
+    if (strcmp(opt, "-fold") == 0) {
+	/* -fold {s init} : un cumul ; le résultat est la dernière valeur */
+	Tcl_Obj **fv, **av;
+	Tcl_Size nf;
+	MapFold f;
+	int rc;
+
+	if (objc < 4 || Tcl_ListObjGetElements(interp, objv[3], &nf, &fv)
+		!= TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (nf != 2) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("type map: -fold needs "
+		    "{name initialValue}", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "MAP", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	f.name = fv[0];
+	f.init = fv[1];
+	Tcl_IncrRefCount(f.name);
+	Tcl_IncrRefCount(f.init);
+	av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) objc);
+	av[0] = objv[0];
+	av[1] = objv[1];
+	memcpy(av + 2, objv + 4, sizeof(Tcl_Obj *) * (size_t) (objc - 4));
+	rc = TypeMapList(interp, objc - 2, av, &f);
+	Tcl_Free(av);
+	Tcl_DecrRefCount(f.name);
+	Tcl_DecrRefCount(f.init);
+	return rc;
+    }
+    if (objc >= 5 && (objc % 2) == 1) {
+	/* v17x : une colonne de flottants en une passe (le résultat de la
+	 * boucle par blocs quand aucun élément n'y est marqué) */
+	Tcl_Obj *one;
+
+	if (MapTupleFast(interp, objc - 1, objv, &objv[objc - 1], 1, &one,
+		NULL, NULL)) {
+	    Tcl_SetObjResult(interp, one);
+	    Tcl_DecrRefCount(one);
+	    return TCL_OK;
+	}
+    }
+    return TypeMapList(interp, objc, objv, NULL);
 }
 
 static int
-TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	const MapFold *fold)
 {
     Tcl_Obj **ev;
     Tcl_Size k, j, nv, nc, m = 2, cap;
@@ -11378,7 +12972,7 @@ TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     int rc, multi = 0;
 
     if (objc < 5 || (objc - 3) % 2 != 0) {
-	return TypeMapCore(interp, objc, objv);	/* (le message) */
+	return TypeMapCore(interp, objc, objv, fold);	/* (le message) */
     }
     for (k = 2; k < objc - 1; k += 2) {
 	if (Tcl_ListObjLength(NULL, objv[k], &nv) == TCL_OK && nv > 1) {
@@ -11386,7 +12980,7 @@ TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	}
     }
     if (!multi) {
-	return TypeMapCore(interp, objc, objv);
+	return TypeMapCore(interp, objc, objv, fold);
     }
     cap = 2 * objc + 64;
     ev = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) cap);
@@ -11435,7 +13029,7 @@ TypeMapList(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     if (rc == TCL_OK) {
 	ev[m] = objv[objc - 1];
-	rc = TypeMapCore(interp, m + 1, ev);
+	rc = TypeMapCore(interp, m + 1, ev, fold);
     }
     for (j = 2; j < m; j++) {
 	Tcl_DecrRefCount(ev[j]);
@@ -11486,38 +13080,97 @@ struct MapPair {
  */
 static void
 TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
-	const int *slotOf, double *const *cols, Tcl_Size i0, int nb,
-	unsigned char *bad)
+	const int *slotOf, double *const *cols, Tcl_WideInt *const *icols,
+	Tcl_Size i0, int nb, unsigned char *bad, unsigned char *ibad)
 {
     Tcl_Size k, v = 0;
     int e;
     MNum t;
 
+    /* bad : l'élément n'est pas tout en doubles ; ibad : pas tout en
+     * entiers (sans programme entier, icols NULL : toujours marqué) */
     memset(bad, 0, nb);
+    memset(ibad, icols == NULL, nb);
     for (k = 0; k < npairs; k++) {
 	const struct MapPair *pr = &pairs[k];
 
 	if (pr->cdata != NULL) {
 	    int s = slotOf[v++];
 
-	    if (s >= 0) {
+	    if (s < 0) {
+		continue;
+	    }
+	    {
 		const unsigned char *c = pr->cdata + (size_t) i0 * pr->cstride;
 		double *col = cols[s];
 
-		if (pr->csize == 8) {
-		    if (pr->cstride == 8) {
-			memcpy(col, c, (size_t) nb * 8);
+		if (pr->ckind == 2) {
+		    memset(ibad, 1, nb);
+		    if (pr->csize == 8) {
+			if (pr->cstride == 8) {
+			    memcpy(col, c, (size_t) nb * 8);
+			} else if (pr->cstride % 8 == 0
+				&& ((uintptr_t) c % 8) == 0) {
+			    /* à pas (une fenêtre) : lecture typée */
+			    const double *cd = (const double *) c;
+			    size_t s8 = pr->cstride / 8;
+
+			    for (e = 0; e < nb; e++) {
+				col[e] = cd[(size_t) e * s8];
+			    }
+			} else {
+			    for (e = 0; e < nb; e++) {
+				memcpy(&col[e], c + (size_t) e * pr->cstride, 8);
+			    }
+			}
 		    } else {
 			for (e = 0; e < nb; e++) {
-			    memcpy(&col[e], c + (size_t) e * pr->cstride, 8);
+			    float f;
+
+			    memcpy(&f, c + (size_t) e * pr->cstride, 4);
+			    col[e] = f;
 			}
 		    }
 		} else {
-		    for (e = 0; e < nb; e++) {
-			float f;
+		    /* des entiers en cases */
+		    Tcl_WideInt *ic = icols ? icols[s] : NULL;
 
-			memcpy(&f, c + (size_t) e * pr->cstride, 4);
-			col[e] = f;
+		    memset(bad, 1, nb);
+		    if (ic == NULL) {
+			continue;
+		    }
+		    for (e = 0; e < nb; e++) {
+			const unsigned char *cp = c + (size_t) e * pr->cstride;
+
+			switch (pr->csize) {
+			case 1:
+			    ic[e] = pr->ckind ? (Tcl_WideInt) *(uint8_t *) cp
+				    : (Tcl_WideInt) *(int8_t *) cp;
+			    break;
+			case 2: {
+			    uint16_t u; int16_t s16;
+
+			    memcpy(&u, cp, 2); memcpy(&s16, cp, 2);
+			    ic[e] = pr->ckind ? (Tcl_WideInt) u : s16;
+			    break;
+			}
+			case 4: {
+			    uint32_t u; int32_t s32;
+
+			    memcpy(&u, cp, 4); memcpy(&s32, cp, 4);
+			    ic[e] = pr->ckind ? (Tcl_WideInt) u : s32;
+			    break;
+			}
+			default: {
+			    uint64_t u;
+
+			    memcpy(&u, cp, 8);
+			    if (pr->ckind && u > (uint64_t) WIDE_MAX) {
+				ibad[e] = 1;	/* trop grand */
+			    }
+			    ic[e] = (Tcl_WideInt) u;
+			}
+			}
 		    }
 		}
 	    }
@@ -11530,6 +13183,7 @@ TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
 		Tcl_Obj *const *el = pr->elems + i0 * pr->estride;
 		Tcl_Size es = pr->estride;
 		double *col = cols[s];
+		Tcl_WideInt *ic = icols ? icols[s] : NULL;
 
 		for (e = 0; e < nb; e++) {
 		    Tcl_Obj *o;
@@ -11540,14 +13194,22 @@ TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
 		    }
 #endif
 		    o = TCL_ANNOT_CONTENT(el[e * es]);
-
 		    if (TclHasInternalRep(o, &tclDoubleType)
 			    && !isnan(o->internalRep.doubleValue)) {
 			col[e] = o->internalRep.doubleValue;
-		    } else if (MNumOf(o, &t) && t.isD == 1) {
-			col[e] = t.d;
+			ibad[e] = 1;
+		    } else if (MNumOf(o, &t)) {
+			if (t.isD == 1) {
+			    col[e] = t.d;
+			    ibad[e] = 1;
+			} else {
+			    bad[e] = 1;
+			    if (ic != NULL) {
+				ic[e] = t.w;
+			    }
+			}
 		    } else {
-			bad[e] = 1;
+			bad[e] = ibad[e] = 1;
 		    }
 		}
 	    }
@@ -11558,9 +13220,8 @@ TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
 	    Tcl_Size np, j;
 
 	    if (Tcl_ListObjGetElements(NULL, MListContent(
-		    pr->elems[(i0 + e) * pr->estride]),
-		    &np, &parts) != TCL_OK) {
-		bad[e] = 1;
+		    pr->elems[(i0 + e) * pr->estride]), &np, &parts) != TCL_OK) {
+		bad[e] = ibad[e] = 1;
 		continue;
 	    }
 	    for (j = 0; j < pr->nvars; j++) {
@@ -11569,10 +13230,18 @@ TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
 		if (s < 0) {
 		    continue;
 		}
-		if (j < np && MNumOf(parts[j], &t) && t.isD == 1) {
-		    cols[s][e] = t.d;
+		if (j < np && MNumOf(parts[j], &t)) {
+		    if (t.isD == 1) {
+			cols[s][e] = t.d;
+			ibad[e] = 1;
+		    } else {
+			bad[e] = 1;
+			if (icols != NULL) {
+			    icols[s][e] = t.w;
+			}
+		    }
 		} else {
-		    bad[e] = 1;
+		    bad[e] = ibad[e] = 1;
 		}
 	    }
 	}
@@ -11580,8 +13249,71 @@ TypeMapGather(const struct MapPair *pairs, Tcl_Size npairs,
     }
 }
 
+/* les variables qu'un sous-arbre lit */
+static void
+MMarkSlots(const MProg *g, int i, unsigned char *mark)
+{
+    const MNode *nd = &g->n[i];
+    int k;
+
+    switch (nd->kind) {
+    case MN_CONST:
+	return;
+    case MN_VAR:
+	mark[nd->slot] = 1;
+	return;
+    case MN_NEG: case MN_POS: case MN_NOT:
+	MMarkSlots(g, nd->a, mark);
+	return;
+    case MN_COND:
+	MMarkSlots(g, nd->a, mark);
+	MMarkSlots(g, nd->b, mark);
+	MMarkSlots(g, nd->c, mark);
+	return;
+    case MN_FUNC:
+	for (k = 0; k < nd->nargs; k++) {
+	    MMarkSlots(g, nd->args[k], mark);
+	}
+	return;
+    default:
+	MMarkSlots(g, nd->a, mark);
+	MMarkSlots(g, nd->b, mark);
+	return;
+    }
+}
+
+/* l'opération du sommet d'un cumul découpé, comme MDRun la ferait ; 0 si
+ * MDRun refuserait (résultat non fini) */
 static int
-TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+MDCombine(int op, int fn, double x, double y, double *out)
+{
+    double r;
+
+    switch (op) {
+    case MD_ADD: r = x + y; break;
+    case MD_SUB: r = x - y; break;
+    case MD_MUL: r = x * y; break;
+    case MD_DIV: if (y == 0.0) return 0; r = x / y; break;
+    case MD_POW: r = pow(x, y); break;
+    default:
+	switch (fn) {
+	case MF_POWF: r = pow(x, y); break;
+	case MF_ATAN2: r = atan2(x, y); break;
+	case MF_FMOD: if (y == 0.0) return 0; r = fmod(x, y); break;
+	default: r = hypot(x, y); break;
+	}
+	break;
+    }
+    if (isnan(r) || isinf(r)) {
+	return 0;
+    }
+    *out = r;
+    return 1;
+}
+
+static int
+TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
+	const MapFold *fold)
 {
     Tcl_Size npairs, k, j, n = -1, i, total = 0;
     Tcl_Obj *body, **res = NULL, *resList;
@@ -11590,6 +13322,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Size blen;
     MProg g;
     int root = -1, fast, allD = 1, allW = 1, rc = TCL_OK;
+    int cellsOut = 0;		/* -sum, -min, -max : entiers en cases */
     struct MapPair *pairs;
     int *slotOf = NULL;		/* rang de chaque variable de boucle dans
 				 * le programme, ou -1 */
@@ -11599,13 +13332,39 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Size nkeep = 0;
     int blk = 0;			/* par blocs */
     double **bcols = NULL, *bmem = NULL;
-    unsigned char bbad[MD_BLK];
+    unsigned char bbad[MD_BLK], ibad[MD_BLK], gbad[MD_BLK];
     Tcl_Size bStart = 0, bEnd = 0;
     int bAllGood = 0;
+    /* le programme entier (mi, et iE pour un cumul) : quels programmes
+     * servent par blocs */
+    MDProg mi, iE;
+    int dblOK = 0, intOK = 0, dblSplit = 0, intSplit = 0;
+    Tcl_WideInt **icols = NULL, *imem = NULL;
+    int iDepth = 0, dDepth = 0;
+    /* -fold : s, sa valeur (nombre fNum, ou objet fObj), et le découpage
+     * (fA : ce qui dépend de s, fE : le reste, calculé par blocs) */
+    int fSlot = -1, fIsNum = 0, fStale = 0, split = 0, fOp = 0, fFn = 0;
+    int eSumSlot = -1;		/* s + $v : la variable v (somme directe) */
+    Tcl_Size iStart = 0;
+    int fSLeft = 0, fAIsS = 0, fAMul = 0;	/* A = s, ou A = c * s */
+    double fC = 0.0;
+    MNum fNum;
+    Tcl_Obj *fObj = NULL;
+    MDProg dA, dE;
+
+    memset(&dA, 0, sizeof(dA));
+    memset(&dE, 0, sizeof(dE));
+    memset(&fNum, 0, sizeof(fNum));
+    if (fold != NULL && fold->name == NULL) {
+	/* pas un cumul : un résultat interne (-sum, -min, -max), les
+	 * entiers en cases de 64 bits, sans objet par élément */
+	cellsOut = 1;
+	fold = NULL;
+    }
 
     if (objc < 5 || (objc - 3) % 2 != 0) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?-sum|-min|-max? varList list ?varList list "
-		"...? {(expression)}");
+	Tcl_WrongNumArgs(interp, 2, objv, "?-sum|-min|-max|-fold {name init}? "
+		"varList list ?varList list ...? {(expression)}");
 	return TCL_ERROR;
     }
     body = objv[objc - 1];
@@ -11704,9 +13463,15 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     fast = !g.bad;
     memset(&dp, 0, sizeof(dp));
+    memset(&mi, 0, sizeof(mi));
+    memset(&iE, 0, sizeof(iE));
     if (fast && MDType(&g, root) == 1) {
 	MDCompile(&g, root, &dp);
 	dp.ok = (dp.maxDepth <= 32);
+    }
+    if (fast && MIType(&g, root)) {
+	MICompile(&g, root, &mi);
+	mi.ok = (mi.maxDepth <= 32);
     }
 
     /* les variables lues qui ne sont pas des variables de boucle : lues une
@@ -11733,13 +13498,38 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		}
 	    }
 	}
+	if (fold != NULL) {
+	    const char *fn = Tcl_GetString(fold->name);
+
+	    for (k = 0; k < npairs; k++) {
+		for (j = 0; j < pairs[k].nvars; j++) {
+		    if (strcmp(Tcl_GetString(pairs[k].vars[j]), fn) == 0) {
+			Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map: "
+				"\"%s\" is both the -fold variable and a loop "
+				"variable", fn));
+			Tcl_SetErrorCode(interp, "TCL", "TYPE", "MAP",
+				(char *) NULL);
+			rc = TCL_ERROR;
+			n = 0;		/* (rien à parcourir) */
+		    }
+		}
+	    }
+	    for (i = 0; fast && i < g.nnames; i++) {
+		if (strcmp(Tcl_GetString(g.names[i]), fn) == 0) {
+		    fSlot = (int) i;
+		}
+	    }
+	    fObj = fold->init;
+	    Tcl_IncrRefCount(fObj);
+	    fIsNum = !TclIsAnnotated(fObj) && MNumOf(fObj, &fNum);
+	}
 	for (i = 0; fast && i < g.nnames; i++) {
 	    int loop = 0;
 
 	    for (v = 0; v < total; v++) {
 		loop |= (slotOf[v] == i);
 	    }
-	    if (!loop) {
+	    if (!loop && i != fSlot) {
 		Tcl_Obj *o = Tcl_ObjGetVar2(interp, g.names[i], NULL, 0);
 
 		if (o == NULL || !MNumOf(o, &vals[i])) {
@@ -11759,33 +13549,146 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
      * rassemblées dans de petits tableaux (lectures indépendantes), le
      * programme appliqué au bloc entier, et les éléments marqués repris
      * un par un par le chemin ci-dessous */
-    if (fast && dp.ok && n > 1 && getenv("TCL_TYPE_NOBLOCK") == NULL) {
+    if (fast && (dp.ok || mi.ok) && n > 1
+	    && getenv("TCL_TYPE_NOBLOCK") == NULL) {
 	Tcl_Size v = 0;
 
-	blk = 1;
+	/* les valeurs lues une fois : des doubles pour le programme
+	 * flottant, des entiers pour le programme entier ; chaque élément
+	 * est ensuite classé au rassemblement */
+	dblOK = dp.ok;
+	intOK = mi.ok;
 	for (i = 0; i < g.nnames; i++) {
 	    int loop = 0;
 
 	    for (v = 0; v < total; v++) {
 		loop |= (slotOf[v] == i);
 	    }
-	    if (!loop && vals[i].isD != 1) {
-		blk = 0;		/* un entier lu une fois : MEval */
+	    if (!loop && i != fSlot) {
+		dblOK &= (vals[i].isD == 1);
+		intOK &= (vals[i].isD == 0);
 	    }
 	}
-	for (k = 0, v = 0; k < npairs; k++) {
-	    if (pairs[k].cdata != NULL && slotOf[v] >= 0
-		    && pairs[k].ckind != 2) {
-		blk = 0;		/* des entiers en cases : MEval */
+	blk = dblOK || intOK;
+    }
+    if (blk && fold != NULL) {
+	/* un cumul : par blocs seulement s'il se découpe. Le sommet est une
+	 * opération binaire ; un côté (A) ne lit que s et des valeurs fixes,
+	 * l'autre (E) ne lit pas s : E par blocs, puis s = A(s) op E, élément
+	 * par élément, dans l'ordre (le résultat est celui de la boucle) */
+	int r = root, L, R;
+	const MNode *nd;
+
+	blk = 0;
+	while (r >= 0 && g.n[r].kind == MN_POS) {
+	    r = g.n[r].a;
+	}
+	nd = (r >= 0) ? &g.n[r] : NULL;
+	if (fSlot >= 0 && nd != NULL && (nd->kind == MN_ADD
+		|| nd->kind == MN_SUB || nd->kind == MN_MUL
+		|| nd->kind == MN_DIV || nd->kind == MN_POW
+		|| (nd->kind == MN_FUNC && nd->nargs == 2
+		&& (nd->fn == MF_POWF || nd->fn == MF_ATAN2
+		|| nd->fn == MF_FMOD || nd->fn == MF_HYPOT)))) {
+	    unsigned char *mL = (unsigned char *) Tcl_Alloc(g.nnames + 1);
+	    unsigned char *mR = (unsigned char *) Tcl_Alloc(g.nnames + 1);
+	    int aSide = -1, okA = 1;
+
+	    L = (nd->kind == MN_FUNC) ? nd->args[0] : nd->a;
+	    R = (nd->kind == MN_FUNC) ? nd->args[1] : nd->b;
+	    memset(mL, 0, g.nnames + 1);
+	    memset(mR, 0, g.nnames + 1);
+	    MMarkSlots(&g, L, mL);
+	    MMarkSlots(&g, R, mR);
+	    if (mL[fSlot] && !mR[fSlot]) {
+		aSide = 0;
+	    } else if (mR[fSlot] && !mL[fSlot]) {
+		aSide = 1;
 	    }
-	    v += pairs[k].nvars;
+	    for (j = 0; aSide >= 0 && j < total; j++) {
+		if (slotOf[j] >= 0 && (aSide ? mR : mL)[slotOf[j]]) {
+		    okA = 0;		/* A lit une variable de boucle */
+		}
+	    }
+	    if (aSide >= 0 && okA && intOK
+		    && g.n[aSide ? R : L].kind == MN_VAR
+		    && g.n[aSide ? R : L].slot == fSlot
+		    && (nd->kind == MN_ADD || nd->kind == MN_SUB
+		    || nd->kind == MN_MUL) && MIType(&g, aSide ? L : R)) {
+		/* en entiers : s op E, E par blocs */
+		MICompile(&g, aSide ? L : R, &iE);
+		if (iE.maxDepth <= 32) {
+		    intSplit = 1;
+		    if (nd->kind == MN_ADD
+			    && g.n[aSide ? L : R].kind == MN_VAR
+			    && g.n[aSide ? L : R].slot != fSlot) {
+			eSumSlot = g.n[aSide ? L : R].slot;	/* s + $v */
+		    }
+		}
+	    }
+	    if (aSide >= 0 && okA && (dblOK || intSplit)) {
+		int dTyped = dblOK && MDType(&g, aSide ? R : L) == 1
+			&& MDType(&g, aSide ? L : R) == 1;
+
+		if (dTyped) {
+		    MDCompile(&g, aSide ? R : L, &dA);
+		    MDCompile(&g, aSide ? L : R, &dE);
+		    dblSplit = (dA.maxDepth <= 32 && dE.maxDepth <= 32);
+		}
+		if (dblSplit || intSplit) {
+		    split = blk = 1;
+		    fSLeft = (aSide == 0);
+		    fOp = (nd->kind == MN_ADD) ? MD_ADD
+			    : (nd->kind == MN_SUB) ? MD_SUB
+			    : (nd->kind == MN_MUL) ? MD_MUL
+			    : (nd->kind == MN_DIV) ? MD_DIV
+			    : (nd->kind == MN_POW) ? MD_POW : MD_F2;
+		    fFn = nd->fn;
+		    fAIsS = (g.n[aSide ? R : L].kind == MN_VAR
+			    && g.n[aSide ? R : L].slot == fSlot);
+		    /* A = c * s ou s * c, c constante ou valeur fixe : la
+		     * multiplication faite telle quelle, dans le même ordre */
+		    if (dA.nops == 3 && dA.ops[2].op == MD_MUL) {
+			const MDOp *o0 = &dA.ops[0], *o1 = &dA.ops[1];
+
+			if (o1->op == MD_VAR && o1->arg == fSlot
+				&& (o0->op == MD_CONST || (o0->op == MD_VAR
+				&& o0->arg != fSlot))) {
+			    fAMul = 1;		/* c * s */
+			    fC = (o0->op == MD_CONST) ? o0->k : vals[o0->arg].d;
+			} else if (o0->op == MD_VAR && o0->arg == fSlot
+				&& (o1->op == MD_CONST || (o1->op == MD_VAR
+				&& o1->arg != fSlot))) {
+			    fAMul = 2;		/* s * c */
+			    fC = (o1->op == MD_CONST) ? o1->k : vals[o1->arg].d;
+			}
+		    }
+		}
+	    }
+	    Tcl_Free(mL);
+	    Tcl_Free(mR);
 	}
     }
     if (blk) {
+	dDepth = (dp.maxDepth > dE.maxDepth) ? dp.maxDepth : dE.maxDepth;
+	iDepth = (mi.maxDepth > iE.maxDepth) ? mi.maxDepth : iE.maxDepth;
+	icols = (Tcl_WideInt **) Tcl_Alloc(g.nnames * sizeof(Tcl_WideInt *));
+	imem = (Tcl_WideInt *) Tcl_Alloc(((size_t) g.nnames + iDepth + 1)
+		* MD_BLK * sizeof(Tcl_WideInt));
+	memset(imem, 0, ((size_t) g.nnames + iDepth + 1) * MD_BLK
+		* sizeof(Tcl_WideInt));
+	for (i = 0; i < g.nnames; i++) {
+	    icols[i] = NULL;
+	}
+	for (j = 0; j < total; j++) {
+	    if (slotOf[j] >= 0) {
+		icols[slotOf[j]] = imem + (size_t) slotOf[j] * MD_BLK;
+	    }
+	}
 	bcols = (double **) Tcl_Alloc(g.nnames * sizeof(double *));
-	bmem = (double *) Tcl_Alloc(((size_t) g.nnames + dp.maxDepth + 1)
+	bmem = (double *) Tcl_Alloc(((size_t) g.nnames + dDepth + 1)
 		* MD_BLK * sizeof(double));
-	memset(bmem, 0, ((size_t) g.nnames + dp.maxDepth + 1) * MD_BLK
+	memset(bmem, 0, ((size_t) g.nnames + dDepth + 1) * MD_BLK
 		* sizeof(double));
 	for (i = 0; i < g.nnames; i++) {
 	    bcols[i] = NULL;
@@ -11796,7 +13699,42 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	}
     }
-    for (i = 0; i < n; i++) {
+    /*
+     * s + $v sur une colonne d'entiers en cases (8, 16, 32 bits) : la somme
+     * des n-1 premiers éléments d'un trait (le dernier passe par le chemin
+     * général, qui pose les variables). Même résultat que l'ordre élément
+     * par élément tant qu'aucune somme partielle ne dépasse 64 bits : non
+     * signés, les sommes partielles vont de s à la somme finale ; signés,
+     * |s| < 2^62 et moins de 2^30 éléments. Sinon le chemin par blocs.
+     */
+    if (split && intSplit && eSumSlot >= 0 && fIsNum && fNum.isD == 0
+	    && n > 1) {
+	Tcl_Size col = 0;
+
+	for (k = 0; k < npairs; k++) {
+	    const struct MapPair *pr = &pairs[k];
+	    Tcl_Size jj;
+
+	    for (jj = 0; jj < pr->nvars; jj++, col++) {
+		if (slotOf[col] == eSumSlot && pr->nvars == 1
+			&& pr->cdata != NULL && pr->ckind < 2
+			&& pr->csize <= 4 && n - 1 < ((Tcl_Size) 1 << 30)) {
+		    Tcl_WideInt sum = MapCellSum(pr->cdata, pr->cstride,
+			    pr->ckind, pr->csize, n - 1), r;
+		    Tcl_WideInt sw = fNum.w;
+		    int safe = pr->ckind == 1 || (sw < ((Tcl_WideInt) 1 << 62)
+			    && sw > -((Tcl_WideInt) 1 << 62));
+
+		    if (safe && !__builtin_add_overflow(sw, sum, &r)) {
+			fNum.w = r;
+			fStale = 1;
+			iStart = n - 1;
+		    }
+		}
+	    }
+	}
+    }
+    for (i = iStart; i < n; i++) {
 	MNum out;
 	int ok = fast;
 	Tcl_Size v = 0;
@@ -11809,34 +13747,137 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    if (i >= bEnd) {
 		bStart = i;
 		bEnd = (n - i > MD_BLK) ? i + MD_BLK : n;
-		TypeMapGather(pairs, npairs, slotOf, bcols, bStart,
-			(int) (bEnd - bStart), bbad);
+		int dRun = split ? dblSplit : dblOK;
+		int iRun = split ? intSplit : intOK;
 		const double *bout = bmem
-			+ ((size_t) g.nnames + dp.maxDepth) * MD_BLK;
-		int e, nb = (int) (bEnd - bStart);
+			+ ((size_t) g.nnames + dDepth) * MD_BLK;
+		const Tcl_WideInt *iout = imem
+			+ ((size_t) g.nnames + iDepth) * MD_BLK;
+		int e, nb = (int) (bEnd - bStart), anyD = 0, anyI = 0;
 		MNum *dst = num + bStart;
 
-		MDRunBlock(&dp, bcols, vals, nb,
-			bmem + (size_t) g.nnames * MD_BLK, bbad,
-			(double *) bout);
+		TypeMapGather(pairs, npairs, slotOf, bcols,
+			iRun ? icols : NULL, bStart, nb, bbad, ibad);
+		if (dRun) {
+		    MDRunBlock(split ? &dE : &dp, bcols, vals, nb,
+			    bmem + (size_t) g.nnames * MD_BLK, bbad,
+			    (double *) bout);
+		} else {
+		    memset(bbad, 1, nb);
+		}
+		if (iRun && memchr(ibad, 0, nb) != NULL) {
+		    /* (rien à faire si aucun élément n'est tout en entiers :
+		     * des cases de flottants, par exemple) */
+		    MIRunBlock(split ? &iE : &mi, icols, vals, nb,
+			    imem + (size_t) g.nnames * MD_BLK, ibad,
+			    (Tcl_WideInt *) iout);
+		}
 		/* tous rangés ; les marqués seront refaits un par un */
 		for (e = 0; e < nb; e++) {
-		    dst[e].isD = 1;
-		    dst[e].d = bout[e];
+		    gbad[e] = bbad[e] && ibad[e];
+		    if (!bbad[e]) {
+			anyD = 1;
+			if (!split) {
+			    dst[e].isD = 1;
+			    dst[e].d = bout[e];
+			}
+		    } else if (!ibad[e]) {
+			anyI = 1;
+			if (!split) {
+			    dst[e].isD = 0;
+			    dst[e].w = iout[e];
+			}
+		    }
 		}
-		bAllGood = (memchr(bbad, 1, nb) == NULL);
-		if (memchr(bbad, 0, nb) != NULL) {
+		bAllGood = (memchr(gbad, 1, nb) == NULL);
+		if (anyD) {
 		    allW = 0;		/* au moins un flottant */
 		}
+		if (anyI) {
+		    allD = 0;		/* au moins un entier */
+		}
 	    }
-	    if (bAllGood && bEnd != n) {
+	    if (split) {
+		/* le cumul : s = A(s) op E[i], dans l'ordre */
+		const double *bout = bmem
+			+ ((size_t) g.nnames + dDepth) * MD_BLK;
+		Tcl_Size i2 = i, lim = (bEnd < n - 1) ? bEnd : n - 1;
+
+		/* en entiers : s op e, sur 64 bits, arrêt au dépassement */
+		if (intSplit && fIsNum && fNum.isD == 0) {
+		    const Tcl_WideInt *ie = imem
+			    + ((size_t) g.nnames + iDepth) * MD_BLK - bStart;
+		    Tcl_WideInt sw = fNum.w, r;
+
+		    for (; i2 < lim && !ibad[i2 - bStart]; i2++) {
+			if (!(fSLeft ? MIOp(fOp, sw, ie[i2], &r)
+				: MIOp(fOp, ie[i2], sw, &r))) {
+			    break;
+			}
+			sw = r;
+		    }
+		    if (i2 > i) {
+			fNum.w = sw;
+			fStale = 1;
+		    }
+		}
+		/* les formes courantes en boucle serrée : mêmes opérations, même
+		 * ordre, même refus d'un résultat non fini */
+		if (dblSplit && i2 == i && fIsNum && fNum.isD == 1 && fSLeft
+			&& (fOp == MD_ADD || fOp == MD_SUB || fOp == MD_MUL)
+			&& (fAIsS || fAMul)) {
+		    const double *eb = bout - bStart;
+		    double sd = fNum.d, a, r;
+
+		    for (; i2 < lim && !bbad[i2 - bStart]; i2++) {
+			a = fAIsS ? sd : (fAMul == 1) ? fC * sd : sd * fC;
+			r = (fOp == MD_ADD) ? a + eb[i2] : (fOp == MD_SUB)
+				? a - eb[i2] : a * eb[i2];
+			if (isnan(r) || isinf(r)
+				|| (!fAIsS && (isnan(a) || isinf(a)))) {
+			    break;
+			}
+			sd = r;
+		    }
+		    if (i2 > i) {
+			fNum.d = sd;
+			fStale = 1;
+		    }
+		}
+		for (; dblSplit && i2 < bEnd && i2 != n - 1; i2++) {
+		    double a, r;
+
+		    if (bbad[i2 - bStart] || !fIsNum || fNum.isD != 1) {
+			break;
+		    }
+		    if (fAIsS) {
+			a = fNum.d;
+		    } else {
+			vals[fSlot] = fNum;
+			if (!MDRun(&dA, vals, &a)) {
+			    break;
+			}
+		    }
+		    if (!(fSLeft ? MDCombine(fOp, fFn, a, bout[i2 - bStart], &r)
+			    : MDCombine(fOp, fFn, bout[i2 - bStart], a, &r))) {
+			break;
+		    }
+		    fNum.d = r;
+		    fStale = 1;
+		}
+		if (i2 > i) {
+		    i = i2 - 1;		/* faits ; le suivant reprend ici */
+		    continue;
+		}
+		/* l'élément i par le chemin général */
+	    } else if (bAllGood && bEnd != n) {
 		i = bEnd - 1;		/* le bloc entier est fait */
 		continue;
 	    }
-	    if (!bbad[i - bStart] && i != n - 1) {
+	    if (!split && !gbad[i - bStart] && i != n - 1) {
 		Tcl_Size i2 = i + 1;	/* les suivants bons : sautés */
 
-		while (i2 < bEnd && !bbad[i2 - bStart] && i2 != n - 1) {
+		while (i2 < bEnd && !gbad[i2 - bStart] && i2 != n - 1) {
 		    i2++;
 		}
 		i = i2 - 1;
@@ -11920,6 +13961,13 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		}
 	    }
 	}
+	if (ok && fSlot >= 0) {
+	    if (fIsNum) {
+		vals[fSlot] = fNum;
+	    } else {
+		ok = 0;			/* s n'est pas un nombre : expr */
+	    }
+	}
 	if (ok) {
 	    for (v = 0; v < total; v++) {
 		if (slotOf[v] < 0) {
@@ -11949,6 +13997,10 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		if (MDRun(&dp, vals, &out.d)) {
 		    num[i] = out;
 		    allW = 0;
+		    if (fold != NULL) {
+			fNum = out;
+			fIsNum = fStale = 1;
+		    }
 		    continue;
 		}
 		ok = 0;			/* expr pour cet élément */
@@ -11958,6 +14010,10 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    num[i] = out;		/* un nombre, gardé tel quel */
 	    allD &= out.isD;
 	    allW &= !out.isD;
+	    if (fold != NULL) {
+		fNum = out;
+		fIsNum = fStale = 1;
+	    }
 	} else {
 	    /* par expr, les variables posées dans le cadre de l'appelant */
 	    Tcl_Obj *r;
@@ -11977,12 +14033,41 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    }
 		}
 	    }
+	    if (fold != NULL) {
+		/* s, à jour, pour expr */
+		if (fStale) {
+		    Tcl_DecrRefCount(fObj);
+		    fObj = fNum.isD ? Tcl_NewDoubleObj(fNum.d)
+			    : Tcl_NewWideIntObj(fNum.w);
+		    Tcl_IncrRefCount(fObj);
+		    fStale = 0;
+		}
+		if (Tcl_ObjSetVar2(interp, fold->name, NULL, fObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    rc = TCL_ERROR;
+		    n = i;
+		    goto loopdone;
+		}
+	    }
 	    if (Tcl_ExprObj(interp, body, &r) != TCL_OK) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			"\n    (type map element %" TCL_SIZE_MODIFIER "d)", i));
 		rc = TCL_ERROR;
 		n = i;
 		goto loopdone;
+	    }
+	    if (fold != NULL) {
+		/* la nouvelle valeur de s (l'objet d'expr, tel quel) */
+		MNum t;
+
+		Tcl_DecrRefCount(fObj);
+		fObj = r;		/* (la référence d'expr) */
+		fStale = 0;
+		fIsNum = !TclIsAnnotated(r) && MNumOf(r, &t);
+		if (fIsNum) {
+		    fNum = t;
+		}
+		continue;
 	    }
 	    {
 		MNum t;
@@ -12034,9 +14119,26 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    }
 	}
     }
-    if (rc == TCL_OK && n > 0 && (allD || allW)) {
+    if (fold != NULL) {
+	if (rc == TCL_OK) {
+	    if (fStale) {
+		Tcl_DecrRefCount(fObj);
+		fObj = fNum.isD ? Tcl_NewDoubleObj(fNum.d)
+			: Tcl_NewWideIntObj(fNum.w);
+		Tcl_IncrRefCount(fObj);
+	    }
+	    if (Tcl_ObjSetVar2(interp, fold->name, NULL, fObj,
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		rc = TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, fObj);
+	    }
+	}
+	goto results;
+    }
+    if (rc == TCL_OK && n > 0 && (allD || (allW && cellsOut))) {
 	/* que des nombres d'un genre : une liste en cases, sans objets */
-	const char *tn = allD ? "list.double" : "list.int";
+	const char *tn = allD ? "list.double" : "list.int(s,64)";
 	TclType *lt = TclTypeParse(interp, tn, (Tcl_Size) strlen(tn));
 	unsigned char *data;
 	Tcl_Obj *cv = (lt != NULL) ? TclCompactNewAlways(lt, n, &data) : NULL;
@@ -12063,10 +14165,41 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    * sizeof(Tcl_Obj *));
 	    memset(res, 0, ((n > 0) ? n : 1) * sizeof(Tcl_Obj *));
 	}
-	for (i = 0; i < n; i++) {
-	    if (res[i] == NULL) {
-		res[i] = num[i].isD ? Tcl_NewDoubleObj(num[i].d)
-			: Tcl_NewWideIntObj(num[i].w);
+	{
+	    /*
+	     * Petits entiers : un objet partagé par valeur (les octets, les
+	     * compteurs) ; ailleurs, la valeur précédente si elle est égale.
+	     * Les objets sont purs et sans texte : les partager ne change rien.
+	     */
+	    Tcl_Obj *small[MAP_SMALL_HI - MAP_SMALL_LO + 1];
+	    Tcl_Obj *prev = NULL;
+	    MNum pv;
+
+	    memset(small, 0, sizeof(small));
+	    pv.isD = -1;
+	    pv.w = 0;
+	    for (i = 0; i < n; i++) {
+		if (res[i] != NULL) {
+		    continue;
+		}
+		if (!num[i].isD && num[i].w >= MAP_SMALL_LO
+			&& num[i].w <= MAP_SMALL_HI) {
+		    Tcl_Obj **c = &small[num[i].w - MAP_SMALL_LO];
+
+		    if (*c == NULL) {
+			*c = Tcl_NewWideIntObj(num[i].w);
+		    }
+		    res[i] = *c;
+		} else if (prev != NULL && pv.isD == num[i].isD
+			&& (num[i].isD ? memcmp(&pv.d, &num[i].d, 8) == 0
+			    : pv.w == num[i].w)) {
+		    res[i] = prev;
+		} else {
+		    res[i] = num[i].isD ? Tcl_NewDoubleObj(num[i].d)
+			    : Tcl_NewWideIntObj(num[i].w);
+		    prev = res[i];
+		    pv = num[i];
+		}
 		Tcl_IncrRefCount(res[i]);
 	    }
 	}
@@ -12111,6 +14244,25 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_Free(bcols);
 	Tcl_Free(bmem);
     }
+    if (fObj != NULL) {
+	Tcl_DecrRefCount(fObj);
+    }
+    if (dA.ops) {
+	Tcl_Free(dA.ops);
+    }
+    if (dE.ops) {
+	Tcl_Free(dE.ops);
+    }
+    if (mi.ops) {
+	Tcl_Free(mi.ops);
+    }
+    if (iE.ops) {
+	Tcl_Free(iE.ops);
+    }
+    if (icols != NULL) {
+	Tcl_Free(icols);
+	Tcl_Free(imem);
+    }
     MProgFree(&g);
     if (dp.ops) {
 	Tcl_Free(dp.ops);
@@ -12121,6 +14273,1154 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	Tcl_DecrRefCount(pairs[k].varList);
     }
     Tcl_Free(pairs);
+    return rc;
+}
+
+/* comme lmap : les variables de boucle gardent le dernier élément */
+static int
+MapSetLastVars(Tcl_Interp *interp, const struct MapPair *pairs,
+	Tcl_Size npairs, Tcl_Size n)
+{
+    Tcl_Size k;
+
+    for (k = 0; k < npairs; k++) {
+	Tcl_Obj *e = (pairs[k].cdata != NULL)
+		? TclCompactElement(pairs[k].list, n - 1)
+		: pairs[k].elems[(n - 1) * pairs[k].estride];
+
+	if (e == NULL) {
+	    e = Tcl_NewObj();
+	}
+	Tcl_IncrRefCount(e);
+	if (Tcl_ObjSetVar2(interp, pairs[k].varList, NULL, e, 0) == NULL) {
+	    Tcl_DecrRefCount(e);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(e);
+    }
+    return TCL_OK;
+}
+
+/*
+ * v17x : un tuple en une passe. type map {x y} L {(A, B ...)} : les K
+ * composantes lisent les mêmes colonnes ; chaque bloc est rassemblé une
+ * fois et les K programmes flottants tournent dessus, chacun écrivant dans
+ * sa colonne de sortie (list.double en cases). Seulement quand le
+ * résultat est celui des K passes à l'identique : chaque composante dans
+ * le programme flottant, les valeurs fixes des flottants, et aucun élément
+ * marqué (un entier, un texte, un résultat non fini) ; sinon 0, sans rien
+ * avoir changé, et le découpage habituel décide (ses messages, expr...).
+ * av : objv[0], objv[1], puis les paires varList liste (sans le corps).
+ * Rend 1 et K colonnes (avec une référence chacune) dans outCols.
+ */
+static int
+MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
+	Tcl_Obj *const parts[], Tcl_Size K, Tcl_Obj **outCols,
+	Tcl_Obj *sinkName, const char *sinkPath)
+{
+    void *sink = NULL;		/* -in : les cases de la cible */
+    unsigned char *sdst[64];
+    size_t sstep[64];
+    double *tmp = NULL;
+    struct MapPair *pairs = NULL;
+    MProg *g = NULL;
+    MDProg *dp = NULL;
+    MNum **vals = NULL;
+    double ***ccols = NULL, **gcols = NULL, *gmem = NULL, *scratch = NULL;
+    unsigned char **outData = NULL;
+    int *slotOf = NULL, maxDepth = 0, ok = 0;
+    Tcl_Size npairs = 0, k, j, s, n = -1, i, built = 0;
+    unsigned char bbad[MD_BLK], ibad[MD_BLK], cbad[MD_BLK];
+    TclType *lt;
+
+    if (K < 1 || K > 64 || ac < 4 || (ac % 2) != 0
+	    || TclTypeOpsMode() == TCL_TYPE_OPS_OFF
+	    || getenv("TCL_TYPE_NOBLOCK") != NULL
+	    || getenv("TCL_TYPE_NOTUPLE") != NULL) {
+	return 0;
+    }
+    /* les colonnes : une variable chacune (une varList de plusieurs noms
+     * prend une liste d'autant de colonnes, comme TypeMapList) */
+    for (k = 2; k < ac; k += 2) {
+	Tcl_Size nv;
+
+	if (MapSpecTyped(av[k])
+		|| Tcl_ListObjLength(NULL, av[k], &nv) != TCL_OK || nv < 1) {
+	    return 0;
+	}
+	npairs += nv;
+    }
+    pairs = (struct MapPair *) Tcl_Alloc(npairs * sizeof(struct MapPair));
+    memset(pairs, 0, npairs * sizeof(struct MapPair));
+    npairs = 0;
+    for (k = 2; k < ac; k += 2) {
+	Tcl_Obj **vv, **cv, *one = av[k + 1];
+	Tcl_Size nv, nc;
+
+	Tcl_ListObjGetElements(NULL, av[k], &nv, &vv);
+	if (nv > 1 && (Tcl_ListObjGetElements(NULL, MListContent(av[k + 1]),
+		&nc, &cv) != TCL_OK || nc != nv)) {
+	    goto done;
+	}
+	for (j = 0; j < nv; j++) {
+	    struct MapPair *pr = &pairs[npairs];
+	    Tcl_Obj *lo = MListContent((nv > 1) ? cv[j] : one), *vbase;
+	    Tcl_Obj *const *vel;
+	    Tcl_Size vn, vst;
+
+	    pr->nvars = 1;
+	    pr->estride = 1;
+	    if (TclObjViewInfo(lo, &vbase, &vel, &vn, &vst)) {
+		pr->list = vbase;
+		pr->elems = (Tcl_Obj **) vel;
+		pr->len = vn;
+		pr->estride = vst;
+	    } else if (TclCompactScalarInfo(lo, &pr->len, &pr->cdata,
+		    &pr->cstride, &pr->ckind, &pr->csize)) {
+		pr->list = lo;
+	    } else if (TclHasInternalRep(lo, &tclListType)) {
+		pr->list = lo;
+		Tcl_ListObjGetElements(NULL, lo, &pr->len, &pr->elems);
+	    } else {
+		goto done;
+	    }
+	    if (pr->cdata != NULL && pr->ckind != 2) {
+		goto done;		/* des entiers : marqués partout */
+	    }
+	    Tcl_IncrRefCount(pr->list);
+	    pr->varList = vv[j];
+	    Tcl_IncrRefCount(pr->varList);
+	    pr->vars = &pr->varList;
+	    npairs++;
+	    if (n >= 0 && pr->len != n) {
+		goto done;		/* (le message : le chemin habituel) */
+	    }
+	    n = pr->len;
+	}
+    }
+    if (n < 2) {
+	goto done;
+    }
+    /* les K programmes */
+    g = (MProg *) Tcl_Alloc(K * sizeof(MProg));
+    dp = (MDProg *) Tcl_Alloc(K * sizeof(MDProg));
+    vals = (MNum **) Tcl_Alloc(K * sizeof(MNum *));
+    ccols = (double ***) Tcl_Alloc(K * sizeof(double **));
+    memset(g, 0, K * sizeof(MProg));
+    memset(dp, 0, K * sizeof(MDProg));
+    memset(vals, 0, K * sizeof(MNum *));
+    memset(ccols, 0, K * sizeof(double **));
+    slotOf = (int *) Tcl_Alloc(npairs * sizeof(int));
+    for (k = 0; k < npairs; k++) {
+	slotOf[k] = -1;
+    }
+    for (j = 0; j < K; j++) {
+	int root;
+
+	g[j].p = Tcl_GetString(parts[j]);
+	root = MExpr(&g[j]);
+	MSkip(&g[j]);
+	if (g[j].bad || *g[j].p != '\0' || MDType(&g[j], root) != 1) {
+	    goto done;
+	}
+	MDCompile(&g[j], root, &dp[j]);
+	if (dp[j].maxDepth > 32) {
+	    goto done;
+	}
+	if (dp[j].maxDepth > maxDepth) {
+	    maxDepth = dp[j].maxDepth;
+	}
+	vals[j] = (MNum *) Tcl_Alloc((g[j].nnames + 1) * sizeof(MNum));
+	ccols[j] = (double **) Tcl_Alloc((g[j].nnames + 1) * sizeof(double *));
+	for (s = 0; s < g[j].nnames; s++) {
+	    Tcl_Size l;
+	    const char *nm = Tcl_GetStringFromObj(g[j].names[s], &l);
+	    Tcl_Size last = -1;
+
+	    for (k = 0; k < npairs; k++) {
+		Tcl_Size l2;
+		const char *t = Tcl_GetStringFromObj(pairs[k].varList, &l2);
+
+		if (l == l2 && memcmp(nm, t, l) == 0) {
+		    last = k;		/* (la dernière l'emporte) */
+		}
+	    }
+	    ccols[j][s] = NULL;
+	    if (last >= 0) {
+		slotOf[last] = (int) last;
+		ccols[j][s] = (double *) (intptr_t) (last + 1);	/* (après) */
+	    } else {
+		/* une valeur fixe : un flottant, lu une fois */
+		Tcl_Obj *o = Tcl_ObjGetVar2(interp, g[j].names[s], NULL, 0);
+
+		if (o == NULL || !MNumOf(o, &vals[j][s])
+			|| vals[j][s].isD != 1) {
+		    goto done;
+		}
+	    }
+	}
+    }
+    /* les colonnes rassemblées (une par variable lue) et les sorties */
+    gcols = (double **) Tcl_Alloc(npairs * sizeof(double *));
+    gmem = (double *) Tcl_Alloc((size_t) npairs * MD_BLK * sizeof(double));
+    scratch = (double *) Tcl_Alloc(((size_t) maxDepth + 1) * MD_BLK
+	    * sizeof(double));
+    for (k = 0; k < npairs; k++) {
+	gcols[k] = (slotOf[k] >= 0) ? gmem + (size_t) k * MD_BLK : NULL;
+    }
+    for (j = 0; j < K; j++) {
+	for (s = 0; s < g[j].nnames; s++) {
+	    if (ccols[j][s] != NULL) {
+		ccols[j][s] = gcols[(intptr_t) ccols[j][s] - 1];
+	    }
+	}
+    }
+    if (sinkName != NULL) {
+	/* -in : les variables d'abord (le dernier élément, connu), puis les
+	 * cases neuves de la cible, écrites bloc par bloc */
+	if (MapSetLastVars(interp, pairs, npairs, n) != TCL_OK) {
+	    goto done;
+	}
+	sink = TclTypePathCellsBegin(interp, sinkName, sinkPath, K, n, sdst,
+		sstep);
+	if (sink == NULL) {
+	    goto done;
+	}
+	tmp = (double *) Tcl_Alloc(MD_BLK * sizeof(double));
+	goto pass;
+    }
+    lt = TclTypeParse(interp, "list.double", 11);
+    if (lt == NULL) {
+	Tcl_ResetResult(interp);
+	goto done;
+    }
+    outData = (unsigned char **) Tcl_Alloc(K * sizeof(unsigned char *));
+    for (j = 0; j < K; j++) {
+	Tcl_Obj *cv = TclCompactNewAlways(lt, n, &outData[j]);
+
+	if (cv == NULL || ((uintptr_t) outData[j] % sizeof(double)) != 0) {
+	    if (cv != NULL) {
+		Tcl_IncrRefCount(cv);
+		Tcl_DecrRefCount(cv);
+	    }
+	    goto done;
+	}
+	outCols[j] = TclNewAnnotatedOwn(cv, TclTypeRefFor(interp, lt, -1));
+	Tcl_IncrRefCount(outCols[j]);
+	built++;
+    }
+    /* la passe : un rassemblement par bloc, K programmes dessus */
+  pass:
+    for (i = 0; i < n; i += MD_BLK) {
+	int nb = (n - i > MD_BLK) ? MD_BLK : (int) (n - i);
+
+	TypeMapGather(pairs, npairs, slotOf, gcols, NULL, i, nb, bbad, ibad);
+	if (memchr(bbad, 1, nb) != NULL) {
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    memset(cbad, 0, nb);
+	    MDRunBlock(&dp[j], ccols[j], vals[j], nb, scratch, cbad,
+		    sink ? tmp : (double *) outData[j] + i);
+	    if (memchr(cbad, 1, nb) != NULL) {
+		goto done;
+	    }
+	    if (sink != NULL) {
+		/* à son pas dans la cible */
+		unsigned char *d = sdst[j] + (size_t) i * sstep[j];
+		size_t st = sstep[j];
+		int e;
+
+		if (st == 8) {
+		    memcpy(d, tmp, (size_t) nb * 8);
+		} else if (((uintptr_t) d % 8) == 0) {
+		    double *dd = (double *) d;
+		    size_t s8 = st / 8;
+
+		    for (e = 0; e < nb; e++) {
+			dd[(size_t) e * s8] = tmp[e];
+		    }
+		} else {
+		    for (e = 0; e < nb; e++) {
+			memcpy(d + (size_t) e * st, &tmp[e], 8);
+		    }
+		}
+	    }
+	}
+    }
+    if (sink != NULL) {
+	TclTypePathCellsEnd(sink, 1);	/* installée */
+	sink = NULL;
+	ok = 1;
+	goto done;
+    }
+    /* comme lmap : les variables gardent le dernier élément */
+    if (MapSetLastVars(interp, pairs, npairs, n) != TCL_OK) {
+	goto done;		/* (une trace : le chemin habituel refait) */
+    }
+    ok = 1;
+  done:
+    if (sink != NULL) {
+	TclTypePathCellsEnd(sink, 0);	/* abandonnée : rien n'a changé */
+    }
+    if (tmp != NULL) {
+	Tcl_Free(tmp);
+    }
+    if (!ok) {
+	for (j = 0; j < built; j++) {
+	    Tcl_DecrRefCount(outCols[j]);
+	    outCols[j] = NULL;
+	}
+    }
+    if (outData != NULL) {
+	Tcl_Free(outData);
+    }
+    if (gcols != NULL) {
+	Tcl_Free(gcols);
+	Tcl_Free(gmem);
+	Tcl_Free(scratch);
+    }
+    if (g != NULL) {
+	for (j = 0; j < K; j++) {
+	    MProgFree(&g[j]);
+	    if (dp[j].ops) {
+		Tcl_Free(dp[j].ops);
+	    }
+	    if (vals[j]) {
+		Tcl_Free(vals[j]);
+	    }
+	    if (ccols[j]) {
+		Tcl_Free(ccols[j]);
+	    }
+	}
+	Tcl_Free(g);
+	Tcl_Free(dp);
+	Tcl_Free(vals);
+	Tcl_Free(ccols);
+    }
+    if (slotOf != NULL) {
+	Tcl_Free(slotOf);
+    }
+    for (k = 0; k < npairs; k++) {
+	Tcl_DecrRefCount(pairs[k].list);
+	Tcl_DecrRefCount(pairs[k].varList);
+    }
+    if (pairs != NULL) {
+	Tcl_Free(pairs);
+    }
+    return ok;
+}
+
+/*
+ * 24/11 (v17r) : les boucles vectorisables. foreach et lmap demandent au
+ * registre, à chaque appel, si une entrée sait faire cet appel-là ; une
+ * entrée rend TCL_CONTINUE si elle ne sait pas (la boucle ordinaire suit),
+ * sinon son résultat. Les entrées sont essayées par priorité décroissante.
+ * L'entrée intégrée s'appuie sur type map : elle n'accepte que ce qu'elle
+ * fait à l'identique de la boucle.
+ */
+typedef struct VecEntry {
+    const char *name;
+    TclVecEachloopProc *proc;
+    int priority;
+} VecEntry;
+
+static VecEntry vecReg[16];
+static int nVec = 0;
+TCL_DECLARE_MUTEX(vecMutex)
+
+int
+TclVecRegister(const char *name, TclVecEachloopProc *proc, int priority)
+{
+    int k, j;
+
+    Tcl_MutexLock(&vecMutex);
+    for (k = 0; k < nVec; k++) {
+	if (strcmp(vecReg[k].name, name) == 0) {
+	    vecReg[k].proc = proc;	/* (remplace) */
+	    vecReg[k].priority = priority;
+	    Tcl_MutexUnlock(&vecMutex);
+	    return TCL_OK;
+	}
+    }
+    if (nVec == 16) {
+	Tcl_MutexUnlock(&vecMutex);
+	return TCL_ERROR;
+    }
+    for (k = 0; k < nVec && vecReg[k].priority >= priority; k++) {
+    }
+    for (j = nVec; j > k; j--) {
+	vecReg[j] = vecReg[j - 1];
+    }
+    vecReg[k].name = name;
+    vecReg[k].proc = proc;
+    vecReg[k].priority = priority;
+    nVec++;
+    Tcl_MutexUnlock(&vecMutex);
+    return TCL_OK;
+}
+
+static TclVecEachloopProc VecTypeMap;
+
+int
+TclVecEachloop(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    int k, rc;
+    static int init = 0;
+
+    if (!init) {
+	TclVecRegister("typemap", VecTypeMap, 0);
+	init = 1;
+    }
+    for (k = 0; k < nVec; k++) {
+	rc = vecReg[k].proc(interp, isLmap, objc, objv);
+	if (rc != TCL_CONTINUE) {
+	    return rc;
+	}
+    }
+    return TCL_CONTINUE;
+}
+
+/* le noeud rend-il toujours une valeur neuve (un calcul), jamais un de
+ * ses opérandes tel quel ($x, ?:, min, max, abs, int, double, +x) ? */
+static int
+MFresh(const MProg *g, int i)
+{
+    const MNode *nd = &g->n[i];
+
+    switch (nd->kind) {
+    case MN_POS:
+	return MFresh(g, nd->a);	/* (des parenthèses, ou +x) */
+    case MN_VAR: case MN_CONST: case MN_COND:
+	return 0;
+    case MN_FUNC:
+	return !(nd->fn == MF_ABS || nd->fn == MF_DOUBLE || nd->fn == MF_INT
+		|| nd->fn == MF_MIN || nd->fn == MF_MAX || nd->fn == MF_ROUND);
+    default:
+	return 1;
+    }
+}
+
+/* le texte est-il une expression pure (le sous-ensemble compilé) ? Et rend-
+ * elle toujours une valeur neuve (*freshPtr) ? */
+static int
+MapExprPure(const char *text, int *freshPtr)
+{
+    MProg g;
+    int ok, root;
+
+    memset(&g, 0, sizeof(g));
+    g.p = text;
+    root = MExpr(&g);
+    MSkip(&g);
+    ok = !g.bad && *g.p == '\0';
+    if (freshPtr != NULL) {
+	*freshPtr = ok && root >= 0 && MFresh(&g, root);
+    }
+    MProgFree(&g);
+    return ok;
+}
+
+/* une commande du nom donné, telle qu'elle est résolue ici, est-elle la
+ * commande intégrée ? */
+static int
+VecBuiltin(Tcl_Interp *interp, const char *name, Tcl_ObjCmdProc *proc)
+{
+    Tcl_CmdInfo info;
+
+    return Tcl_GetCommandInfo(interp, name, &info) && info.objProc == proc;
+}
+
+/* le mot d'un jeton : son texte s'il est simple (un seul jeton texte, en
+ * accolades ou nu) ; NULL sinon */
+static Tcl_Obj *
+VecSimpleWord(Tcl_Token *t, int *braced)
+{
+    if (t->type != TCL_TOKEN_SIMPLE_WORD || t->numComponents != 1) {
+	return NULL;
+    }
+    *braced = (t->start[0] == '{');
+    return Tcl_NewStringObj(t[1].start, t[1].size);
+}
+
+static int VecBodyForm(Tcl_Interp *interp, int isLmap, Tcl_Obj *body,
+	Tcl_Obj **exprPtr, Tcl_Obj **foldPtr, int *assignPtr);
+
+/* un nom de variable simple : lettres, chiffres, _ */
+static int
+VecPlainName(const char *p, Tcl_Size n)
+{
+    Tcl_Size i;
+
+    if (n <= 0) {
+	return 0;
+    }
+    for (i = 0; i < n; i++) {
+	if (!(isalnum(UCHAR(p[i])) || p[i] == '_')) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/*
+ * incr s ?E? (foreach) : E est 1, un entier écrit, $v, ou [expr {E}].
+ * L'expression rendue : ($s + E) ; l'appelant vérifie que tout reste entier
+ * (sinon la boucle ordinaire, qui donne l'erreur d'incr).
+ */
+static int
+VecIncrForm(Tcl_Interp *interp, Tcl_Parse *pp, Tcl_Obj **exprPtr,
+	Tcl_Obj **foldPtr)
+{
+    Tcl_Token *t0 = pp->tokenPtr, *t1, *t2;
+    Tcl_Obj *w0, *w1 = NULL, *add = NULL;
+    int braced, ok = 0;
+
+    w0 = VecSimpleWord(t0, &braced);
+    if (w0 == NULL || strcmp(Tcl_GetString(w0), "incr") != 0
+	    || !VecBuiltin(interp, "incr", Tcl_IncrObjCmd)) {
+	goto done;
+    }
+    t1 = t0 + 1 + t0->numComponents;
+    w1 = VecSimpleWord(t1, &braced);
+    if (w1 == NULL || braced || !VecPlainName(Tcl_GetString(w1),
+	    (Tcl_Size) strlen(Tcl_GetString(w1)))) {
+	goto done;
+    }
+    if (pp->numWords == 2) {
+	add = Tcl_NewStringObj("1", 1);
+    } else {
+	Tcl_Obj *lit;
+	Tcl_WideInt w;
+
+	t2 = t1 + 1 + t1->numComponents;
+	if ((lit = VecSimpleWord(t2, &braced)) != NULL) {
+	    /* un entier écrit (décimal, sans espace) */
+	    const char *q = Tcl_GetString(lit);
+	    const char *r = (*q == '-' || *q == '+') ? q + 1 : q;
+
+	    if (!braced && *r != '\0' && strspn(r, "0123456789")
+		    == strlen(r) && (*r != '0' || r[1] == '\0')
+		    && Tcl_GetWideIntFromObj(NULL, lit, &w) == TCL_OK) {
+		add = Tcl_ObjPrintf("%" TCL_LL_MODIFIER "d", (long long) w);
+	    }
+	    TclDiscard(lit);
+	} else if (t2->type == TCL_TOKEN_WORD && t2->numComponents == 2
+		&& t2[1].type == TCL_TOKEN_VARIABLE
+		&& t2[1].numComponents == 1 && t2[2].type == TCL_TOKEN_TEXT
+		&& VecPlainName(t2[2].start, t2[2].size)) {
+	    /* $v */
+	    add = Tcl_NewStringObj(t2[1].start, t2[1].size);
+	} else if (t2->type == TCL_TOKEN_WORD && t2->numComponents == 1
+		&& t2[1].type == TCL_TOKEN_COMMAND) {
+	    /* [expr {E}] */
+	    Tcl_Obj *inner = Tcl_NewStringObj(t2[1].start + 1,
+		    t2[1].size - 2), *ie = NULL, *dummy = NULL;
+	    int da;
+
+	    Tcl_IncrRefCount(inner);
+	    if (VecBodyForm(interp, 1, inner, &ie, &dummy, &da) && ie != NULL
+		    && Tcl_GetString(inner)[0] != '(') {
+		add = ie;
+	    } else if (ie != NULL) {
+		TclDiscard(ie);
+	    }
+	    Tcl_DecrRefCount(inner);
+	}
+    }
+    if (add != NULL) {
+	*exprPtr = Tcl_ObjPrintf("($%s + %s)", Tcl_GetString(w1),
+		Tcl_GetString(add));
+	*foldPtr = w1;
+	w1 = NULL;
+	TclDiscard(add);
+	ok = 1;
+    }
+  done:
+    if (w1 != NULL) {
+	TclDiscard(w1);
+    }
+    if (w0 != NULL) {
+	TclDiscard(w0);
+    }
+    return ok;
+}
+
+/*
+ * Le corps : (E), ou expr {E} (lmap) ; (s = E), ou set s [expr {E}]
+ * (foreach). *exprPtr reçoit « (E) », *foldPtr le nom de s (foreach). 0 si
+ * le corps n'a pas une de ces formes.
+ */
+static int
+VecBodyForm(Tcl_Interp *interp, int isLmap, Tcl_Obj *body, Tcl_Obj **exprPtr,
+	Tcl_Obj **foldPtr, int *assignPtr)
+{
+    Tcl_Size len;
+    const char *b = Tcl_GetStringFromObj(body, &len), *e = b + len, *p;
+    Tcl_Parse parse;
+    int depth = 0, braced, ok = 0;
+
+    *exprPtr = *foldPtr = NULL;
+    *assignPtr = 0;
+    while (b < e && isspace(UCHAR(*b))) {
+	b++;
+    }
+    while (e > b && isspace(UCHAR(e[-1]))) {
+	e--;
+    }
+    if (e - b >= 2 && *b == '(' && e[-1] == ')') {
+	/* (E) ou (s = E) : la parenthèse ouvrante ferme à la fin, pas de ; */
+	const char *in = b + 1, *ie = e - 1, *eq = NULL;
+
+	for (p = b; p < e; p++) {
+	    if (*p == '(' || *p == '[' || *p == '{') {
+		depth++;
+	    } else if (*p == ')' || *p == ']' || *p == '}') {
+		if (--depth == 0 && p != e - 1) {
+		    return 0;
+		}
+	    } else if (depth == 1 && (*p == ';' || *p == '"' || *p == '\\')) {
+		return 0;
+	    } else if (depth == 1 && *p == '=' && eq == NULL
+		    && p[1] != '=' && p > in && p[-1] != '=' && p[-1] != '!'
+		    && p[-1] != '<' && p[-1] != '>') {
+		eq = p;
+	    }
+	}
+	if (eq == NULL) {
+	    if (!isLmap) {
+		return 0;
+	    }
+	    *exprPtr = Tcl_NewStringObj(b, e - b);
+	    return 1;
+	}
+	if (isLmap) {
+	    return 0;
+	}
+	{
+	    const char *n = in, *ne = eq;
+
+	    while (n < ne && isspace(UCHAR(*n))) {
+		n++;
+	    }
+	    while (ne > n && isspace(UCHAR(ne[-1]))) {
+		ne--;
+	    }
+	    for (p = n; p < ne; p++) {
+		if (!(isalnum(UCHAR(*p)) || *p == '_')) {
+		    return 0;
+		}
+	    }
+	    if (n == ne) {
+		return 0;
+	    }
+	    *foldPtr = Tcl_NewStringObj(n, ne - n);
+	    *exprPtr = Tcl_ObjPrintf("(%.*s)", (int) (ie - eq - 1), eq + 1);
+	    *assignPtr = 1;		/* (s = E) : E tel qu'il est rendu */
+	    return 1;
+	}
+    }
+    /* expr {E} ; set s [expr {E}] */
+    if (Tcl_ParseCommand(NULL, b, e - b, 0, &parse) != TCL_OK) {
+	return 0;
+    }
+    if (parse.term < e - 1 || parse.commentSize > 0) {
+	goto parsedone;		/* plus d'une commande */
+    }
+    if (isLmap && parse.numWords == 2) {
+	Tcl_Obj *w0 = VecSimpleWord(parse.tokenPtr, &braced), *w1;
+
+	if (w0 != NULL && strcmp(Tcl_GetString(w0), "expr") == 0
+		&& VecBuiltin(interp, "expr", Tcl_ExprObjCmd)) {
+	    Tcl_Token *t1 = parse.tokenPtr + 1 + parse.tokenPtr->numComponents;
+
+	    w1 = VecSimpleWord(t1, &braced);
+	    if (w1 != NULL && braced) {
+		*exprPtr = Tcl_ObjPrintf("(%s)", Tcl_GetString(w1));
+		ok = 1;
+	    }
+	    if (w1 != NULL) {
+		TclDiscard(w1);
+	    }
+	}
+	if (w0 != NULL) {
+	    TclDiscard(w0);
+	}
+    } else if (!isLmap && (parse.numWords == 2 || parse.numWords == 3)
+	    && VecIncrForm(interp, &parse, exprPtr, foldPtr)) {
+	/* incr s ?E? : un cumul d'entiers, ($s + E) */
+	*assignPtr = 2;
+	ok = 1;
+    } else if (!isLmap && parse.numWords == 3) {
+	Tcl_Token *t0 = parse.tokenPtr, *t1, *t2;
+	Tcl_Obj *w0 = VecSimpleWord(t0, &braced), *w1 = NULL;
+
+	t1 = t0 + 1 + t0->numComponents;
+	t2 = t1 + 1 + t1->numComponents;
+	if (w0 != NULL && strcmp(Tcl_GetString(w0), "set") == 0
+		&& VecBuiltin(interp, "set", Tcl_SetObjCmd)
+		&& (w1 = VecSimpleWord(t1, &braced)) != NULL && !braced
+		&& t2->type == TCL_TOKEN_WORD && t2->numComponents == 1
+		&& t2[1].type == TCL_TOKEN_COMMAND) {
+	    /* [expr {E}] : le script entre crochets, une commande */
+	    Tcl_Obj *inner = Tcl_NewStringObj(t2[1].start + 1,
+		    t2[1].size - 2);
+	    Tcl_Obj *ie = NULL, *dummy = NULL;
+	    int da;
+
+	    Tcl_IncrRefCount(inner);
+	    if (VecBodyForm(interp, 1, inner, &ie, &dummy, &da) && ie != NULL
+		    && Tcl_GetString(inner)[0] != '(') {
+		*exprPtr = ie;
+		*foldPtr = w1;
+		w1 = NULL;
+		ok = 1;
+	    } else if (ie != NULL) {
+		TclDiscard(ie);
+	    }
+	    Tcl_DecrRefCount(inner);
+	}
+	if (w1 != NULL) {
+	    TclDiscard(w1);
+	}
+	if (w0 != NULL) {
+	    TclDiscard(w0);
+	}
+    }
+  parsedone:
+    Tcl_FreeParse(&parse);
+    return ok;
+}
+
+/* une variable que la boucle peut poser sans témoin : pas d'élément de
+ * tableau, pas un tableau, pas de trace, pas de type ni de contrat */
+static int
+VecPlainVar(Tcl_Interp *interp, Tcl_Obj *name)
+{
+    Var *varPtr, *arrayPtr = NULL;
+    const char *n = Tcl_GetString(name);
+
+    if (strchr(n, '(') != NULL || *n == '\0') {
+	return 0;
+    }
+    varPtr = TclObjLookupVarEx(interp, name, NULL, 0, NULL, 0, 0, &arrayPtr);
+    if (varPtr == NULL) {
+	return 1;			/* (pas encore là : créée sans trace) */
+    }
+    if (TclIsVarArray(varPtr) || TclIsVarTraced(varPtr)
+	    || (arrayPtr != NULL && TclIsVarTraced(arrayPtr))
+	    || (varPtr->flags & (VAR_TYPED | VAR_CONTRACT))) {
+	return 0;
+    }
+    return 1;
+}
+
+#define VEC_MIN 16		/* en dessous : la boucle ordinaire */
+
+/* un entier (grand ou non), au sens d'incr */
+static int
+VecIsInt(Tcl_Obj *o)
+{
+    void *p;
+    int t;
+
+    if (Tcl_GetNumberFromObj(NULL, o, &p, &t) != TCL_OK) {
+	return 0;
+    }
+    return t == TCL_NUMBER_INT || t == TCL_NUMBER_BIG;
+}
+
+static int VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
+
+/*
+ * Les listes de variables, copiées : le mot peut être l'objet-nom d'une
+ * variable locale compilée (un littéral partagé), dont la recherche de
+ * variable efface la représentation interne (tclVar.c, [80304238ac]) ;
+ * ses éléments de liste disparaîtraient sous nos pieds.
+ */
+static int
+VecTypeMap(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *small[16], **ov = (objc <= 16) ? small
+	    : (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) objc);
+    Tcl_Size k;
+    int rc;
+
+    for (k = 0; k < objc; k++) {
+	ov[k] = (k % 2 == 1 && k < objc - 1) ? Tcl_DuplicateObj(objv[k])
+		: objv[k];
+	Tcl_IncrRefCount(ov[k]);
+    }
+    rc = VecTypeMapRun(interp, isLmap, objc, ov);
+    for (k = 0; k < objc; k++) {
+	Tcl_DecrRefCount(ov[k]);
+    }
+    if (ov != small) {
+	Tcl_Free(ov);
+    }
+    return rc;
+}
+
+static int
+VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    Tcl_Obj *ex = NULL, *fv = NULL, **av = NULL, *init = NULL;
+    Tcl_Size k, n = -1, len, ac = 0;
+    int rc = TCL_CONTINUE, assign = 0, fresh = 0;
+
+    if (TclTypeOpsMode() == TCL_TYPE_OPS_OFF
+	    || getenv("TCL_TYPE_NOVECLOOP") != NULL || objc < 4
+	    || (objc % 2) != 0) {
+	return TCL_CONTINUE;
+    }
+    if (!VecBodyForm(interp, isLmap, objv[objc - 1], &ex, &fv, &assign)) {
+	return TCL_CONTINUE;
+    }
+    Tcl_IncrRefCount(ex);
+    if (fv != NULL) {
+	Tcl_IncrRefCount(fv);
+    }
+    if (!MapExprPure(Tcl_GetString(ex), &fresh)
+	    || (assign == 1 && !fresh)) {
+	/* (s = E) garde un opérande tel quel ($u, ?:...), sans le
+	 * normaliser comme expr : la boucle ordinaire */
+	goto decline;
+    }
+    /* une variable par liste, des listes de même longueur, assez longues */
+    for (k = 1; k < objc - 1; k += 2) {
+	Tcl_Obj **vv;
+	Tcl_Size nv;
+
+	if (Tcl_ListObjGetElements(NULL, objv[k], &nv, &vv) != TCL_OK
+		|| nv != 1 || !VecPlainVar(interp, vv[0])
+		|| (fv != NULL && strcmp(Tcl_GetString(vv[0]),
+		    Tcl_GetString(fv)) == 0)
+		|| Tcl_ListObjLength(NULL, objv[k + 1], &len) != TCL_OK
+		|| (n >= 0 && len != n)) {
+	    goto decline;
+	}
+	n = len;
+    }
+    if (n < VEC_MIN) {
+	goto decline;
+    }
+    if (fv != NULL) {
+	/* le cumul : s doit exister (sa valeur de départ), sans témoin */
+	if (!VecPlainVar(interp, fv)
+		|| (init = Tcl_ObjGetVar2(interp, fv, NULL, 0)) == NULL) {
+	    goto decline;
+	}
+	Tcl_IncrRefCount(init);
+	if (assign == 2 && !VecIsInt(init)) {
+	    goto decline;		/* incr : s entier au départ */
+	}
+    }
+    /* type map ?-fold {s init}? {v} L ... (E) */
+    av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) (objc + 4));
+    av[ac++] = objv[0];
+    av[ac++] = objv[0];
+    for (k = 1; k < objc - 1; k++) {
+	av[ac++] = objv[k];
+    }
+    av[ac++] = ex;
+    if (fv != NULL) {
+	MapFold f;
+
+	f.name = fv;
+	f.init = init;
+	rc = TypeMapList(interp, ac, av, &f);
+    } else {
+	rc = TypeMapList(interp, ac, av, NULL);
+    }
+    if (rc == TCL_OK && assign == 2) {
+	/* incr : un cumul resté entier, sinon la boucle ordinaire (l'erreur
+	 * d'incr sur l'élément qui n'est pas entier) */
+	Tcl_Obj *fin = Tcl_ObjGetVar2(interp, fv, NULL, 0);
+
+	if (fin == NULL || !VecIsInt(fin)) {
+	    rc = TCL_ERROR;
+	}
+    }
+    if (rc != TCL_OK) {
+	/* l'erreur telle que la boucle la donne : la boucle ordinaire,
+	 * depuis le début (le corps est pur ; s remis à son départ) */
+	if (fv != NULL) {
+	    Tcl_ObjSetVar2(interp, fv, NULL, init, 0);
+	}
+	Tcl_ResetResult(interp);
+	rc = TCL_CONTINUE;
+    } else if (isLmap) {
+	/* la liste des résultats, sans annotation (comme lmap) */
+	Tcl_Obj *r = Tcl_GetObjResult(interp), *c = NULL;
+
+	if (TclAnnotInfo(r, &c, NULL, NULL, NULL) != 0 && c != NULL) {
+	    Tcl_SetObjResult(interp, c);
+	}
+    } else {
+	Tcl_ResetResult(interp);	/* foreach ne rend rien */
+    }
+    Tcl_Free(av);
+  decline:
+    if (init != NULL) {
+	Tcl_DecrRefCount(init);
+    }
+    if (fv != NULL) {
+	Tcl_DecrRefCount(fv);
+    }
+    Tcl_DecrRefCount(ex);
+    return rc;
+}
+
+/*
+ * Le niveau compilation (v17s). TclVecCompilable : le corps a-t-il une
+ * forme que le registre peut prendre ? (À la compilation : seules ces
+ * boucles paient l'essai.) Le reste se décide à l'exécution, par
+ * ::tcl::unsupported::vecloop isLmap v1 L1 ?v2 L2 ...? body, qui rend
+ * {1 résultat} si la boucle a été faite, ou {0 L1 L2 ...} : les listes,
+ * déjà évaluées, pour la boucle ordinaire.
+ */
+int
+TclVecCompilable(Tcl_Interp *interp, int isLmap, const char *body,
+	Tcl_Size len)
+{
+    Tcl_Obj *b = Tcl_NewStringObj(body, len), *ex = NULL, *fv = NULL;
+    int assign = 0, fresh = 0, ok;
+
+    Tcl_IncrRefCount(b);
+    ok = VecBodyForm(interp, isLmap, b, &ex, &fv, &assign);
+    if (ok) {
+	Tcl_IncrRefCount(ex);
+	ok = MapExprPure(Tcl_GetString(ex), &fresh)
+		&& !(assign == 1 && !fresh);
+	Tcl_DecrRefCount(ex);
+    }
+    if (fv != NULL) {
+	TclDiscard(fv);
+    }
+    Tcl_DecrRefCount(b);
+    return ok;
+}
+
+static int
+VecLoopObjCmd(TCL_UNUSED(void *), Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    int isLmap, rc;
+    Tcl_Size k, nl = 0;
+    Tcl_Obj **av, *r;
+
+    if (objc < 5 || (objc % 2) != 1
+	    || Tcl_GetBooleanFromObj(interp, objv[1], &isLmap) != TCL_OK) {
+	Tcl_WrongNumArgs(interp, 1, objv, "isLmap varList list "
+		"?varList list ...? body");
+	return TCL_ERROR;
+    }
+    /* d'abord le moins cher : assez d'éléments ? */
+    for (k = 3; k < objc - 1; k += 2) {
+	Tcl_Size len;
+
+	if (Tcl_ListObjLength(NULL, objv[k], &len) == TCL_OK && len > nl) {
+	    nl = len;
+	}
+    }
+    rc = TCL_CONTINUE;
+    if (nl >= VEC_MIN) {
+	av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) (objc - 1));
+	av[0] = Tcl_NewStringObj(isLmap ? "lmap" : "foreach", -1);
+	Tcl_IncrRefCount(av[0]);
+	memcpy(av + 1, objv + 2, sizeof(Tcl_Obj *) * (size_t) (objc - 2));
+	rc = TclVecEachloop(interp, isLmap, objc - 1, av);
+	if (rc != TCL_OK && rc != TCL_ERROR) {
+	    rc = TCL_CONTINUE;	/* (jamais break ni continue ici) */
+	}
+	Tcl_DecrRefCount(av[0]);
+	Tcl_Free(av);
+    }
+    if (rc == TCL_CONTINUE) {
+	Tcl_Obj *z = Tcl_NewWideIntObj(0);
+
+	r = Tcl_NewListObj(0, NULL);
+	Tcl_ListObjAppendElement(NULL, r, z);
+	for (k = 3; k < objc - 1; k += 2) {
+	    Tcl_ListObjAppendElement(NULL, r, objv[k]);
+	}
+	Tcl_ResetResult(interp);
+	Tcl_SetObjResult(interp, r);
+	return TCL_OK;
+    }
+    if (rc != TCL_OK) {
+	return rc;
+    }
+    {
+	Tcl_Obj *pair[2];
+
+	pair[0] = Tcl_NewWideIntObj(1);
+	pair[1] = Tcl_GetObjResult(interp);
+	r = Tcl_NewListObj(2, pair);
+	Tcl_SetObjResult(interp, r);
+    }
+    return TCL_OK;
+}
+
+/*
+ * type repeat T N ?valeur? (v17t) : une liste list.T de N fois la valeur ;
+ * type repeat -into L N ?valeur? : une valeur de type L (son élément ; une
+ * longueur fixée par L est vérifiée). Par défaut, le zéro de l'élément (0,
+ * ou 0.0 pour un flottant ; demandé sinon). La valeur est vérifiée une
+ * fois ; toujours en cases quand l'élément en a une forme : codée une fois
+ * et recopiée par blocs (TclCompactRepeat). Sinon la même valeur partagée.
+ */
+static int
+TypeRepeatCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    TclType *tp, *et;
+    Tcl_Size n, len, k;
+    const char *tn;
+    Tcl_Obj *v, *c = NULL, *content = NULL, *res = NULL, *z = NULL;
+    int rc = TCL_ERROR;
+
+    int into = (objc >= 3 && strcmp(Tcl_GetString(objv[2]), "-into") == 0);
+
+    if (into) {
+	objv++;
+	objc--;			/* -into L : L à la place de T */
+    }
+    if (objc != 4 && objc != 5) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("wrong # args: should be "
+		"\"type repeat type count ?value?\" or \"type repeat -into "
+		"listType count ?value?\"", -1));
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
+	return TCL_ERROR;
+    }
+    tn = Tcl_GetStringFromObj(objv[2], &len);
+    if ((tp = TclTypeParse(interp, tn, len)) == NULL) {
+	return TCL_ERROR;
+    }
+    if (!into) {
+	et = tp;
+	if ((tp = TclTypeListOf(interp, et)) == NULL) {
+	    return TCL_ERROR;
+	}
+    } else if (tp->kind != TCLT_LIST || (et = tp->elem) == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"type repeat: \"%s\" is not a list type", tn));
+	return TCL_ERROR;
+    }
+    if (Tcl_GetSizeIntFromObj(interp, objv[3], &n) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (n < 0) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"type repeat: bad count \"%s\"", Tcl_GetString(objv[3])));
+	return TCL_ERROR;
+    }
+    if ((tp->arity >= 0 && n != tp->arity) || (tp->lenRange
+	    && (n < tp->lenMin || (tp->lenMax >= 0 && n > tp->lenMax)))) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"type repeat: %" TCL_SIZE_MODIFIER "d elements do not fit "
+		"in %s", n, tn));
+	return TCL_ERROR;
+    }
+    if (objc == 5) {
+	v = objv[4];
+    } else {
+	/* le zéro d'un élément numérique : refuse un mot, accepte 0 */
+	Tcl_Obj *w = Tcl_NewStringObj("x", 1), *h = Tcl_NewStringObj("0.5", 3);
+
+	Tcl_IncrRefCount(w);
+	Tcl_IncrRefCount(h);
+	z = Tcl_NewStringObj("0", 1);
+	Tcl_IncrRefCount(z);
+	if (TclTypeValidate(NULL, et, w, -1, NULL) == TCL_OK
+		|| TclTypeValidate(NULL, et, z, -1, NULL) != TCL_OK) {
+	    Tcl_DecrRefCount(w);
+	    Tcl_DecrRefCount(h);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "type repeat: a value is needed for elements of type %s",
+		    et->name));
+	    goto done;
+	}
+	if (TclTypeValidate(NULL, et, h, -1, NULL) == TCL_OK) {
+	    Tcl_DecrRefCount(z);
+	    z = Tcl_NewStringObj("0.0", 3);
+	    Tcl_IncrRefCount(z);
+	}
+	Tcl_DecrRefCount(w);
+	Tcl_DecrRefCount(h);
+	v = z;
+    }
+    if ((c = TclTypedConform(interp, et, v)) == NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("type repeat: value: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp))));
+	goto done;
+    }
+    Tcl_IncrRefCount(c);
+    content = TclCompactRepeat(tp, c, n);
+    if (content != NULL) {
+	res = TclNewAnnotatedOwn(content, TclTypeRefFor(interp, tp, -1));
+    } else {
+	/* des objets : la même valeur partagée, la liste mise au type L
+	 * (éléments identiques : vérifiés une fois, ValidateG) */
+	Tcl_Obj **ev = NULL, *lst, *cc, *bare = NULL;
+	TclType *at = NULL;
+
+	if (TclIsAnnotated(c) && TclAnnotNotes(c) == NULL
+		&& TclAnnotInfo(c, &bare, &at, NULL, NULL) == 1 && at == et
+		&& bare != NULL && !TclIsAnnotated(bare)) {
+	    /* l'élément de son propre type, sans notes : son contenu nu,
+	     * comme dans une liste typée */
+	    Tcl_IncrRefCount(bare);
+	    Tcl_DecrRefCount(c);
+	    c = bare;
+	}
+	if (n > 0) {
+	    ev = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) n);
+	    for (k = 0; k < n; k++) {
+		ev[k] = c;
+	    }
+	}
+	lst = Tcl_NewListObj(n, ev);
+	if (ev != NULL) {
+	    Tcl_Free(ev);
+	}
+	Tcl_IncrRefCount(lst);
+	if (!TclIsAnnotated(c)) {
+	    /* un élément nu, déjà vérifié, et la longueur aussi : la liste
+	     * neuve prise telle quelle */
+	    res = TclNewAnnotatedOwn(lst, TclTypeRefFor(interp, tp, -1));
+	    Tcl_DecrRefCount(lst);
+	    goto set;
+	}
+	cc = TclTypedConform(interp, tp, lst);
+	if (cc == NULL) {
+	    Tcl_DecrRefCount(lst);
+	    goto done;
+	}
+	if (cc == lst && lst->refCount == 1 && TclIsAnnotated(cc) == 0) {
+	    /* la liste neuve, à nous seuls : prise telle quelle */
+	    res = TclNewAnnotatedOwn(lst, TclTypeRefFor(interp, tp, -1));
+	    Tcl_DecrRefCount(lst);
+	} else {
+	    Tcl_IncrRefCount(cc);
+	    res = TclNewAnnotated(interp, tp, -1, cc);
+	    Tcl_DecrRefCount(cc);
+	    Tcl_DecrRefCount(lst);
+	}
+    }
+  set:
+    Tcl_SetObjResult(interp, res);
+    rc = TCL_OK;
+  done:
+    if (c != NULL) {
+	Tcl_DecrRefCount(c);
+    }
+    if (z != NULL) {
+	Tcl_DecrRefCount(z);
+    }
     return rc;
 }
 
@@ -12410,6 +15710,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     if (strcmp(sub, "map") == 0) {
 	return TypeMapCmd(interp, objc, objv);	/* 23/11 */
     }
+    if (strcmp(sub, "repeat") == 0) {
+	return TypeRepeatCmd(interp, objc, objv);	/* v17t */
+    }
     if (strcmp(sub, "ops") == 0) {
 	/* 23/11 : type ops TYPE : la spécialisation choisie pour TYPE (son
 	 * nom), ou rien si TYPE n'a que le chemin général */
@@ -12468,7 +15771,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, map, meta, ops, parse, proc, variant "
+	    "call, canonic, cast, convert, debug, deref, export, forget, get, is, map, meta, ops, parse, proc, repeat, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }
@@ -12620,7 +15923,7 @@ QuickScalarOk(const TclType *ft, Tcl_Obj *v)
 {
     double d;
 
-    if (ft == NULL || ft->binLink != NULL) {
+    if (ft == NULL || ft->binLink != NULL || ft->pred != NULL) {
 	return 0;
     }
     switch (ft->kind) {
@@ -12752,7 +16055,8 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
 	 * la même chose après ses cas généraux) ; le message vient de
 	 * TclTypeValidate. */
 	double dv;
-	int quick = (tp->binLink == NULL) && (tp->kind == TCLT_DOUBLE
+	int quick = (tp->binLink == NULL && tp->pred == NULL)
+		&& (tp->kind == TCLT_DOUBLE
 		? Tcl_GetDoubleFromObj(NULL, valueObj, &dv) == TCL_OK
 		: (tp->bitWidth == 0 && tp->binKind != TCLBIN_UINT
 		    && tp->binKind != TCLBIN_SINT
@@ -13236,6 +16540,8 @@ TclTypesInit(Tcl_Interp *interp)
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::typesversion",
 	    TypesVersionObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::vecloop",
+	    VecLoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::abi", AbiObjCmd,
 	    NULL, NULL);
     TclCompactInit(interp);

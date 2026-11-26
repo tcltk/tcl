@@ -2272,9 +2272,20 @@ NormElems(Tcl_Size n, Tcl_Obj *const *ev, TclType *elem, TclTypeField *fields,
     Tcl_Size i;
 
     for (i = 0; i < n; i++) {
-	TclType *t = (fields != NULL) ? fields[i].type
+	TclType *t;
+	Tcl_Obj *r;
+
+	if (fields == NULL && stride != 2 && i > 0 && ev[i] == ev[i - 1]) {
+	    /* le même objet que le précédent (lrepeat, type repeat) : le
+	     * même résultat */
+	    if (nev != NULL) {
+		nev[i] = nev[i - 1];
+	    }
+	    continue;
+	}
+	t = (fields != NULL) ? fields[i].type
 		: ((stride == 2 && (i % 2) == 0) ? NULL : elem);
-	Tcl_Obj *r = (t != NULL) ? NormContent(t, -1, ev[i]) : NULL;
+	r = (t != NULL) ? NormContent(t, -1, ev[i]) : NULL;
 
 	if (r != NULL) {
 	    if (nev == NULL) {
@@ -6047,7 +6058,9 @@ NewCompactBuf(TclType *et, TclCompactLayout *lay, Tcl_Size cap)
     size_t bytes = (size_t) (cap > 0 ? cap : 1) * lay->size;
 
     b->data = (unsigned char *) Tcl_Alloc(bytes);
-    memset(b->data, 0, bytes);		/* remplissage d'alignement : 0 */
+    if (lay->node[0].kind == CN_PROD) {
+	memset(b->data, 0, bytes);	/* remplissage d'alignement : 0 */
+    }					/* (un scalaire : tout est écrit) */
     b->n = 0;
     b->cap = cap > 0 ? cap : 1;
     b->stride = lay->size;
@@ -6655,6 +6668,105 @@ TclCompactWriteScalar(Tcl_Obj *v, Tcl_Size idx, Tcl_Size nnames,
     return 1;
 }
 
+/*
+ * type repeat L N valeur (v17t) : une liste L de n fois la valeur, rangée
+ * en cases sans liste intermédiaire : la valeur codée une fois, sa case
+ * recopiée par blocs qui doublent (un octet : memset). NULL si L n'a pas
+ * de forme en cases (ou la valeur ne s'y code pas) : l'appelant fait une
+ * liste d'objets.
+ */
+Tcl_Obj *
+TclCompactRepeat(TclType *ltp, Tcl_Obj *value, Tcl_Size n)
+{
+    TclCompactLayout *lay;
+    TclCompactBuf *b;
+    Tcl_Obj *v;
+    Tcl_ObjInternalRep ir;
+    size_t es, done, total;
+    int wanted;
+
+    if (ltp == NULL || ltp->kind != TCLT_LIST || ltp->elem == NULL || n <= 0) {
+	return NULL;
+    }
+    /* toujours en cases quand l'élément en a une forme (une création en
+     * masse : comme les résultats de type map) */
+    wanted = ltp->compactWanted || ltp->elem->compactWanted;
+    if ((lay = TclCompactLayoutOf(ltp->elem)) == NULL
+	    || (value->typePtr == &annotatedObjType
+		&& TclAnnotNotes(value) != NULL)) {
+	return NULL;
+    }
+    b = NewCompactBuf(ltp->elem, lay, n);
+    b->norm = wanted || !compactOn ? 1 : 0;
+    if (EncodeNode(lay->node, 0, value, b->data, b->norm) < 0) {
+	ReleaseCompactBuf(b);
+	return NULL;
+    }
+    es = (size_t) lay->size;
+    total = (size_t) n * es;
+    if (es == 1) {
+	memset(b->data + 1, b->data[0], total - 1);
+    } else {
+	for (done = es; done < total; ) {
+	    size_t c = (done < total - done) ? done : total - done;
+
+	    memcpy(b->data + done, b->data, c);
+	    done += c;
+	}
+    }
+    b->n = n;
+    v = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = b;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(v, &compactListType, &ir);
+    TclInvalidateStringRep(v);
+    return v;
+}
+
+/*
+ * Recopie l'élément idx (déjà écrit) dans count positions first, first+step...
+ * (une tranche remplie d'une même valeur : vérifiée et codée une fois).
+ * 1 si fait ; 0 si le tampon n'est pas à v seul (rien n'est écrit).
+ */
+int
+TclCompactFillFrom(Tcl_Obj *v, Tcl_Size idx, Tcl_Size first, Tcl_Size count,
+	Tcl_Size step)
+{
+    TclCompactBuf *b;
+    const unsigned char *src;
+    size_t es;
+    Tcl_Size k, i;
+
+    if (v->typePtr != &compactListType || Tcl_IsShared(v)) {
+	return 0;
+    }
+    b = COMPACT_BUF(v);
+    if (b->refCount > 1 || idx < 0 || idx >= b->n || count < 0
+	    || (count > 0 && (first < 0 || first >= b->n
+		|| first + (count - 1) * step < 0
+		|| first + (count - 1) * step >= b->n))) {
+	return 0;
+    }
+    es = (size_t) b->stride;
+    src = b->data + (size_t) idx * es;
+    if (es == 1) {
+	unsigned char c = *src;
+
+	for (k = 0, i = first; k < count; k++, i += step) {
+	    b->data[i] = c;
+	}
+    } else {
+	for (k = 0, i = first; k < count; k++, i += step) {
+	    if (i != idx) {
+		memcpy(b->data + (size_t) i * es, src, es);
+	    }
+	}
+    }
+    CompactDropCache(v);
+    TclInvalidateStringRep(v);
+    return 1;
+}
+
 /* Contenu compact (objet neuf) d'une liste list.T, ou NULL. */
 Tcl_Obj *
 TclCompactFrom(TclType *ltp, Tcl_Obj *content)
@@ -6678,17 +6790,54 @@ TclCompactFrom(TclType *ltp, Tcl_Obj *content)
 	return NULL;
     }
     for (k = 0; k < n; k++) {
+	if (k > 0 && ev[k] == ev[k - 1]) {
+	    continue;
+	}
 	if (ev[k]->typePtr == &annotatedObjType && TclAnnotNotes(ev[k]) != NULL) {
 	    return NULL;		/* v17a : un élément noté garde ses notes */
 	}
     }
     b = NewCompactBuf(ltp->elem, lay, n);
     b->norm = wanted;
-    for (k = 0; k < n; k++) {
-	if (EncodeNode(lay->node, 0, ev[k], b->data + (size_t) k * lay->size,
-		b->norm) < 0) {
-	    ReleaseCompactBuf(b);
-	    return NULL;
+    {
+	/* 24/11 : un scalaire qui est le même objet que le précédent
+	 * (lrepeat) : sa case recopiée, sans le reconvertir */
+	int scalar = (lay->nnodes == 1 && (lay->node[0].kind == CN_INT
+		|| lay->node[0].kind == CN_UINT || lay->node[0].kind == CN_FLT));
+
+	size_t es = (size_t) lay->size;
+
+	for (k = 0; k < n; ) {
+	    unsigned char *cell = b->data + (size_t) k * es;
+	    Tcl_Size r = 1;
+
+	    if (EncodeNode(lay->node, 0, ev[k], cell, b->norm) < 0) {
+		ReleaseCompactBuf(b);
+		return NULL;
+	    }
+	    if (scalar) {
+		/* la suite du même objet : la case recopiée par blocs qui
+		 * doublent (un octet : memset) */
+		while (k + r < n && ev[k + r] == ev[k]) {
+		    r++;
+		}
+		if (r > 1) {
+		    if (es == 1) {
+			memset(cell + 1, cell[0], (size_t) (r - 1));
+		    } else {
+			size_t done = es, total = (size_t) r * es;
+
+			while (done < total) {
+			    size_t c = (done < total - done) ? done
+				    : total - done;
+
+			    memcpy(cell + done, cell, c);
+			    done += c;
+			}
+		    }
+		}
+	    }
+	    k += r;
 	}
     }
     b->n = n;
@@ -6765,9 +6914,10 @@ TclCompactNew(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
     if (ltp == NULL || ltp->kind != TCLT_LIST || ltp->elem == NULL || n < 0) {
 	return NULL;
     }
+    /* toujours en cases quand l'élément en a une forme (une création en
+     * masse : comme les résultats de type map) */
     wanted = ltp->compactWanted || ltp->elem->compactWanted;
-    if (!(compactOn || wanted)
-	    || (lay = TclCompactLayoutOf(ltp->elem)) == NULL) {
+    if ((lay = TclCompactLayoutOf(ltp->elem)) == NULL) {
 	return NULL;
     }
     b = NewCompactBuf(ltp->elem, lay, n);
@@ -7271,6 +7421,48 @@ TclCompactFieldColumn(Tcl_Obj *v, Tcl_Size f, TclType *lt)
 
 /* 23/11 : la même, même quand la forme compacte n'est pas demandée (le
  * résultat de type map : des nombres, en cases d'emblée). */
+/*
+ * v17w : une copie privée d'une liste en cases (son propre tampon, à
+ * écrire sur place), ou NULL si v n'est pas une liste en cases.
+ */
+Tcl_Obj *
+TclCompactClone(Tcl_Obj *v)
+{
+    return TclCompactCloneEx(v, 1);
+}
+
+/* copy = 0 : le tampon neuf n'est pas rempli (l'appelant écrit tout) */
+Tcl_Obj *
+TclCompactCloneEx(Tcl_Obj *v, int copy)
+{
+    TclCompactBuf *b, *nb;
+    Tcl_Obj *c;
+    Tcl_ObjInternalRep ir;
+    size_t bytes;
+
+    if (v == NULL || v->typePtr != &compactListType) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    nb = (TclCompactBuf *) Tcl_Alloc(sizeof(TclCompactBuf));
+    *nb = *b;
+    nb->cap = b->n > 0 ? b->n : 1;
+    bytes = (size_t) nb->cap * b->stride;
+    nb->data = (unsigned char *) Tcl_Alloc(bytes);
+    if (copy) {
+	memcpy(nb->data, b->data, (size_t) b->n * b->stride);
+    }
+    nb->refCount = 1;
+    TclTypeHold(nb->et);
+    nb->lay->refCount++;
+    c = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = nb;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(c, &compactListType, &ir);
+    TclInvalidateStringRep(c);
+    return c;
+}
+
 Tcl_Obj *
 TclCompactNewAlways(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
 {

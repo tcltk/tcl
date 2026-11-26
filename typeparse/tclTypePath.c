@@ -4915,6 +4915,16 @@ ScalarRangeRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
  * tirés de cases), rangée dans la variable sous le même type. Les colonnes
  * sont déjà dans le type des éléments (l'appelant les y a mises).
  */
+/* une case réécrite (des colonnes qui se recouvrent) : l'objet neuf
+ * qu'elle tenait, jamais rangé, est libéré */
+#define OBJCOL_DROP(I) \
+    do {								\
+	if (nev[(I)] != ev[(I)] && nev[(I)]->refCount == 0) {		\
+	    Tcl_IncrRefCount(nev[(I)]);					\
+	    Tcl_DecrRefCount(nev[(I)]);					\
+	}								\
+    } while (0)
+
 static int
 ObjColumnsWrite(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *a, Tcl_Obj *v,
 	TclType *tp, const char *path, Tcl_Size K, Tcl_Obj *const cols[])
@@ -4960,6 +4970,8 @@ ObjColumnsWrite(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *a, Tcl_Obj *v,
 	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
 		const unsigned char *cp = cd + (size_t) k * cs;
 
+		OBJCOL_DROP(i);
+
 		if (ck == 2) {
 		    double d;
 
@@ -4986,6 +4998,7 @@ ObjColumnsWrite(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *a, Tcl_Obj *v,
 	    }
 	} else if (TclListObjGetElements(NULL, c, &cnn, &cev) == TCL_OK) {
 	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+		OBJCOL_DROP(i);
 		nev[i] = TCL_ANNOT_CONTENT(cev[k]);
 	    }
 	} else {
@@ -5155,6 +5168,147 @@ TclTypePathWriteCellColumns(Tcl_Interp *interp, Tcl_Obj *nameObj,
     }
     RangeTextFree(&rx);
     return ok;
+}
+
+/*
+ * v17x : écrire type map -in bloc par bloc. TclTypePathCellsBegin prépare
+ * une liste neuve en cases de doubles (8 octets) pour VAR, de même type :
+ * non remplie quand les colonnes du chemin couvrent chaque case une fois,
+ * sinon une copie (seulement si la liste est partagée : une liste à la
+ * seule variable s'écrit sur place, par l'autre chemin). Rend, pour chaque
+ * colonne, l'adresse de sa première case et le pas en octets ; rien n'est
+ * installé avant TclTypePathCellsEnd(…, 1) ; End(…, 0) abandonne. Entre les
+ * deux, aucun script ne doit s'exécuter. NULL : le cas ne s'y prête pas.
+ */
+typedef struct CellSink {
+    Var *varPtr;
+    Tcl_Obj *na;		/* la nouvelle valeur (une référence) */
+} CellSink;
+
+void *
+TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	const char *path, Tcl_Size K, Tcl_Size count0, unsigned char **dst,
+	size_t *dstep)
+{
+    Var *varPtr, *arrayPtr;
+    Tcl_Obj *a, *v, *nv, *na;
+    TclType *tp;
+    RangeText rx;
+    Tcl_Size n, j, first[64], count[64], stride[64], dn;
+    const unsigned char *dd0;
+    size_t ds;
+    int dk, dz, full = 1;
+    unsigned char seen[64];
+    CellSink *cs;
+
+    if (K < 1 || K > 64) {
+	return NULL;
+    }
+    varPtr = TclObjLookupVarEx(interp, nameObj, NULL, 0, "set", 0, 0,
+	    &arrayPtr);
+    if (varPtr == NULL || arrayPtr != NULL) {
+	Tcl_ResetResult(interp);
+	return NULL;
+    }
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (TclIsVarArray(varPtr) || !(varPtr->flags & VAR_TYPED)
+	    || (a = varPtr->value.objPtr) == NULL
+	    || (varPtr->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST
+	    || !TclCompactScalarInfo(v, &dn, &dd0, &ds, &dk, &dz)
+	    || dk != 2 || dz != 8 || ds % 8 != 0) {
+	return NULL;
+    }
+    if (!RangeTextParse(path, (Tcl_Size) strlen(path), &rx)) {
+	return NULL;
+    }
+    n = dn;
+    if (rx.ncols != K) {
+	RangeTextFree(&rx);
+	return NULL;
+    }
+    memset(seen, 0, sizeof(seen));
+    for (j = 0; j < K; j++) {
+	rx.st.wj = (int) j;
+	if (RangeSpec(NULL, &rx.st, n, &first[j], &count[j], &stride[j])
+		!= TCL_OK || count[j] != count0) {
+	    RangeTextFree(&rx);
+	    return NULL;
+	}
+	if (stride[j] != K || first[j] < 0 || first[j] >= K
+		|| seen[first[j]] || count[j] != (n - first[j] + K - 1) / K) {
+	    full = 0;
+	} else {
+	    seen[first[j]] = 1;
+	}
+    }
+    RangeTextFree(&rx);
+    if (full && n % K != 0) {
+	full = 0;
+    }
+    if (!full) {
+	/* des colonnes disjointes seulement (même pas, débuts distincts dans
+	 * un pas) : sinon l'ordre des écritures compterait (la dernière
+	 * colonne l'emporte, colonne par colonne) */
+	Tcl_Size lo = first[0], hi = first[0], q;
+
+	for (j = 0; j < K; j++) {
+	    if (stride[j] != stride[0] || stride[j] < 1) {
+		return NULL;
+	    }
+	    for (q = 0; q < j; q++) {
+		if (first[q] == first[j]) {
+		    return NULL;
+		}
+	    }
+	    lo = (first[j] < lo) ? first[j] : lo;
+	    hi = (first[j] > hi) ? first[j] : hi;
+	}
+	if (hi - lo >= stride[0]) {
+	    return NULL;
+	}
+    }
+    if (!full && !(Tcl_IsShared(a) || Tcl_IsShared(v)
+	    || !TclCompactScalarWritable(v))) {
+	return NULL;		/* sur place : le chemin des colonnes */
+    }
+    nv = TclCompactCloneEx(v, !full);
+    if (nv == NULL) {
+	return NULL;
+    }
+    na = TclNewAnnotatedOwn(nv, TclTypeRefFor(interp, tp, -1));
+    if (na == NULL) {
+	return NULL;
+    }
+    Tcl_IncrRefCount(na);
+    (void) TclCompactScalarInfo(nv, &dn, &dd0, &ds, &dk, &dz);
+    for (j = 0; j < K; j++) {
+	dst[j] = (unsigned char *) dd0 + (size_t) first[j] * ds;
+	dstep[j] = ds * (size_t) stride[j];
+    }
+    cs = (CellSink *) Tcl_Alloc(sizeof(CellSink));
+    cs->varPtr = varPtr;
+    cs->na = na;
+    return cs;
+}
+
+void
+TclTypePathCellsEnd(void *h, int commit)
+{
+    CellSink *cs = (CellSink *) h;
+
+    if (commit) {
+	Tcl_Obj *old = cs->varPtr->value.objPtr;
+
+	cs->varPtr->value.objPtr = cs->na;	/* (la référence passe) */
+	Tcl_DecrRefCount(old);
+    } else {
+	Tcl_DecrRefCount(cs->na);
+    }
+    Tcl_Free(cs);
 }
 
 /*

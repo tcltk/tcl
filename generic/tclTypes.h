@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17q"
+#define TCL_TYPES_VERSION "v17x"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -208,6 +208,12 @@ struct TclType {
     const TclTypeOps *ops;	/* 23/11 : opérations spécialisées, ou NULL */
     size_t opsGen;		/* génération du registre où ops a été choisi */
     struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
+    Tcl_Obj *pred;		/* v17u : prédicat int(($%2==0)), texte de
+				 * l'expression (avec ses parenthèses), ou NULL */
+    struct TclType *predBase;	/* v17u : le type restreint (int, int(u,8)...) */
+    Tcl_Interp *predInterp;	/* v17u : où l'évaluer (NULL : interp supprimé) */
+    void *predProg;		/* v17u : forme numérique compilée (MProg), ou
+				 * NULL ; (void *) 1 : pas de forme numérique */
 };
 #define TCLT_SUM_TAGGED	0
 #define TCLT_SUM_UNION	1
@@ -475,6 +481,26 @@ int TclObjViewInfo(Tcl_Obj *v, Tcl_Obj **basePtr, Tcl_Obj *const **elemsPtr,
 	Tcl_Size *nPtr, Tcl_Size *stridePtr);
 int TclIsObjView(Tcl_Obj *v);
 int TclCompactScalarWritable(Tcl_Obj *v);
+/* 24/11 (v17r) : les boucles vectorisables (foreach, lmap) */
+typedef int (TclVecEachloopProc)(Tcl_Interp *interp, int isLmap,
+	Tcl_Size objc, Tcl_Obj *const objv[]);
+int TclVecRegister(const char *name, TclVecEachloopProc *proc, int priority);
+void TclTypePredTrust(int delta);
+Tcl_Obj *TclCompactClone(Tcl_Obj *v);
+Tcl_Obj *TclCompactCloneEx(Tcl_Obj *v, int copy);
+void *TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	const char *path, Tcl_Size K, Tcl_Size count, unsigned char **dst,
+	size_t *dstep);
+void TclTypePathCellsEnd(void *h, int commit);
+int TclTypePathWriteCellColumns(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	const char *path, Tcl_Size K, Tcl_Obj *const cols[]);
+Tcl_Obj *TclCompactRepeat(TclType *ltp, Tcl_Obj *value, Tcl_Size n);
+int TclCompactFillFrom(Tcl_Obj *v, Tcl_Size idx, Tcl_Size first,
+	Tcl_Size count, Tcl_Size step);
+int TclVecCompilable(Tcl_Interp *interp, int isLmap, const char *body,
+	Tcl_Size len);
+int TclVecEachloop(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
 int TclCompactScalarInfo(Tcl_Obj *v, Tcl_Size *nPtr,
 	const unsigned char **dataPtr, size_t *stridePtr, int *kindPtr,
 	int *sizePtr);

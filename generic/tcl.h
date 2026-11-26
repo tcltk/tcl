@@ -1886,8 +1886,10 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_INDEX		1024	/* index of $name(...) in the extended
 				 * syntax (nested parentheses, "tags"):
 				 * wraps its components, which follow */
-#define TCL_TOKEN_ANNOT		512	/* type annotation {type}word: the text of
-				 * the braces; the rest of the word follows */
+#define TCL_TOKEN_ANNOT		2048	/* type annotation {type}word: the text of
+				 * the braces; the rest of the word follows.
+				 * 2048, not 512: 512 is TCL_TOKEN_CMD_IN_EXPR
+				 * in the TIP 759 series for Tcl 9.1 */
 
 /*
  * Parsing error types. On any parsing error, one of these values will be

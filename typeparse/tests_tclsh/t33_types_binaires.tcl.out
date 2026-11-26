@@ -8,15 +8,15 @@ int takes (u|s, bits ?, be|le?), for example int(u,16,be)
 type "string" has no binary representation (use int(u|s,n), double(n), string(enc,N|z), bitarray(n), a literal sum, list(N).T or a product of these)
 03
 n=3 int
-03
-x=3 double
+03.0
+x=3.0 double
 05
 05
 02
 p=2 int(u,16,be)
 1type mismatch: expected int(u,8) but got int (use an explicit cast)
 1type mismatch: expected int(u,8) but got int(s,32) (use an explicit cast)
-1type mismatch: expected int but got age (use an explicit cast)
+05
 080
 1type mismatch: expected port but got int(u,16) (use an explicit cast)
 04

@@ -1071,6 +1071,8 @@ typedef struct Proc {
     CompiledLocal *lastLocalPtr;/* Pointer to the last allocated local
 				 * variable or NULL if none. This has frame
 				 * index (numCompiledLocals-1). */
+    void *typedSig;		/* v16p : signature typée (tclTypes.c), ou
+				 * NULL pour une procédure classique. */
 } Proc;
 
 /*

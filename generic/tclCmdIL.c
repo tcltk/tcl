@@ -20,7 +20,11 @@
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclTomMath.h"
+#include "tclTypes.h"
 #include <math.h>
+
+static int		LassignCore(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			    int objc, Tcl_Obj *const objv[]);
 
 /*
  * During execution of the "lsort" command, structures of the following type
@@ -495,6 +499,11 @@ InfoArgsCmd(
      * Build a return list containing the arguments.
      */
 
+    listObjPtr = TclTypedSigArgNames(procPtr->typedSig);	/* v16p */
+    if (listObjPtr != NULL) {
+	Tcl_SetObjResult(interp, listObjPtr);
+	return TCL_OK;
+    }
     listObjPtr = Tcl_NewListObj(0, NULL);
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
 	    localPtr = localPtr->nextPtr) {
@@ -974,6 +983,27 @@ InfoDefaultCmd(
 	return TCL_ERROR;
     }
 
+    {
+	/* v16p : les champs d'une procédure typée */
+	Tcl_Obj *defObj = NULL;
+	int has = TclTypedSigDefault(procPtr->typedSig, argName, &defObj);
+
+	if (has >= 0) {
+	    if (defObj == NULL) {
+		TclNewObj(defObj);
+	    }
+	    if (Tcl_ObjSetVar2(interp, objv[3], NULL, defObj,
+		    TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(has));
+	    return TCL_OK;
+	}
+	if (has == -1) {
+	    localPtr = NULL;
+	    goto noArg;
+	}
+    }
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
 	    localPtr = localPtr->nextPtr) {
 	if (TclIsVarArgument(localPtr)
@@ -1000,6 +1030,7 @@ InfoDefaultCmd(
 	}
     }
 
+  noArg:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "procedure \"%s\" doesn't have an argument \"%s\"",
 	    procName, argName));
@@ -2260,9 +2291,6 @@ Tcl_LassignObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    Tcl_Size listObjc;		/* The length of the list. */
-    Tcl_Size origListObjc;	/* Original length */
-    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?varName ...?");
@@ -2277,7 +2305,29 @@ Tcl_LassignObjCmd(
      * (see below). I see that as preferable as duping lists is potentially
      * expensive for abstract lists when they have a string representation.
      */
-    listPtr = objv[1];
+    /* v16m : lassign {list}$p a b : lassign reçoit le mot et résout son
+     * annotation. */
+    if (TclAnnotSettleValueArg(interp, objv[1], &listPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    {
+	int code = LassignCore(interp, listPtr, objc, objv);
+
+	Tcl_DecrRefCount(listPtr);
+	return code;
+    }
+}
+
+static int
+LassignCore(
+    Tcl_Interp *interp,
+    Tcl_Obj *listPtr,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Size listObjc;		/* The length of the list. */
+    Tcl_Size origListObjc;	/* Original length */
+    int i;
 
     if (TclListObjLength(interp, listPtr, &listObjc) != TCL_OK) {
 	return TCL_ERROR;

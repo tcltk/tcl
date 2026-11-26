@@ -40,6 +40,8 @@ struct ForeachState {
     Tcl_Obj *resultList;	/* List of result values from the loop body,
 				 * or NULL if we're not collecting them
 				 * ([lmap] vs [foreach]). */
+    Tcl_Obj *settled;		/* v16m : les listes dont l'annotation a été
+				 * résolue, tenues pendant la boucle. */
 };
 
 /*
@@ -2801,6 +2803,17 @@ EachloopCmd(
     }
 
     /*
+     * typeparse (v17r) : une boucle que le registre des boucles
+     * vectorisables sait faire à l'identique (corps fait d'une expression
+     * pure) ; TCL_CONTINUE : la boucle ordinaire.
+     */
+
+    result = TclVecEachloop(interp, collect == TCL_EACH_COLLECT, objc, objv);
+    if (result != TCL_CONTINUE) {
+	return result;
+    }
+
+    /*
      * Manage numList parallel value lists.
      * statePtr->argvList[i] is a value list counted by statePtr->argcList[i];
      * statePtr->varvList[i] is the list of variables associated with the
@@ -2873,9 +2886,30 @@ EachloopCmd(
 	/* Values */
 	/* Liste typée : parcourir son contenu V (tenu par la valeur annotée
 	 * pendant la commande), éléments typés. */
-	valObj = TclAnnotIterList(objv[2+i*2]);
-	if (valObj == NULL) {
-	    valObj = objv[2+i*2];
+	valObj = objv[2+i*2];
+	if (TclAnnotHasFresh(valObj)) {
+	    /* v16m : foreach {a b} {list}$p : la boucle reçoit le mot et
+	     * résout son annotation. */
+	    Tcl_Obj *settled;
+
+	    if (TclAnnotSettleValueArg(interp, valObj, &settled) != TCL_OK) {
+		result = TCL_ERROR;
+		goto done;
+	    }
+	    if (statePtr->settled == NULL) {
+		statePtr->settled = Tcl_NewListObj(0, NULL);
+		Tcl_IncrRefCount(statePtr->settled);
+	    }
+	    Tcl_ListObjAppendElement(NULL, statePtr->settled, settled);
+	    Tcl_DecrRefCount(settled);
+	    valObj = settled;
+	}
+	{
+	    Tcl_Obj *iv = TclAnnotIterList(valObj);
+
+	    if (iv != NULL) {
+		valObj = iv;
+	    }
 	}
 	if (TclObjTypeHasProc(valObj,indexProc)) {
 	    /* Special case for AbstractList */
@@ -3094,6 +3128,9 @@ ForeachCleanup(
     }
     if (statePtr->resultList != NULL) {
 	TclDecrRefCount(statePtr->resultList);
+    }
+    if (statePtr->settled != NULL) {
+	TclDecrRefCount(statePtr->settled);
     }
     TclStackFree(interp, statePtr);
 }

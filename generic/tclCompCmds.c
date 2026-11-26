@@ -15,6 +15,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclTypes.h"
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -1609,6 +1610,7 @@ CompileDictEachCmd(
     const char **argv;
     Tcl_DString buffer;
 
+
     /*
      * There must be three arguments after the command.
      */
@@ -1695,7 +1697,18 @@ CompileDictEachCmd(
      * this point.
      */
 
-    CompileWord(envPtr, dictTokenPtr, interp, 2);
+    if (dictTokenPtr->numComponents > 1
+	    && dictTokenPtr[1].type == TCL_TOKEN_ANNOT) {
+	/* v16m : dict for {k v} {dict}$p : la boucle reçoit le mot et caste
+	 * sa valeur une fois. */
+	SetLineInformation(2);
+	PushLiteral(envPtr, dictTokenPtr[1].start, dictTokenPtr[1].size);
+	TclCompileTokens(interp, dictTokenPtr + 2,
+		dictTokenPtr->numComponents - 1, envPtr);
+	TclEmitOpcode(INST_ANNOT_CAST, envPtr);
+    } else {
+	CompileWord(envPtr, dictTokenPtr, interp, 2);
+    }
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -2767,6 +2780,8 @@ CompileEachloopCmd(
     int numWords, numLists, i, code = TCL_OK;
     Tcl_Size j;
     Tcl_Obj *varListObj = NULL;
+    int vec = 1;		/* vectorisable : l'essai du registre d'abord */
+    int okJump = 0, endJump = 0;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -2776,6 +2791,7 @@ CompileEachloopCmd(
     if (procPtr == NULL) {
 	return TCL_ERROR;
     }
+
 
     numWords = (int)parsePtr->numWords;
     if ((numWords < 4) || (numWords%2 != 0)) {
@@ -2835,6 +2851,9 @@ CompileEachloopCmd(
 	    code = TCL_ERROR;
 	    goto done;
 	}
+	if (numVars != 1 || tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    vec = 0;
+	}
 
 	varListPtr = (ForeachVarList *)Tcl_Alloc(offsetof(ForeachVarList, varIndexes)
 		+ numVars * sizeof(varListPtr->varIndexes[0]));
@@ -2867,10 +2886,60 @@ CompileEachloopCmd(
     infoIndex = TclCreateAuxData(infoPtr, &newForeachInfoType, envPtr);
 
     /*
+     * Vectorisable loops (a pure expression body, see tclTypes.c): first
+     * ::tcl::unsupported::vecloop with the evaluated lists. It returns
+     * {1 result}, or {0 list ...} and the ordinary loop runs on the lists
+     * it gives back.
+     */
+
+    if (vec && !TclVecCompilable(interp, collect == TCL_EACH_COLLECT,
+	    bodyTokenPtr[1].start, bodyTokenPtr[1].size)) {
+	vec = 0;
+    }
+    if (vec) {
+	PushStringLiteral(envPtr, "::tcl::unsupported::vecloop");
+	PushStringLiteral(envPtr, (collect == TCL_EACH_COLLECT) ? "1" : "0");
+	for (i = 0, tokenPtr = parsePtr->tokenPtr;
+		i < numWords;
+		i++, tokenPtr = TokenAfter(tokenPtr)) {
+	    if (i == 0) {
+		continue;
+	    }
+	    if (i%2 == 1 && i < numWords-1) {
+		PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
+	    } else if (i == numWords-1) {
+		PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
+	    } else if (tokenPtr->numComponents > 1
+		    && tokenPtr[1].type == TCL_TOKEN_ANNOT) {
+		SetLineInformation(i);
+		PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
+		TclCompileTokens(interp, tokenPtr + 2,
+			tokenPtr->numComponents - 1, envPtr);
+		TclEmitOpcode(INST_ANNOT_CAST, envPtr);
+	    } else {
+		CompileWord(envPtr, tokenPtr, interp, i);
+	    }
+	}
+	TclEmitInvoke(envPtr, INST_INVOKE_STK4, numWords + 1);
+	TclEmitOpcode(INST_DUP, envPtr);
+	TclEmitInstInt4(INST_LIST_INDEX_IMM, 0, envPtr);
+	okJump = CurrentOffset(envPtr);
+	TclEmitInstInt4(INST_JUMP_TRUE4, 0, envPtr);
+	if (collect == TCL_EACH_COLLECT) {
+	    TclEmitInstInt4(INST_LIST, 0, envPtr);
+	}
+	for (i = 1; i <= numLists; i++) {
+	    TclEmitInstInt4(INST_OVER, (i - 1)
+		    + ((collect == TCL_EACH_COLLECT) ? 1 : 0), envPtr);
+	    TclEmitInstInt4(INST_LIST_INDEX_IMM, i, envPtr);
+	}
+    }
+
+    /*
      * Create the collecting object, unshared.
      */
 
-    if (collect == TCL_EACH_COLLECT) {
+    if (!vec && collect == TCL_EACH_COLLECT) {
 	TclEmitInstInt4(INST_LIST, 0, envPtr);
     }
 
@@ -2879,10 +2948,22 @@ CompileEachloopCmd(
      */
 
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
-	    i < numWords-1;
+	    !vec && i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    CompileWord(envPtr, tokenPtr, interp, i);
+	    if (tokenPtr->numComponents > 1
+		    && tokenPtr[1].type == TCL_TOKEN_ANNOT) {
+		/* v16m : foreach {a b} {list}$p : la boucle reçoit le mot et
+		 * caste sa valeur une fois, sans valeur annotée entre les
+		 * deux. */
+		SetLineInformation(i);
+		PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
+		TclCompileTokens(interp, tokenPtr + 2,
+			tokenPtr->numComponents - 1, envPtr);
+		TclEmitOpcode(INST_ANNOT_CAST, envPtr);
+	    } else {
+		CompileWord(envPtr, tokenPtr, interp, i);
+	    }
 	}
     }
 
@@ -2932,6 +3013,20 @@ CompileEachloopCmd(
 
     if (collect != TCL_EACH_COLLECT) {
 	PushStringLiteral(envPtr, "");
+    }
+
+    if (vec) {
+	/* drop the vecloop result under the loop's; the vectorised branch
+	 * leaves its result */
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+	endJump = CurrentOffset(envPtr);
+	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - okJump,
+		envPtr->codeStart + okJump + 1);
+	TclEmitInstInt4(INST_LIST_INDEX_IMM, 1, envPtr);
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - endJump,
+		envPtr->codeStart + endJump + 1);
     }
 
     done:

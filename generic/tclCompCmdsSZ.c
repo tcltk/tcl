@@ -160,11 +160,21 @@ TclCompileSetCmd(
 	return TCL_ERROR;
     }
     if (TclHasAnnotatedWord(parsePtr)) {	/* set {type}x ... : at run time */
-	if (numWords == 3) {
-	    /* set x {-v}$mot : annotation locale écrite sur la valeur */
-	    Tcl_Obj *lt = TclAnnotLocalWordText(interp,
-		    TokenAfter(TokenAfter(parsePtr->tokenPtr)));
+	Tcl_Token *nameTok = TokenAfter(parsePtr->tokenPtr);
 
+	if (numWords == 3) {
+	    /* set x {-v}$mot : annotation locale écrite sur la valeur. Une
+	     * étiquette {i:} est permise quand le nom est annoté : le
+	     * constructeur la lit (set {S}v {i:}5, v16l). */
+	    Tcl_Obj *lt = TclAnnotLocalWordText(interp, TokenAfter(nameTok));
+
+	    if (lt != NULL && nameTok->numComponents > 0
+		    && nameTok[1].type == TCL_TOKEN_ANNOT
+		    && Tcl_GetString(lt)[0] != '\0'
+		    && Tcl_GetString(lt)[strlen(Tcl_GetString(lt)) - 1] == ':') {
+		Tcl_DecrRefCount(lt);
+		lt = NULL;
+	    }
 	    if (lt != NULL) {
 		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::annotlocal",
 			17, 0), envPtr);

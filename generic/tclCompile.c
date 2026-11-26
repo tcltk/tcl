@@ -693,6 +693,22 @@ InstructionDesc const tclInstructionTable[] = {
 	 * path of the list paths, the name at that path in names receives
 	 * the element at the same path of the content ("" if absent).
 	 * Stack: ... names value paths => ... content */
+    {"annotMark",	  1,   +1,	   0,	{OPERAND_NONE}},
+	/* v16m: the mark of the annotations of the words of the command that
+	 * follows.
+	 * Stack: ... => ... mark */
+    {"annotExpire",	  1,   -1,	   0,	{OPERAND_NONE}},
+	/* v16m: the annotations of the words of the command expire (in
+	 * place) when it is done; its result stays.
+	 * Stack: ... mark result => ... result */
+    {"annotSettle",	  1,    0,	   0,	{OPERAND_NONE}},
+	/* v16m: a value argument of a loop command: its pending annotation
+	 * is resolved, as by a constructor without context.
+	 * Stack: ... value => ... settledValue */
+    {"annotCast",	  1,   -1,	   0,	{OPERAND_NONE}},
+	/* v16m: {T}word received by a loop compiled inline: cast the value of
+	 * the word to T at once, without the annotated value in between.
+	 * Stack: ... typeText value => ... castValue */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2064,7 +2080,7 @@ CompileCommandTokens(
     Tcl_Obj *cmdObj;
     Command *cmdPtr = NULL;
     int code = TCL_ERROR;
-    int cmdKnown, expand = -1;
+    int cmdKnown, expand = -1, annotWrap;
     Tcl_Size *wlines, wlineat;
     Tcl_Size cmdLine = envPtr->line;
     Tcl_Size *clNext = envPtr->clNext;
@@ -2125,6 +2141,16 @@ CompileCommandTokens(
 	}
     }
 
+    /*
+     * v16m, piste B : une commande qui a un mot annoté est encadrée,
+     *	annotMark <commande> annotExpire
+     * pour que les annotations de ses mots expirent quand elle finit.
+     */
+    annotWrap = TclHasAnnotatedWord(parsePtr);
+    if (annotWrap) {
+	TclEmitOpcode(INST_ANNOT_MARK, envPtr);
+    }
+
     /* If cmdPtr != NULL, try to call cmdPtr->compileProc */
     if (cmdPtr) {
 	code = CompileCmdCompileProc(interp, parsePtr, cmdPtr, envPtr);
@@ -2146,6 +2172,9 @@ CompileCommandTokens(
 
     Tcl_DecrRefCount(cmdObj);
 
+    if (annotWrap) {
+	TclEmitOpcode(INST_ANNOT_EXPIRE, envPtr);
+    }
     TclEmitOpcode(INST_POP, envPtr);
     EnterCmdExtentData(envPtr, cmdIdx,
 	    parsePtr->term - parsePtr->commandStart,
