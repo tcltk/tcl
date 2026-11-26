@@ -606,6 +606,30 @@ combinaison reste élément par élément, en boucle serrée pour `s ⊕ e` et
 Un million d'éléments : produit scalaire et lissage 2,5 à 3 ns par élément
 en cases, 8 à 13 en objets, contre 80 ns pour la boucle ; un `?:` 25 ns.
 
+**Sur place : `-in`.** `type map -in VAR(CHEMIN) varList ?varList liste ...?
+corps` calcule comme `type map`, la première `varList` liée à ce que
+désigne le chemin dans la variable, et écrit le résultat au même endroit :
+une valeur par colonne du chemin (un tuple pour une fenêtre). La commande
+rend la nouvelle valeur de la variable, comme `lset` ou `ledit`.
+
+    type map -in pl((0,1)::2) {x y} {($x + $tx, $y + $ty)}      ;# translation
+    type map -in pl((0,1)::2) {x y} {($c*$x - $s*$y, $s*$x + $c*$y)}
+    type map -in L {x} {($x * 2)}                                  ;# toute la liste
+    type map -in L(1::2) {y} {k} $coef {($y * $k)}                 ;# avec une autre liste
+
+* Le type de la sortie est celui de la cible : chaque valeur est rangée
+  comme par une affectation (validation, cases, prédicats). Une annotation
+  du corps (`{T}{(…)}`) n'est qu'une déclaration, vérifiée une fois : `T`
+  doit entrer dans le type des éléments de la cible.
+* Une signature d'entrée reste permise (pour la cible, son type doit y
+  entrer ; pour les listes ajoutées, elle vérifie comme dans `type map`).
+* Tout ou rien : les colonnes sont calculées, puis écrites d'un coup.
+* Avec un chemin, la variable doit être typée (comme pour `$v(chemin)`) ;
+  sans chemin, toute variable.
+* Une liste en cases partagée (un paramètre) est copiée une fois, ou pas du
+  tout quand le chemin couvre chaque case (`(0,1)::2` sur une liste paire) ;
+  les résultats sont écrits à leur pas dans les cases.
+
 **foreach et lmap vectorisés.** `foreach` et `lmap` demandent, à chaque
 appel, à un registre de boucles vectorisables si une entrée sait faire cet
 appel-là à l'identique ; sinon, la boucle ordinaire. L'entrée intégrée
@@ -718,7 +742,7 @@ typé : aire ×5,9, longueur ×7,1, translation ×2,8, rotation ×3,9, boîte
 `exemples/tcllib_geometry/COMPARAISON.md` compare la chaîne entière en dix
 variantes (Tcl nu, typé scintillant ou de bout en bout, en Tcl, vectorisé
 ou en C, en objets ou en cases), un principe par variante : ×0,5 pour le
-Tcl typé élément par élément, ×24 pour le Tcl typé vectorisé en cases, ×46
+Tcl typé élément par élément, ×33 pour le Tcl typé vectorisé en cases, ×45
 pour le C en cases.
 
 ## Formes d'un type : `type def T DÉF {-compact}F`

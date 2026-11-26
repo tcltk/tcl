@@ -47,30 +47,16 @@ proc ::math::geometry::lengthOfPolylineV {{polyline}pl} {
 # réentrelacées par une seule écriture de fenêtre
 proc ::math::geometry::translateV {{vector}t; {polyline}pl} {
     set tx $t(x);  set ty $t(y)
-    set {polyline}out [Vide $pl]
-    set out((0,1)::2) {*}[type map {{coord}x; {coord}y} $pl((0,1)::2) \
-	    {{coord}u; {coord}v}{($x + $tx, $y + $ty)}]
-    return $out
-}
-
-# une polyligne de même longueur et de même forme que PL (en cases si PL
-# l'est : le résultat reste dans la forme de l'entrée)
-proc ::math::geometry::Vide {pl} {
-    if {[namespace tail [type get $pl]] eq "polylinec"} {
-	# des zéros en cases, faits par type map, puis la forme en cases
-	return [type repeat -into polylinec [llength $pl] 0.0]
-    }
-    set {polyline}z {*}[lrepeat [llength $pl] 0.0]
-    return $z
+    # calculé et écrit sur place, dans la copie locale de pl (v17w)
+    type map -in pl((0,1)::2) {x y} {($x + $tx, $y + $ty)}
+    return $pl
 }
 
 proc ::math::geometry::rotateV {{coord}angle; {polyline}pl} {
     set a [expr {$::math::geometry::torad * $angle}]
     set c [expr {cos($a)}];  set s [expr {sin($a)}]
-    set {polyline}out [Vide $pl]
-    set out((0,1)::2) {*}[type map {{coord}x; {coord}y} $pl((0,1)::2) \
-	    {{coord}u; {coord}v}{($c * $x - $s * $y, $s * $x + $c * $y)}]
-    return $out
+    type map -in pl((0,1)::2) {x y} {($c * $x - $s * $y, $s * $x + $c * $y)}
+    return $pl
 }
 
 # Boîte englobante : min et max des deux tranches (type map -min / -max)

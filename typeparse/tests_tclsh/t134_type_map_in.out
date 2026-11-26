@@ -1,0 +1,25 @@
+liste nue : 2 4 6
+typée : 0.5 1.0 1.5 2.0
+tranche : 1.0 20.0 3.0 40.0
+fenêtre : 2.0 1.0 4.0 3.0
+fenêtre rot : -0.0 1.0 -1.0 0.0
+autre liste : 10.0 40.0 90.0
+longueurs : ERR type map: the lists have different lengths
+nombre valeurs : ERR type map -in: the body gives 1 value, D((0,1)::2) needs 2
+type cible : ERR expected integer but got "0.5"
+annot ok : 0 1 1
+annot refusée : ERR type map -in: the body gives double, which does not enter int (column 0 of I)
+annot tuple : 3.0 -1.0 7.0 -1.0
+signature : 0.5 1.0 1.5 2.0
+prédicat : ERR value "3" is not of type int(($%2==0)): ($%2==0) is false
+prédicat ok : 4 6 8
+tout ou rien : {cannot use non-numeric floating-point value "-NaN" as right operand of "/"} {1.0 0.0 4.0}
+pas de variable : ERR can't read "nulle": no such variable
+chemin non typé : ERR can't read "U(1::2)": variable isn't array
+type gardé : vd
+arguments : ERR wrong # args: should be "type map -in varName(path) varList ?varList list ...? body"
+procédure : {2.0 4.0 4.0 6.0} {1.0 2.0 3.0 4.0}
+cases partagées : {1.0 2.0 3.0 4.0} {2.0 1.0 4.0 3.0}
+liste d'objets : {1 2 3 4} {100 2 300 4}
+entiers 32 bits : ERR value "3000000000" does not fit in int(s,32)
+nominal : {2.0 3.0 4.0 5.0} pl

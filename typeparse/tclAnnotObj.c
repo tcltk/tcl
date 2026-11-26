@@ -6058,7 +6058,9 @@ NewCompactBuf(TclType *et, TclCompactLayout *lay, Tcl_Size cap)
     size_t bytes = (size_t) (cap > 0 ? cap : 1) * lay->size;
 
     b->data = (unsigned char *) Tcl_Alloc(bytes);
-    memset(b->data, 0, bytes);		/* remplissage d'alignement : 0 */
+    if (lay->node[0].kind == CN_PROD) {
+	memset(b->data, 0, bytes);	/* remplissage d'alignement : 0 */
+    }					/* (un scalaire : tout est écrit) */
     b->n = 0;
     b->cap = cap > 0 ? cap : 1;
     b->stride = lay->size;
@@ -7419,6 +7421,48 @@ TclCompactFieldColumn(Tcl_Obj *v, Tcl_Size f, TclType *lt)
 
 /* 23/11 : la même, même quand la forme compacte n'est pas demandée (le
  * résultat de type map : des nombres, en cases d'emblée). */
+/*
+ * v17w : une copie privée d'une liste en cases (son propre tampon, à
+ * écrire sur place), ou NULL si v n'est pas une liste en cases.
+ */
+Tcl_Obj *
+TclCompactClone(Tcl_Obj *v)
+{
+    return TclCompactCloneEx(v, 1);
+}
+
+/* copy = 0 : le tampon neuf n'est pas rempli (l'appelant écrit tout) */
+Tcl_Obj *
+TclCompactCloneEx(Tcl_Obj *v, int copy)
+{
+    TclCompactBuf *b, *nb;
+    Tcl_Obj *c;
+    Tcl_ObjInternalRep ir;
+    size_t bytes;
+
+    if (v == NULL || v->typePtr != &compactListType) {
+	return NULL;
+    }
+    b = COMPACT_BUF(v);
+    nb = (TclCompactBuf *) Tcl_Alloc(sizeof(TclCompactBuf));
+    *nb = *b;
+    nb->cap = b->n > 0 ? b->n : 1;
+    bytes = (size_t) nb->cap * b->stride;
+    nb->data = (unsigned char *) Tcl_Alloc(bytes);
+    if (copy) {
+	memcpy(nb->data, b->data, (size_t) b->n * b->stride);
+    }
+    nb->refCount = 1;
+    TclTypeHold(nb->et);
+    nb->lay->refCount++;
+    c = Tcl_NewObj();
+    ir.twoPtrValue.ptr1 = nb;
+    ir.twoPtrValue.ptr2 = NULL;
+    Tcl_StoreInternalRep(c, &compactListType, &ir);
+    TclInvalidateStringRep(c);
+    return c;
+}
+
 Tcl_Obj *
 TclCompactNewAlways(TclType *ltp, Tcl_Size n, unsigned char **dataPtr)
 {

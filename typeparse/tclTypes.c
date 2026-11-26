@@ -12474,6 +12474,294 @@ TypeMapTyped(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
     return rc;
 }
 
+/*
+ * type map -in VAR(CHEMIN) varList ?varList liste ...? corps (v17w)
+ *
+ * Calcule comme type map, la première varList liée à ce que désigne le
+ * chemin dans la variable, et écrit le résultat au même endroit : une
+ * valeur par colonne du chemin (un tuple pour une fenêtre). Le type de la
+ * sortie est celui de la cible ; une annotation du corps est vérifiée une
+ * fois (elle doit y entrer). Tout ou rien : les colonnes sont calculées,
+ * puis écrites d'un coup par le chemin. Rend la nouvelle valeur.
+ */
+static int TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
+
+static TclType *
+MapInElemType(Tcl_Obj *col)
+{
+    TclType *tp = NULL;
+
+    if (TclAnnotInfo(col, NULL, &tp, NULL, NULL) != 1 || tp == NULL) {
+	return NULL;
+    }
+    while (tp->kind != TCLT_LIST && tp->under != NULL) {
+	tp = tp->under;
+    }
+    return (tp->kind == TCLT_LIST) ? tp->elem : NULL;
+}
+
+/* Des éléments qui ne vérifient rien de plus qu'un nombre : int ou double
+ * (ou un nominal sur eux, sans règle de validation), sans prédicat. */
+static int
+MapInPlainCells(Tcl_Interp *interp, TclType *const *tt, Tcl_Size K)
+{
+    Tcl_Size j;
+
+    for (j = 0; j < K; j++) {
+	TclType *t = tt[j];
+
+	if (t == NULL || (t->kind != TCLT_INT && t->kind != TCLT_DOUBLE)
+		|| t->pred != NULL || t->binLink != NULL || t->bitWidth > 0
+		|| (t->nominal && t->under != NULL
+		    && FindRule(GetData(interp), t->under->name, t->name))) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+static int
+TypeMapIn(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *target, *nameObj = NULL, *pathObj = NULL, *cur = NULL;
+    Tcl_Obj *body, *content = NULL, *cols = NULL, **av = NULL, **cv;
+    Tcl_Obj *parts = NULL, **wv = NULL;
+    TclType *outT = NULL, *tt[64];
+    Tcl_Size K, j, ac, tlen, nc;
+    const char *t, *par;
+    int annotated, inl = 0, err = 0, rc = TCL_ERROR;
+
+    if (objc < 6 || (objc % 2) != 0) {
+	Tcl_WrongNumArgs(interp, 2, objv, "-in varName(path) varList "
+		"?varList list ...? body");
+	return TCL_ERROR;
+    }
+    target = objv[3];
+    body = objv[objc - 1];
+    t = Tcl_GetStringFromObj(target, &tlen);
+    par = (const char *) memchr(t, '(', (size_t) tlen);
+    if (par != NULL && tlen > 0 && t[tlen - 1] == ')' && par > t) {
+	nameObj = Tcl_NewStringObj(t, par - t);
+	pathObj = Tcl_NewStringObj(par + 1, tlen - (par - t) - 2);
+    } else {
+	nameObj = Tcl_NewStringObj(t, tlen);
+    }
+    Tcl_IncrRefCount(nameObj);
+    if (pathObj != NULL) {
+	Tcl_IncrRefCount(pathObj);
+    }
+    cur = Tcl_ObjGetVar2(interp, nameObj, pathObj, TCL_LEAVE_ERR_MSG);
+    if (cur == NULL) {
+	goto done;
+    }
+    Tcl_IncrRefCount(cur);
+
+    /* le nombre de colonnes : les variables de la première varList */
+    if (MapSpecTyped(objv[4])) {
+	const char *st = Tcl_GetString(objv[4]);
+	TclType *pt = TclTypeParse(interp, st, (Tcl_Size) strlen(st));
+
+	if (pt == NULL) {
+	    goto done;
+	}
+	K = (pt->kind == TCLT_PRODUCT) ? pt->nfields : 1;
+    } else if (Tcl_ListObjLength(interp, objv[4], &K) != TCL_OK) {
+	goto done;
+    }
+    if (K < 1 || K > 64) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("type map -in: the first "
+		"varList names the columns of the target (1 to 64)", -1));
+	goto done;
+    }
+    /* le type des éléments de chaque colonne de la cible (NULL : libre) */
+    if (K == 1) {
+	tt[0] = MapInElemType(cur);
+    } else {
+	if (Tcl_ListObjGetElements(interp, MListContent(cur), &nc, &cv)
+		!= TCL_OK) {
+	    goto done;
+	}
+	if (nc != K) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: %s has %"
+		    TCL_SIZE_MODIFIER "d columns, and the first varList "
+		    "names %" TCL_SIZE_MODIFIER "d", t, nc, K));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    tt[j] = MapInElemType(cv[j]);
+	}
+    }
+
+    /* une annotation du corps : vérifiée une fois contre la cible */
+    annotated = MapBodyType(interp, body, &outT, &content, &inl, &err);
+    if (err) {
+	goto done;
+    }
+    if (annotated) {
+	Tcl_Size Kd = (outT->kind == TCLT_PRODUCT) ? outT->nfields : 1;
+
+	if (Kd != K) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: the body "
+		    "gives %s, %s needs %" TCL_SIZE_MODIFIER "d value%s",
+		    outT->name, t, K, K > 1 ? "s" : ""));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    TclType *dj = (outT->kind == TCLT_PRODUCT)
+		    ? outT->fields[j].type : outT;
+
+	    if (tt[j] != NULL && dj != NULL && !TclTypeEnters(tt[j], dj)) {
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: the "
+			"body gives %s, which does not enter %s (column %"
+			TCL_SIZE_MODIFIER "d of %s)", dj->name, tt[j]->name,
+			j, t));
+		Tcl_SetErrorCode(interp, "TCL", "TYPE", "MISMATCH",
+			(char *) NULL);
+		goto done;
+	    }
+	}
+    }
+
+    /* les colonnes, calculées comme type map */
+    av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) objc);
+    av[0] = objv[0];
+    av[1] = objv[1];
+    av[2] = objv[4];
+    av[3] = cur;
+    ac = 4;
+    for (j = 5; j < objc - 1; j++) {
+	av[ac++] = objv[j];
+    }
+    cols = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(cols);
+    if (K == 1 || annotated) {
+	av[ac] = body;
+	if (TypeMapCmd(interp, ac + 1, av) != TCL_OK) {
+	    goto done;
+	}
+	if (K == 1) {
+	    Tcl_ListObjAppendElement(NULL, cols, Tcl_GetObjResult(interp));
+	} else {
+	    Tcl_SetListObj(cols, 0, NULL);
+	    if (Tcl_ListObjGetElements(interp, Tcl_GetObjResult(interp), &nc,
+		    &wv) != TCL_OK) {
+		goto done;
+	    }
+	    Tcl_ListObjReplace(NULL, cols, 0, 0, nc, wv);
+	}
+	Tcl_ResetResult(interp);
+    } else {
+	/* un tuple sans annotation : une composante à la fois */
+	Tcl_Obj **pv;
+	Tcl_Size np, bl;
+	const char *bt = Tcl_GetStringFromObj(body, &bl);
+
+	parts = MapTupleSplit(bt, bl);
+	if (parts == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: %s has %"
+		    TCL_SIZE_MODIFIER "d columns: the body must give as many "
+		    "values, ($a, $b ...)", t, K));
+	    goto done;
+	}
+	Tcl_IncrRefCount(parts);
+	Tcl_ListObjGetElements(NULL, parts, &np, &pv);
+	if (np != K) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("type map -in: the body "
+		    "gives %" TCL_SIZE_MODIFIER "d value%s, %s needs %"
+		    TCL_SIZE_MODIFIER "d", np, np > 1 ? "s" : "", t, K));
+	    goto done;
+	}
+	for (j = 0; j < K; j++) {
+	    av[ac] = pv[j];
+	    if (TypeMapCmd(interp, ac + 1, av) != TCL_OK) {
+		goto done;
+	    }
+	    Tcl_ListObjAppendElement(NULL, cols, Tcl_GetObjResult(interp));
+	    Tcl_ResetResult(interp);
+	}
+    }
+
+    /* l'écriture, d'un coup, par le chemin (ou la variable entière) */
+    {
+	Tcl_Obj **sv = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *)
+		* (size_t) (K + 2)), *setCmd = Tcl_NewStringObj("::set", -1);
+
+	Tcl_Obj *held = Tcl_NewListObj(0, NULL);
+
+	Tcl_IncrRefCount(setCmd);
+	Tcl_IncrRefCount(held);
+	Tcl_ListObjGetElements(NULL, cols, &nc, &cv);
+	sv[0] = setCmd;
+	sv[1] = target;
+	for (j = 0; j < nc; j++) {
+	    /* le contenu nu : c'est la cible qui le range dans son type
+	     * (validation, cases, prédicats), comme une affectation ; des
+	     * nombres sans autre règle : la colonne déjà dans le type des
+	     * éléments (le chemin d'écriture n'a rien à revérifier) */
+	    if (pathObj != NULL && j < K && MapInPlainCells(interp, &tt[j], 1)
+		    && !tt[j]->refine) {
+		Tcl_Obj *cj = MapColumnAs(interp, tt[j], cv[j], "result");
+
+		if (cj == NULL) {
+		    Tcl_DecrRefCount(setCmd);
+		    Tcl_DecrRefCount(held);
+		    Tcl_Free(sv);
+		    goto done;
+		}
+		Tcl_ListObjAppendElement(NULL, held, cj);
+		sv[2 + j] = cj;
+	    } else {
+		sv[2 + j] = TCL_ANNOT_CONTENT(cv[j]);
+	    }
+	}
+	cv = sv + 2;
+	if (pathObj != NULL && MapInPlainCells(interp, tt, K)
+		&& TclTypeOpsMode() == TCL_TYPE_OPS_ON
+		&& TclTypePathWriteCellColumns(interp, nameObj,
+			Tcl_GetString(pathObj), nc, cv)) {
+	    rc = TCL_OK;		/* écrit dans les cases */
+	} else if (pathObj == NULL && nc == 1) {
+	    rc = (Tcl_ObjSetVar2(interp, nameObj, NULL, cv[0],
+		    TCL_LEAVE_ERR_MSG) != NULL) ? TCL_OK : TCL_ERROR;
+	} else {
+	    rc = Tcl_EvalObjv(interp, (int) (nc + 2), sv, 0);
+	}
+	Tcl_DecrRefCount(setCmd);
+	Tcl_Free(sv);
+	Tcl_DecrRefCount(held);
+	if (rc == TCL_OK) {
+	    Tcl_Obj *nv = Tcl_ObjGetVar2(interp, nameObj, NULL,
+		    TCL_LEAVE_ERR_MSG);
+
+	    if (nv == NULL) {
+		rc = TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, nv);
+	    }
+	}
+    }
+
+  done:
+    if (parts != NULL) {
+	Tcl_DecrRefCount(parts);
+    }
+    if (cols != NULL) {
+	Tcl_DecrRefCount(cols);
+    }
+    if (av != NULL) {
+	Tcl_Free(av);
+    }
+    if (cur != NULL) {
+	Tcl_DecrRefCount(cur);
+    }
+    Tcl_DecrRefCount(nameObj);
+    if (pathObj != NULL) {
+	Tcl_DecrRefCount(pathObj);
+    }
+    return rc;
+}
+
 static int
 TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -12483,6 +12771,9 @@ TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	    && objc > 3) ? 2 : 0;
     Tcl_Size k;
 
+    if (strcmp(opt, "-in") == 0) {
+	return TypeMapIn(interp, objc, objv);	/* v17w */
+    }
     if (objc >= 4 + optc) {
 	int typed = (TclAnnotInfo(objv[objc - 1], NULL, NULL, NULL, NULL)
 		!= 0);
@@ -13386,7 +13677,9 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 		} else {
 		    memset(bbad, 1, nb);
 		}
-		if (iRun) {
+		if (iRun && memchr(ibad, 0, nb) != NULL) {
+		    /* (rien à faire si aucun élément n'est tout en entiers :
+		     * des cases de flottants, par exemple) */
 		    MIRunBlock(split ? &iE : &mi, icols, vals, nb,
 			    imem + (size_t) g.nnames * MD_BLK, ibad,
 			    (Tcl_WideInt *) iout);

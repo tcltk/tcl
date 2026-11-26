@@ -10,18 +10,18 @@ Chaque variante isole un principe. Lues dans l'ordre, elles en font le tour.
 
 | | 1 000 sommets | 100 000 sommets | par rapport au Tcl nu |
 |---|---:|---:|---:|
-| 1. Tcl nu (tcllib) | 1 135 µs | 126 ms | ×1 |
-| 2. Tcl nu + C | 169 µs | 20 ms | ×6,4 |
-| 3. Typé scintillant, Tcl | 2 245 µs | 280 ms | ×0,5 |
-| 4. Typé scintillant, vectorisé | 350 µs | 32 ms | ×3,9 |
-| 5. Typé scintillant, C | 62 µs | 6,1 ms | ×21 |
-| 6. Tout typé, Tcl | 2 216 µs | 267 ms | ×0,5 |
-| 7. Tout typé, vectorisé (objets) | 337 µs | 31 ms | ×4,1 |
-| 8. Tout typé, vectorisé (cases) | 102 µs | 5,2 ms | **×24** |
-| 9. Tout typé, C (cases) | 28 µs | 2,8 ms | **×46** |
-| 10. Tout typé, vectorisé + C (cases) | 66 µs | 3,7 ms | ×34 |
+| 1. Tcl nu (tcllib) | 1 141 µs | 119 ms | ×1 |
+| 2. Tcl nu + C | 172 µs | 19 ms | ×6,4 |
+| 3. Typé scintillant, Tcl | 2 248 µs | 260 ms | ×0,5 |
+| 4. Typé scintillant, vectorisé | 302 µs | 27 ms | ×4,4 |
+| 5. Typé scintillant, C | 62 µs | 5,8 ms | ×21 |
+| 6. Tout typé, Tcl | 2 227 µs | 254 ms | ×0,5 |
+| 7. Tout typé, vectorisé (objets) | 275 µs | 27 ms | ×4,4 |
+| 8. Tout typé, vectorisé (cases) | 79 µs | 3,6 ms | **×33** |
+| 9. Tout typé, C (cases) | 27 µs | 2,6 ms | **×45** |
+| 10. Tout typé, vectorisé + C (cases) | 50 µs | 2,7 ms | ×44 |
 
-Conditions : Linux, gcc -O2, typeparse v17v (v17o : ×20 en 8, ×41 en 9, ×29 en 10), coordonnées `double`. Chaque variante tourne
+Conditions : Linux, gcc -O2, typeparse v17w (v17o : ×20 en 8, ×41 en 9, ×29 en 10), coordonnées `double`. Chaque variante tourne
 dans son propre processus ; le temps retenu est le meilleur de trois processus, chacun
 répétant la chaîne (200 fois à 1 000 sommets, 7 fois à 100 000). Les listes « ordinaires »
 sont faites de doubles déjà convertis (calculés par `expr`) : des données lues en texte
@@ -113,10 +113,12 @@ seule la première conversion a disparu.
 
 La même chaîne, la même syntaxe, mais la polyligne est en cases (`{-compact}`, la forme
 compacte du même type). Plus d'objet par nombre : les vues sont des pas dans un tableau
-de doubles, `type map` lit et écrit des cases, et ses blocs se vectorisent. La polyligne
-résultat est créée d'un bloc (`type repeat -into polylinec`, sans liste intermédiaire), et
+de doubles, `type map` lit et écrit des cases, et ses blocs se vectorisent. Translation
+et rotation s'écrivent sur place, `type map -in pl((0,1)::2) {x y} {(…, …)}` : la
+polyligne (un paramètre, donc partagée) est recopiée une fois, sans même la remplir
+puisque la fenêtre couvre chaque case, et chaque résultat est écrit à son pas ; et
 `type map -min {x} $X {($x)}` sur une colonne en cases lit les cases sans les recopier.
-**×24, en Tcl, avec des valeurs typées.**
+**×33, en Tcl, avec des valeurs typées.**
 
 **Principe : la représentation fait l'essentiel du gain. Le même type, déclaré une fois
 avec ses formes (`type def polyline list.coord {-compact}polylinec`), choisit la sienne.**
@@ -132,10 +134,10 @@ sont déjà en cases.
 
 ## 10. Tout typé, vectorisé + C : chaque chose à sa place
 
-Les transformations en Tcl vectorisé, les mesures en C, sur les mêmes cases. ×34, entre
-8 et 9. À 100 000 sommets, translation et rotation écrites en `type map` ne coûtent
-qu'environ 1 ms de plus que leur version C. À 1 000 sommets, les coûts fixes d'une
-commande Tcl se voient davantage (66 contre 28 µs).
+Les transformations en Tcl vectorisé, les mesures en C, sur les mêmes cases. ×44 : à
+100 000 sommets, autant que le tout en C, translation et rotation écrites en
+`type map -in` coûtant à peu près ce que coûte leur version C. À 1 000 sommets, les
+coûts fixes d'une commande Tcl se voient davantage (50 contre 27 µs).
 
 **Principe : en cases, le Tcl vectorisé est assez proche du C pour qu'on n'écrive en C
 que ce qui le mérite, et les deux se passent les mêmes valeurs sans conversion.**
@@ -145,7 +147,7 @@ que ce qui le mérite, et les deux se passent les mêmes valeurs sans conversion
 - Le Tcl typé, écrit élément par élément, est plus lent que le Tcl nu (×0,5) : il vérifie
   ses types sans rien en tirer.
 - Le typage paie quand il change la façon de calculer (vectorisation) et la façon de
-  représenter (cases). Avec les deux, ×24 en Tcl, ×46 avec le C.
+  représenter (cases). Avec les deux, ×33 en Tcl, ×45 avec le C.
 - L'ordre des gains : la représentation d'abord, la vectorisation ensuite, le C en
   dernier.
 

@@ -4910,6 +4910,254 @@ ScalarRangeRead(Tcl_Interp *interp, Tcl_Obj *a, Tcl_Obj *part2Ptr)
 }
 
 /*
+ * v17w : la même chose pour une liste d'objets : une liste neuve, faite des
+ * éléments gardés et des valeurs des colonnes (des objets, ou des nombres
+ * tirés de cases), rangée dans la variable sous le même type. Les colonnes
+ * sont déjà dans le type des éléments (l'appelant les y a mises).
+ */
+static int
+ObjColumnsWrite(Tcl_Interp *interp, Var *varPtr, Tcl_Obj *a, Tcl_Obj *v,
+	TclType *tp, const char *path, Tcl_Size K, Tcl_Obj *const cols[])
+{
+    RangeText rx;
+    Tcl_Size n, j, k, i, first[64], count[64], stride[64], cn;
+    Tcl_Obj **ev, **nev = NULL, *nl, *na, *old;
+    int ok = 0;
+
+    if (TclIsCompactView(v) || TclListObjGetElements(NULL, v, &n, &ev)
+	    != TCL_OK) {
+	return 0;
+    }
+    if (!RangeTextParse(path, (Tcl_Size) strlen(path), &rx)) {
+	return 0;
+    }
+    if (rx.ncols != K) {
+	goto done;
+    }
+    for (j = 0; j < K; j++) {
+	TclType *ct = NULL;
+
+	rx.st.wj = (int) j;
+	if (RangeSpec(NULL, &rx.st, n, &first[j], &count[j], &stride[j])
+		!= TCL_OK || TclAnnotInfo(cols[j], NULL, &ct, NULL, NULL) != 1
+		|| ct->kind != TCLT_LIST || ct->elem != tp->elem
+		|| Tcl_ListObjLength(NULL, cols[j], &cn) != TCL_OK
+		|| cn != count[j]) {
+	    goto done;
+	}
+    }
+    nev = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) (n > 0 ? n : 1));
+    memcpy(nev, ev, sizeof(Tcl_Obj *) * (size_t) n);
+    for (j = 0; j < K; j++) {
+	Tcl_Obj *c = TCL_ANNOT_CONTENT(cols[j]), **cev;
+	const unsigned char *cd;
+	size_t cs;
+	int ck, cz;
+	Tcl_Size cnn;
+
+	if (TclCompactScalarInfo(c, &cnn, &cd, &cs, &ck, &cz)) {
+	    /* des cases : un objet par nombre (la liste d'objets en veut) */
+	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+		const unsigned char *cp = cd + (size_t) k * cs;
+
+		if (ck == 2) {
+		    double d;
+
+		    if (cz == 4) {
+			float f;
+
+			memcpy(&f, cp, 4);
+			d = f;
+		    } else {
+			memcpy(&d, cp, 8);
+		    }
+		    nev[i] = Tcl_NewDoubleObj(d);
+		} else if (cz == 8) {
+		    Tcl_WideInt w;
+
+		    memcpy(&w, cp, 8);
+		    if (ck == 1 && w < 0) {
+			goto undo;		/* (un grand non signé) */
+		    }
+		    nev[i] = Tcl_NewWideIntObj(w);
+		} else {
+		    goto undo;
+		}
+	    }
+	} else if (TclListObjGetElements(NULL, c, &cnn, &cev) == TCL_OK) {
+	    for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+		nev[i] = TCL_ANNOT_CONTENT(cev[k]);
+	    }
+	} else {
+	    goto undo;
+	}
+    }
+    if (0) {
+      undo:
+	/* les objets neufs jamais rangés : libérés par une liste jetable */
+	for (i = 0; i < n; i++) {
+	    if (nev[i] != ev[i] && nev[i]->refCount == 0) {
+		Tcl_IncrRefCount(nev[i]);
+		Tcl_DecrRefCount(nev[i]);
+	    }
+	}
+	goto done;
+    }
+    nl = Tcl_NewListObj(n, nev);
+    na = TclNewAnnotatedOwn(nl, TclTypeRefFor(interp, tp, -1));
+    if (na == NULL) {
+	goto done;
+    }
+    Tcl_IncrRefCount(na);
+    old = varPtr->value.objPtr;
+    varPtr->value.objPtr = na;
+    Tcl_DecrRefCount(old);
+    (void) a;
+    ok = 1;
+  done:
+    if (nev != NULL) {
+	Tcl_Free(nev);
+    }
+    RangeTextFree(&rx);
+    return ok;
+}
+
+/*
+ * v17w (type map -in) : écrit K colonnes en cases (même disposition que
+ * la cible) dans la variable, par un chemin de tranches ou de fenêtres ;
+ * la liste de la variable est copiée d'abord si elle est partagée (une
+ * seule copie, puis les écritures sur place). 1 : fait ; 0 : rien n'est
+ * écrit, le cas ne s'y prête pas (l'appelant passe par set). L'appelant a
+ * vérifié que le type des éléments n'a rien d'autre à vérifier.
+ */
+int
+TclTypePathWriteCellColumns(Tcl_Interp *interp, Tcl_Obj *nameObj,
+	const char *path, Tcl_Size K, Tcl_Obj *const cols[])
+{
+    Var *varPtr, *arrayPtr;
+    Tcl_Obj *a, *v, *nv = NULL, *na = NULL, *ref;
+    TclType *tp;
+    RangeText rx;
+    Tcl_Size n, j, k, i, first[64], count[64], stride[64], dn, cn;
+    const unsigned char *dd0, *sd[64];
+    size_t ds, ss[64];
+    int dk, dz, sk, sz, ok = 0;
+
+    if (K < 1 || K > 64) {
+	return 0;
+    }
+    varPtr = TclObjLookupVarEx(interp, nameObj, NULL, 0, "set", 0, 0,
+	    &arrayPtr);
+    if (varPtr == NULL || arrayPtr != NULL) {
+	return 0;
+    }
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+    if (TclIsVarArray(varPtr) || !(varPtr->flags & VAR_TYPED)
+	    || (a = varPtr->value.objPtr) == NULL
+	    || (varPtr->flags & (VAR_TRACED_READ|VAR_TRACED_WRITE))
+	    || TclAnnotInfo(a, &v, &tp, NULL, NULL) != 1
+	    || tp->kind != TCLT_LIST) {
+	return 0;
+    }
+    if (!TclCompactScalarInfo(v, &dn, &dd0, &ds, &dk, &dz)) {
+	return ObjColumnsWrite(interp, varPtr, a, v, tp, path, K, cols);
+    }
+    if (!RangeTextParse(path, (Tcl_Size) strlen(path), &rx)) {
+	return 0;
+    }
+    n = dn;
+    if (rx.ncols != K) {
+	goto done;
+    }
+    for (j = 0; j < K; j++) {
+	rx.st.wj = (int) j;
+	if (RangeSpec(NULL, &rx.st, n, &first[j], &count[j], &stride[j])
+		!= TCL_OK
+		|| !TclCompactScalarInfo(TCL_ANNOT_CONTENT(cols[j]), &cn,
+			&sd[j], &ss[j], &sk, &sz)
+		|| sk != dk || sz != dz || cn != count[j]) {
+	    goto done;
+	}
+    }
+    /* la liste à la seule variable : sinon une copie privée */
+    if (Tcl_IsShared(a) || Tcl_IsShared(v) || !TclCompactScalarWritable(v)) {
+	/* les colonnes couvrent-elles toute la liste ? (chaque case une
+	 * fois : pas K, débuts 0..K-1) ; alors rien à recopier */
+	int full = 1;
+	unsigned char seen[64];
+
+	memset(seen, 0, sizeof(seen));
+	for (j = 0; j < K && full; j++) {
+	    if (stride[j] != K || first[j] < 0 || first[j] >= K
+		    || seen[first[j]] || count[j] != (n - first[j] + K - 1) / K) {
+		full = 0;
+	    } else {
+		seen[first[j]] = 1;
+	    }
+	}
+	if (full && n % K != 0) {
+	    full = 0;
+	}
+	nv = TclCompactCloneEx(v, !full);
+	if (nv == NULL) {
+	    goto done;
+	}
+	ref = TclTypeRefFor(interp, tp, -1);
+	na = TclNewAnnotatedOwn(nv, ref);
+	if (na == NULL) {
+	    goto done;
+	}
+	Tcl_IncrRefCount(na);
+	v = nv;
+	(void) TclCompactScalarInfo(v, &dn, &dd0, &ds, &dk, &dz);
+    }
+    for (j = 0; j < K; j++) {
+	unsigned char *dd = (unsigned char *) dd0;
+
+	if (ss[j] == (size_t) dz && stride[j] == 1) {
+	    memcpy(dd + (size_t) first[j] * ds, sd[j],
+		    (size_t) count[j] * (size_t) dz);
+	    continue;
+	}
+	if (dz == 8 && ds % 8 == 0 && ss[j] % 8 == 0
+		&& ((uintptr_t) dd0 % 8) == 0 && ((uintptr_t) sd[j] % 8) == 0) {
+	    uint64_t *d64 = (uint64_t *) dd0;
+	    const uint64_t *s64 = (const uint64_t *) sd[j];
+	    size_t dstep = (ds / 8) * (size_t) stride[j], sstep = ss[j] / 8;
+	    uint64_t *dp = d64 + (size_t) first[j] * (ds / 8);
+
+	    for (k = 0; k < count[j]; k++) {
+		dp[(size_t) k * dstep] = s64[(size_t) k * sstep];
+	    }
+	    continue;
+	}
+	for (k = 0, i = first[j]; k < count[j]; k++, i += stride[j]) {
+	    memcpy(dd + (size_t) i * ds, sd[j] + (size_t) k * ss[j],
+		    (size_t) dz);
+	}
+    }
+    if (na != NULL) {
+	/* la copie devient la valeur de la variable (même type) */
+	Tcl_Obj *old = varPtr->value.objPtr;
+
+	varPtr->value.objPtr = na;	/* (la référence de na passe) */
+	Tcl_DecrRefCount(old);
+	na = NULL;
+    } else {
+	TclInvalidateStringRep(a);
+    }
+    ok = 1;
+  done:
+    if (na != NULL) {
+	Tcl_DecrRefCount(na);
+    }
+    RangeTextFree(&rx);
+    return ok;
+}
+
+/*
  * 24/11 : L(a:b:c) = colonne, L((s0,s1,...):b:c) = colonne colonne ...,
  * sur place : L une liste typée de nombres (entiers ou flottants, ni
  * nominale ni binaire) tenue par la seule variable, en objets ou en cases ;
