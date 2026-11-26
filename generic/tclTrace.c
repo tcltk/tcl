@@ -1800,10 +1800,13 @@ TraceExecutionProc(
 
 	    /*
 	     * Restore the interp tracing flag to prevent cmd traces from
-	     * affecting interp traces.
+	     * affecting interp traces. Only that flag: the callback may have
+	     * changed others, e.g. DONT_COMPILE_CMDS_INLINE by deleting or
+	     * creating a trace.
 	     */
 
-	    iPtr->flags = saveInterpFlags;
+	    iPtr->flags = (iPtr->flags & ~INTERP_TRACE_IN_PROGRESS)
+		    | (saveInterpFlags & INTERP_TRACE_IN_PROGRESS);
 	    if (tcmdPtr->flags == 0) {
 		flags |= TCL_TRACE_DESTROYED;
 	    }
