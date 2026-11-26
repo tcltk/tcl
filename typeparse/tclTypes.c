@@ -486,6 +486,7 @@ TclTypesFreeKeys(TclDictKey *keys, Tcl_Size n)
     Tcl_Free(keys);
 }
 
+static void PredProgFree(TclType *tp);
 static void FreeTypeData(TypeData *d);
 
 void
@@ -588,6 +589,7 @@ DeleteData(void *clientData, Tcl_Interp *interp)
 	    tp->familyArgs = NULL;
 	    Tcl_DecrRefCount(o);
 	}
+	tp->predInterp = NULL;		/* v17u : plus d'évaluation */
     }
     for (i = 0; i < d->nNs; i++) {	/* v16u : les espaces de noms */
 	TclNsDecrRefCount(d->nss[i].nsPtr);
@@ -626,6 +628,10 @@ FreeTypeData(TypeData *d)
 	if (d->all[i]->familyArgs != NULL) {
 	    Tcl_DecrRefCount(d->all[i]->familyArgs);
 	}
+	if (d->all[i]->pred != NULL) {
+	    Tcl_DecrRefCount(d->all[i]->pred);
+	}
+	PredProgFree(d->all[i]);
 	if (d->all[i]->compact != NULL) {
 	    TclCompactLayoutRelease(d->all[i]->compact);
 	}
@@ -926,6 +932,9 @@ TclTypeAssignable(const TclType *expected, const TclType *got)
 
     if (TclTypeSame(expected, got)) {
 	return 1;
+    }
+    if (expected->pred != NULL) {
+	return 0;	/* v17u : un prédicat se vérifie sur la valeur */
     }
     if (expected->binLink != NULL && expected->binLink->ref == got) {
 	return 1;			/* l'adresse d'un lien de frontière */
@@ -2305,6 +2314,7 @@ typedef struct ValGuard {
 
 static int ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	int variantHint, int *variantOut, const ValGuard *up);
+static int PredCheck(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value);
 
 static int
 VariantAccepts(const TclTypeField *f, Tcl_Obj *v, const ValGuard *up)
@@ -2511,6 +2521,14 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 	}
     }
     value = TCL_ANNOT_CONTENT(value);	/* une valeur annotée : son contenu */
+    if (tp->pred != NULL && tp->predBase != NULL) {
+	/* v17u : le type restreint, puis le prédicat */
+	if (ValidateG(interp, tp->predBase, value, variantHint, variantOut,
+		up) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	return PredCheck(interp, tp, value);
+    }
     me.tp = tp;
     me.value = value;
     me.up = up;
@@ -5723,6 +5741,13 @@ CopyInto(TclType *into, const TclType *res)
     into->binLink = res->binLink;
     into->binTag = res->binTag;
     into->sumMode = res->sumMode;
+    if (res->pred != NULL && into->pred == NULL) {
+	/* v17u : type def pair int(($%2==0)) : le prédicat suit */
+	into->pred = res->pred;
+	Tcl_IncrRefCount(into->pred);
+	into->predBase = res->predBase;
+	into->predInterp = res->predInterp;
+    }
     if (into->family == NULL && res->family != NULL) {
 	/* type def mm {grandeur(L, 0.001)} : mm hérite de la famille et des
 	 * paramètres de l'instance (règles de famille de type convert). */
@@ -11273,6 +11298,306 @@ MNumOf(Tcl_Obj *o, MNum *out)
     return 0;
 }
 
+/*
+ * v17u : les prédicats de type, T((expression)). « $ » seul (suivi d'un
+ * caractère qui ne commence pas un nom) désigne la valeur.
+ *
+ * PredRewrite rend le texte où chaque $ seul est remplacé par repl, hors
+ * des chaînes "..." et des {...} (des littéraux pour expr).
+ */
+static Tcl_Obj *
+PredRewrite(Tcl_Obj *pred, const char *repl, Tcl_Size rlen)
+{
+    Tcl_Size len, i;
+    const char *p = Tcl_GetStringFromObj(pred, &len);
+    Tcl_Obj *r = Tcl_NewObj();
+    int dq = 0, br = 0;
+    Tcl_Size from = 0;
+
+    for (i = 0; i < len; i++) {
+	char c = p[i];
+
+	if (c == '\\') {
+	    i++;
+	    continue;
+	}
+	if (c == '"' && br == 0) {
+	    dq = !dq;
+	} else if (!dq && c == '{') {
+	    br++;
+	} else if (!dq && c == '}' && br > 0) {
+	    br--;
+	} else if (c == '$' && !dq && br == 0) {
+	    char nc = (i + 1 < len) ? p[i + 1] : ' ';
+
+	    if (!(isalnum(UCHAR(nc)) || nc == '_' || nc == ':' || nc == '{'
+		    || nc == '(')) {
+		Tcl_AppendToObj(r, p + from, i - from);
+		Tcl_AppendToObj(r, repl, rlen);
+		from = i + 1;
+	    }
+	}
+    }
+    Tcl_AppendToObj(r, p + from, len - from);
+    return r;
+}
+
+typedef struct PredNum {
+    MProg g;
+    int root;
+    Tcl_Obj **gnames;		/* __gK : la variable qualifiée lue (::max) */
+    int ng;
+} PredNum;
+
+/* Les $::nom (hors chaînes et accolades) remplacés par $__gK : le
+ * sous-ensemble numérique ne lit que des noms simples. */
+static Tcl_Obj *
+PredGlobals(Tcl_Obj *text, Tcl_Obj ***namesPtr, int *nPtr)
+{
+    Tcl_Size len, i, from = 0;
+    const char *p = Tcl_GetStringFromObj(text, &len);
+    Tcl_Obj *r = Tcl_NewObj();
+    int dq = 0, br = 0;
+
+    *namesPtr = NULL;
+    *nPtr = 0;
+    for (i = 0; i < len; i++) {
+	char c = p[i];
+
+	if (c == '\\') {
+	    i++;
+	    continue;
+	}
+	if (c == '"' && br == 0) {
+	    dq = !dq;
+	} else if (!dq && c == '{') {
+	    br++;
+	} else if (!dq && c == '}' && br > 0) {
+	    br--;
+	} else if (c == '$' && !dq && br == 0 && i + 2 < len
+		&& p[i + 1] == ':' && p[i + 2] == ':') {
+	    Tcl_Size j = i + 1;
+	    char buf[32];
+
+	    while (j < len && (isalnum(UCHAR(p[j])) || p[j] == '_'
+		    || p[j] == ':')) {
+		j++;
+	    }
+	    *namesPtr = (Tcl_Obj **) Tcl_Realloc(*namesPtr,
+		    (*nPtr + 1) * sizeof(Tcl_Obj *));
+	    (*namesPtr)[*nPtr] = Tcl_NewStringObj(p + i + 1, j - i - 1);
+	    Tcl_IncrRefCount((*namesPtr)[*nPtr]);
+	    snprintf(buf, sizeof(buf), "$__g%d", *nPtr);
+	    (*nPtr)++;
+	    Tcl_AppendToObj(r, p + from, i - from);
+	    Tcl_AppendToObj(r, buf, -1);
+	    from = j;
+	    i = j - 1;
+	}
+    }
+    Tcl_AppendToObj(r, p + from, len - from);
+    return r;
+}
+
+static void
+PredProgFree(TclType *tp)
+{
+    if (tp->predProg != NULL && tp->predProg != (void *) 1) {
+	PredNum *pn = (PredNum *) tp->predProg;
+	int k;
+
+	MProgFree(&pn->g);
+	for (k = 0; k < pn->ng; k++) {
+	    Tcl_DecrRefCount(pn->gnames[k]);
+	}
+	if (pn->gnames != NULL) {
+	    Tcl_Free(pn->gnames);
+	}
+	Tcl_Free(pn);
+    }
+    tp->predProg = NULL;
+}
+
+/* La forme numérique (le sous-ensemble de type map), ou NULL. */
+static PredNum *
+PredNumOf(const TclType *tp)
+{
+    TclType *mt = (TclType *) tp;
+
+    if (mt->predProg == NULL) {
+	Tcl_Obj *t0 = PredRewrite(tp->pred, "$__v", 4), *t;
+	PredNum *pn = (PredNum *) Tcl_Alloc(sizeof(PredNum));
+	int k, bad = 0;
+
+	memset(pn, 0, sizeof(*pn));
+	Tcl_IncrRefCount(t0);
+	t = PredGlobals(t0, &pn->gnames, &pn->ng);
+	Tcl_DecrRefCount(t0);
+	Tcl_IncrRefCount(t);
+	pn->g.p = Tcl_GetString(t);
+	pn->root = MExpr(&pn->g);
+	MSkip(&pn->g);
+	for (k = 0; k < pn->g.nnames; k++) {
+	    const char *nm = Tcl_GetString(pn->g.names[k]);
+
+	    if (strcmp(nm, "__v") != 0 && strncmp(nm, "__g", 3) != 0) {
+		bad = 1;
+	    }
+	}
+	if (bad || pn->g.bad || pn->root < 0 || *pn->g.p != '\0'
+		|| pn->g.nnames > 8) {
+	    MProgFree(&pn->g);
+	    for (k = 0; k < pn->ng; k++) {
+		Tcl_DecrRefCount(pn->gnames[k]);
+	    }
+	    if (pn->gnames != NULL) {
+		Tcl_Free(pn->gnames);
+	    }
+	    Tcl_Free(pn);
+	    mt->predProg = (void *) 1;
+	} else {
+	    pn->g.p = NULL;
+	    mt->predProg = pn;
+	}
+	Tcl_DecrRefCount(t);
+    }
+    return (mt->predProg == (void *) 1) ? NULL : (PredNum *) mt->predProg;
+}
+
+/* Les valeurs des variables de la forme numérique : la valeur, et les
+ * variables qualifiées lues à l'instant ; 0 si l'une n'est pas un nombre. */
+static int
+PredVars(Tcl_Interp *pi, const PredNum *pn, Tcl_Obj *value, MNum *vars)
+{
+    int k;
+
+    for (k = 0; k < pn->g.nnames; k++) {
+	const char *nm = Tcl_GetString(pn->g.names[k]);
+	Tcl_Obj *v;
+
+	if (nm[2] == 'v') {
+	    v = value;
+	} else {
+	    int gi = atoi(nm + 3);
+
+	    if (gi < 0 || gi >= pn->ng) {
+		return 0;
+	    }
+	    v = Tcl_ObjGetVar2(pi, pn->gnames[gi], NULL, 0);
+	}
+	if (v == NULL || !MNumOf(v, &vars[k])) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+/* La valeur, en littéral d'expr : "..." où chaque caractère spécial est
+ * précédé d'une barre oblique inverse. */
+static void
+PredQuote(Tcl_DString *ds, Tcl_Obj *value)
+{
+    Tcl_Size len, i;
+    const char *v = Tcl_GetStringFromObj(value, &len);
+
+    Tcl_DStringAppend(ds, "\"", 1);
+    for (i = 0; i < len; i++) {
+	switch (v[i]) {
+	case '\\': case '"': case '$': case '[': case ']': case '{': case '}':
+	    Tcl_DStringAppend(ds, "\\", 1);
+	    Tcl_DStringAppend(ds, v + i, 1);
+	    break;
+	case '\n':
+	    Tcl_DStringAppend(ds, "\\n", 2);
+	    break;
+	default:
+	    Tcl_DStringAppend(ds, v + i, 1);
+	}
+    }
+    Tcl_DStringAppend(ds, "\"", 1);
+}
+
+/*
+ * Vérifie le prédicat de tp sur value (son contenu). Évalué dans
+ * l'interpréteur du type, son résultat et son état d'erreur gardés ; une
+ * erreur de l'expression vaut refus (le message la cite).
+ */
+static Tcl_ThreadDataKey predTrustKey;
+
+/* v17u : une valeur qui a déjà le visa (déjà de ce type) n'est pas
+ * revérifiée pendant qu'on la recopie : TclTypePredTrust(+1) ... (-1). */
+void
+TclTypePredTrust(int delta)
+{
+    int *tr = (int *) Tcl_GetThreadData(&predTrustKey, sizeof(int));
+
+    *tr += delta;
+}
+
+static int
+PredCheck(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value)
+{
+    Tcl_Interp *pi = tp->predInterp;
+    PredNum *pn;
+    MNum vars[8], out;
+    int ok = 0, rc;
+    Tcl_Obj *why = NULL;
+
+    if (pi == NULL || (tp->owner != NULL && tp->owner->dead)) {
+	return TCL_OK;			/* l'interpréteur n'est plus */
+    }
+    if (*(int *) Tcl_GetThreadData(&predTrustKey, sizeof(int)) > 0) {
+	return TCL_OK;			/* le visa : déjà de ce type */
+    }
+    value = TCL_ANNOT_CONTENT(value);
+    if ((pn = PredNumOf(tp)) != NULL && PredVars(pi, pn, value, vars)
+	    && MEval(&pn->g, pn->root, vars, &out)
+	    && !(out.isD && isnan(out.d))) {
+	ok = out.isD ? (out.d != 0.0) : (out.w != 0);
+    } else {
+	/* la valeur en littéral, à la place de $ */
+	Tcl_DString lit;
+	Tcl_Obj *t;
+	Tcl_InterpState st;
+	int b = 0;
+
+	Tcl_DStringInit(&lit);
+	PredQuote(&lit, value);
+	t = PredRewrite(tp->pred, Tcl_DStringValue(&lit),
+		Tcl_DStringLength(&lit));
+	Tcl_DStringFree(&lit);
+	Tcl_IncrRefCount(t);
+	st = Tcl_SaveInterpState(pi, TCL_OK);
+	rc = Tcl_ExprBooleanObj(pi, t, &b);
+	if (rc != TCL_OK) {
+	    why = Tcl_DuplicateObj(Tcl_GetObjResult(pi));
+	    Tcl_IncrRefCount(why);
+	}
+	Tcl_RestoreInterpState(pi, st);
+	Tcl_DecrRefCount(t);
+	ok = (rc == TCL_OK && b);
+    }
+    if (ok) {
+	return TCL_OK;
+    }
+    if (interp != NULL) {
+	if (why != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" is not of type %s: "
+		    "its predicate %s fails: %s", Tcl_GetString(value),
+		    tp->name, Tcl_GetString(tp->pred), Tcl_GetString(why)));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" is not of type %s: "
+		    "%s is false", Tcl_GetString(value), tp->name,
+		    Tcl_GetString(tp->pred)));
+	}
+	Tcl_SetErrorCode(interp, "TCL", "TYPE", "PRED", (char *) NULL);
+    }
+    if (why != NULL) {
+	Tcl_DecrRefCount(why);
+    }
+    return TCL_ERROR;
+}
+
 static Tcl_Obj *
 MListContent(Tcl_Obj *o)
 {
@@ -14851,7 +15176,7 @@ QuickScalarOk(const TclType *ft, Tcl_Obj *v)
 {
     double d;
 
-    if (ft == NULL || ft->binLink != NULL) {
+    if (ft == NULL || ft->binLink != NULL || ft->pred != NULL) {
 	return 0;
     }
     switch (ft->kind) {
@@ -14983,7 +15308,8 @@ DeclareTypedTp(Tcl_Interp *interp, TclType *tp, Tcl_Obj *typeObj,
 	 * la même chose après ses cas généraux) ; le message vient de
 	 * TclTypeValidate. */
 	double dv;
-	int quick = (tp->binLink == NULL) && (tp->kind == TCLT_DOUBLE
+	int quick = (tp->binLink == NULL && tp->pred == NULL)
+		&& (tp->kind == TCLT_DOUBLE
 		? Tcl_GetDoubleFromObj(NULL, valueObj, &dv) == TCL_OK
 		: (tp->bitWidth == 0 && tp->binKind != TCLBIN_UINT
 		    && tp->binKind != TCLBIN_SINT

@@ -1,0 +1,46 @@
+set pair 4 : 4 pair
+set pair 3 : ERR value "3" is not of type pair: ($%2==0) is false
+set pair abc : ERR expected integer but got "abc"
+typé int 6 : 6 pair
+typé int 7 : ERR value "7" is not of type pair: ($%2==0) is false
+pair -> int : int
+en ligne : int(($ > 0))
+en ligne faux : ERR value "-5" is not of type int(($ > 0)): ($ > 0) is false
+u8 pair : int(u,8,($%2==0))
+u8 pair 201 : ERR value "201" is not of type int(u,8,($%2==0)): ($%2==0) is false
+u8 pair 300 : ERR value "300" does not fit in int(u,8)
+double : 55.5
+double faux : ERR value "101" is not of type double((0 <= $ && $ <= 100)): (0 <= $ && $ <= 100) is false
+globale : 3
+globale faux : ERR value "30" is not of type int(($ < $::max)): ($ < $::max) is false
+visa : 3
+non qualifiée : ERR predicate of int: "$max" would be read in whatever frame checks the value: write $ for the value, or a qualified name ($::max)
+chaîne : abc
+chaîne vide : ERR value "" is not of type string(($ ne "")): ($ ne "") is false
+chaîne {a$b} : a$b
+commande : abc
+commande faux : ERR value "abcdef" is not of type string(([string length $] < 4)): ([string length $] < 4) is false
+proc 10 : 5
+proc 11 : ERR argument "n": value "11" is not of type pair: ($%2==0) is false
+list.pair : {2 4 6} list<pair>
+list.pair 5 : ERR value "5" is not of type pair: ($%2==0) is false
+cast liste : 2 4 6
+cast liste 5 : ERR value "5" is not of type pair: ($%2==0) is false
+écriture L(1) 3 : ERR value "3" is not of type pair: ($%2==0) is false
+écriture L(1) 8 : 2 8 6
+lset : ERR value "3" is not of type pair: ($%2==0) is false
+set x 5 : ERR value "5" is not of type pair: ($%2==0) is false
+incr x : ERR value "5" is not of type pair: ($%2==0) is false
+incr x 2 : 6
+proc incr x : ERR value "5" is not of type pair: ($%2==0) is false
+cases : ERR value "5" is not of type int(u,8,($%2==0)): ($%2==0) is false
+cases ok : 4 4 4 6 4 4 4 4 4 4
+tranche : ERR value "7" is not of type int(u,8,($%2==0)): ($%2==0) is false
+tranche ok : 8 4 8 4 8 4 8 4 8 4
+type map : 2 4 6
+type map faux : ERR type map: result: value "3" is not of type int(($%2==0)): ($%2==0) is false
+repeat : 4 4 4
+repeat zéro : 0 0 0
+repeat faux : ERR type repeat: value: value "5" is not of type pair: ($%2==0) is false
+imbriqué : 0 1 1
+liste sans élément : ERR a predicate on a whole list is not supported yet: restrict each element with list.T((...)), for example list.int(($ > 0))

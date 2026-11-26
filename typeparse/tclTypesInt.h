@@ -227,4 +227,8 @@ TclType *TclTypesFinishSum(Tcl_Interp *interp, TypeData *d,
 	Tcl_Size n, TclType *into, int isUnion);
 void	TclTypesFreeFields(TclTypeField *fields, Tcl_Size n);
 
+/* v17u : type restreint par un prédicat, T((expression sur $)) */
+TclType *TclTypesPredType(Tcl_Interp *interp, TypeData *d,
+			    TclType *base, const char *pred, Tcl_Size len);
+
 #endif /* TCLTYPESINT_H */

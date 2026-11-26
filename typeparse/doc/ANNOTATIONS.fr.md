@@ -639,6 +639,10 @@ set {Jour}j 10/11              ;# pas une date
 
 Ces alias sont globaux (`::u8`…) : le fichier les définit avec leur nom qualifié depuis son espace de noms (§ 5.8).
 
+#### 5.7b Prédicats (v17u)
+
+Un type se restreint par un prédicat, écrit comme dernier argument entre parenthèses ; `$` seul désigne la valeur : `int(($%2==0))`, `int(u,8,($ < 100))`, `string(($ ne ""))`, `double((0 <= $ && $ <= 100))`. Le prédicat est évalué à l'entrée de la valeur dans le type (un visa : une valeur déjà de ce type n'est pas revérifiée), peut lire des variables qualifiées (`$::max`) et appeler des commandes, ne doit rien modifier. Un `int` typé entre sans cast si le prédicat est vrai. Voir le manuel, « Types restreints par un prédicat ».
+
 #### 5.8 Espaces de noms (v16u)
 
 Un type appartient à l'espace de noms où il est défini, comme une procédure :

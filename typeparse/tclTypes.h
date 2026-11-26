@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17t"
+#define TCL_TYPES_VERSION "v17u"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -208,6 +208,12 @@ struct TclType {
     const TclTypeOps *ops;	/* 23/11 : opérations spécialisées, ou NULL */
     size_t opsGen;		/* génération du registre où ops a été choisi */
     struct TypeData *owner;	/* v16u : la table de types qui l'a créé */
+    Tcl_Obj *pred;		/* v17u : prédicat int(($%2==0)), texte de
+				 * l'expression (avec ses parenthèses), ou NULL */
+    struct TclType *predBase;	/* v17u : le type restreint (int, int(u,8)...) */
+    Tcl_Interp *predInterp;	/* v17u : où l'évaluer (NULL : interp supprimé) */
+    void *predProg;		/* v17u : forme numérique compilée (MProg), ou
+				 * NULL ; (void *) 1 : pas de forme numérique */
 };
 #define TCLT_SUM_TAGGED	0
 #define TCLT_SUM_UNION	1
@@ -479,6 +485,7 @@ int TclCompactScalarWritable(Tcl_Obj *v);
 typedef int (TclVecEachloopProc)(Tcl_Interp *interp, int isLmap,
 	Tcl_Size objc, Tcl_Obj *const objv[]);
 int TclVecRegister(const char *name, TclVecEachloopProc *proc, int priority);
+void TclTypePredTrust(int delta);
 Tcl_Obj *TclCompactRepeat(TclType *ltp, Tcl_Obj *value, Tcl_Size n);
 int TclCompactFillFrom(Tcl_Obj *v, Tcl_Size idx, Tcl_Size first,
 	Tcl_Size count, Tcl_Size step);

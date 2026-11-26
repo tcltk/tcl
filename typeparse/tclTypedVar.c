@@ -603,6 +603,28 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
 	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
 	return NULL;
     }
+    if ((status == TCLA_TYPED || status == TCLA_RAW) && tp->pred != NULL
+	    && tp->predBase != NULL && !TclTypeEnters(tp, at)
+	    && TclTypeEnters(tp->predBase, at)) {
+	/* v17u : un T entre dans T((prédicat)) sans cast : le prédicat est
+	 * vérifié (le visa) */
+	if (TclTypeValidate(interp, tp, content, -1, NULL) != TCL_OK) {
+	    return NULL;
+	}
+	at = tp;
+    }
+    if ((status == TCLA_TYPED || status == TCLA_RAW)
+	    && tp->kind == TCLT_LIST && at->kind == TCLT_LIST
+	    && tp->elem != NULL && at->elem != NULL && tp->elem->pred != NULL
+	    && tp->elem->predBase != NULL && !TclTypeEnters(tp, at)
+	    && TclTypeEnters(tp->elem->predBase, at->elem)) {
+	/* v17u : list.T entre dans list.T((prédicat)), chaque élément
+	 * vérifié (la longueur aussi, par la validation de la liste) */
+	if (TclTypeValidate(interp, tp, content, -1, NULL) != TCL_OK) {
+	    return NULL;
+	}
+	at = tp;
+    }
     if ((status == TCLA_TYPED || status == TCLA_RAW)
 	    && !TclTypeEnters(tp, at)
 	    && !TclTypeIsPlainString(tp) && !TclTypeIsAny(tp)) {
@@ -645,14 +667,23 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
     copy = Tcl_DuplicateObj(content);
     /* Balise explicite d'une somme ({tEXt}...) : elle fixe la variante. */
     {
-	int chosen = -1;
+	int chosen = -1, trust = (status == TCLA_TYPED && at == tp), rcc;
 
-	if ((status == TCLA_TYPED ? TclTypeComplete : TclTypeCompleteBare)
+	/* v17u : déjà de ce type, la valeur a son visa : ses prédicats ne
+	 * sont pas revérifiés */
+	if (trust) {
+	    TclTypePredTrust(1);
+	}
+	rcc = (status == TCLA_TYPED ? TclTypeComplete : TclTypeCompleteBare)
 		(interp, tp, copy,
 		((status == TCLA_RAW || (status == TCLA_TYPED
 			&& !TclSumTagged(tp))) && at == tp
 			&& tp->kind == TCLT_SUM && variant >= 0) ? variant : hint,
-		&chosen) != TCL_OK) {
+		&chosen);
+	if (trust) {
+	    TclTypePredTrust(-1);
+	}
+	if (rcc != TCL_OK) {
 	    TclDiscard(copy);
 	    return NULL;
 	}
@@ -749,7 +780,9 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    if (status == TCLA_TYPED && at->elem != NULL
 		    && (tp->elem->kind == TCLT_INT || tp->elem->kind == TCLT_DOUBLE)
 		    && at->elem->kind == tp->elem->kind
-		    && !TclTypeAssignable(tp->elem, at->elem)) {
+		    && !TclTypeAssignable(tp->elem, at->elem)
+		    && !(tp->elem->pred != NULL && tp->elem->predBase != NULL
+			&& TclTypeAssignable(tp->elem->predBase, at->elem))) {
 		/* Pas de rétrécissement caché : list<int> n'entre pas dans
 		 * list.int(u,8), comme int n'entre pas dans int(u,8). */
 		Mismatch(interp, tp, at);

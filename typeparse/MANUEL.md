@@ -80,6 +80,53 @@ Le dict, lui, garde sa forme clé/valeur : un dict n'a pas de forme positionnell
 * Un format avec plusieurs formes possibles (PNG, GIF…) : une **somme**
   de produits (voir `exemples/png_somme.tcl`).
 
+## Types restreints par un prédicat : `T((expression))`
+
+Un prédicat restreint un type aux valeurs pour lesquelles une expression est
+vraie. Il s'écrit comme dernier argument du type, entre parenthèses : c'est
+la forme expression de TIP 759, et `$` seul y désigne la valeur.
+
+```tcl
+type def pair     int(($%2==0))                   ;# les entiers pairs
+type def pct      {double((0 <= $ && $ <= 100))}
+set {int(u,8,($%2==0))}b 200                      ;# un octet pair, en ligne
+set {string(($ ne ""))}nom Jean                   ;# une chaîne non vide
+set {string(([string length $] < 9))}code ABC     ;# une commande, aussi
+proc moitie {{pair}n} {expr {$n/2}}
+set {list.pair}L 2 4 6                            ;# chaque élément
+```
+
+* **Un visa, vérifié à l'entrée.** Le prédicat est évalué quand une valeur
+  entre dans le type : `set {T}x`, un paramètre, `type cast`, une écriture
+  par chemin (`set L(1) 3`, `lset`, une tranche), `incr`, la construction
+  d'une liste, `type repeat`, le résultat typé de `type map`. Une valeur
+  déjà de ce type y entre telle quelle : elle a son visa.
+* **Sans cast.** Un `{int}6` entre dans `{pair}` si le prédicat est vrai ;
+  un `pair` entre partout où l'on attend un `int`.
+* **L'état peut varier.** Le prédicat peut lire des variables qualifiées :
+  `int(($ < $::max))`. La valeur certifie que la condition était vraie à
+  son entrée ; elle garde son type si `::max` change. Une variable non
+  qualifiée est refusée à la définition : elle serait lue dans le cadre,
+  quel qu'il soit, qui vérifie la valeur.
+* **Rien à modifier.** Le prédicat ne doit rien changer (comme `assert` en
+  C) : il n'est pas évalué en mode `off`, et une valeur qui a le visa n'est
+  pas revérifiée. Un prédicat qui écrit donnerait un programme différent
+  selon le mode.
+* **Le type restreint d'abord.** `int(u,8,($%2==0))` refuse 300 parce
+  qu'il ne tient pas dans un octet, 201 parce qu'il est impair. Les cases
+  (listes compactes) gardent la représentation du type restreint.
+* **Rapide quand c'est numérique.** Un prédicat qui ne lit que la valeur,
+  des nombres et des variables qualifiées numériques est calculé sans
+  interpréteur (environ 30 ns par valeur) ; sinon il passe par `expr`,
+  la valeur y étant écrite en littéral.
+* **Les prédicats s'empilent.** `type def pos2 {pair(($ > 0))}` : pair,
+  puis positif.
+* **Limite.** Un prédicat sur une liste entière (`list(($ ne {}))`) n'est
+  pas encore accepté : on restreint chaque élément, `list.int(($ > 0))`.
+
+Message : `value "3" is not of type pair: ($%2==0) is false`, code
+`TCL TYPE PRED`. Test : `t133_predicats.tcl`.
+
 ## bitarray : un entier dont on lit les bits
 
 `bitarray(n, ordre)` est un entier de n bits (0 ≤ v < 2^n). L'ordre dit d'où

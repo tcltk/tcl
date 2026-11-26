@@ -639,6 +639,105 @@ TclTypesBinaryType(
     return NULL;
 }
 
+/*
+ * TclTypesPredType -- (v17u)
+ *
+ *	T((expression)) : le type T restreint aux valeurs pour lesquelles
+ *	l'expression, où $ seul désigne la valeur, est vraie. L'expression
+ *	est évaluée à l'entrée de la valeur dans le type (un visa) ; elle peut
+ *	lire des variables qualifiées ($::max), pas modifier l'état (contrat).
+ *	Interné par son nom : int(($%2==0)), int(u,8,($ < 100)).
+ */
+
+TclType *
+TclTypesPredType(
+    Tcl_Interp *interp,
+    TypeData *d,
+    TclType *base,
+    const char *pred,
+    Tcl_Size len)
+{
+    Tcl_DString key;
+    Tcl_HashEntry *hPtr;
+    TclType *inst;
+    Tcl_Size i, bl;
+    int isNew, dq = 0, br = 0;
+
+    while (len > 0 && isspace(UCHAR(pred[0]))) {
+	pred++;
+	len--;
+    }
+    while (len > 0 && isspace(UCHAR(pred[len - 1]))) {
+	len--;
+    }
+    /* une variable non qualifiée serait lue dans un cadre quelconque */
+    for (i = 0; i < len; i++) {
+	char c = pred[i];
+
+	if (c == '\\') {
+	    i++;
+	    continue;
+	}
+	if (c == '"' && br == 0) {
+	    dq = !dq;
+	} else if (!dq && c == '{') {
+	    br++;
+	} else if (!dq && c == '}' && br > 0) {
+	    br--;
+	} else if (c == '$' && !dq && br == 0 && i + 1 < len
+		&& (isalnum(UCHAR(pred[i + 1])) || pred[i + 1] == '_')) {
+	    Tcl_Size j = i + 1;
+
+	    while (j < len && (isalnum(UCHAR(pred[j])) || pred[j] == '_')) {
+		j++;
+	    }
+	    ERR(interp, "PARAM", "predicate of %s: \"$%.*s\" would be read in "
+		    "whatever frame checks the value: write $ for the value, "
+		    "or a qualified name ($::%.*s)", base->name,
+		    (int) (j - i - 1), pred + i + 1, (int) (j - i - 1),
+		    pred + i + 1);
+	    return NULL;
+	}
+    }
+    Tcl_DStringInit(&key);
+    bl = (Tcl_Size) strlen(base->name);
+    if (base->refine && base->binKind != 0 && bl > 0
+	    && base->name[bl - 1] == ')') {
+	/* int(u,8) : int(u,8,(...)) */
+	Tcl_DStringAppend(&key, base->name, bl - 1);
+	Tcl_DStringAppend(&key, ",", 1);
+	Tcl_DStringAppend(&key, pred, len);
+	Tcl_DStringAppend(&key, ")", 1);
+    } else {
+	Tcl_DStringAppend(&key, base->name, bl);
+	Tcl_DStringAppend(&key, "(", 1);
+	Tcl_DStringAppend(&key, pred, len);
+	Tcl_DStringAppend(&key, ")", 1);
+    }
+    hPtr = Tcl_CreateHashEntry(&d->instances, Tcl_DStringValue(&key), &isNew);
+    if (!isNew) {
+	inst = (TclType *) Tcl_GetHashValue(hPtr);
+    } else {
+	inst = TclTypesNewType(d, base->kind, Tcl_DStringValue(&key));
+	TclTypesCopyInto(inst, base);
+	inst->nominal = 1;
+	inst->refine = base->refine;
+	inst->under = base;
+	inst->compactWanted = base->compactWanted;
+	if (inst->pred != NULL) {
+	    Tcl_DecrRefCount(inst->pred);	/* (copié d'une base restreinte) */
+	}
+	inst->pred = Tcl_NewStringObj(pred, len);
+	Tcl_IncrRefCount(inst->pred);
+	inst->predBase = base;
+	inst->predInterp = interp;
+	inst->predProg = NULL;
+	Tcl_SetHashValue(hPtr, inst);
+    }
+    Tcl_DStringFree(&key);
+    return inst;
+}
+
 /* Octets du terminateur NUL d'un string(enc,z) : 2 pour utf-16, ucs-2. */
 
 int
