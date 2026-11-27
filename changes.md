@@ -101,6 +101,7 @@ to the userbase.
  - [Transchan loses input data when written to](https://core.tcl-lang.org/tcl/tktview/6141c1)
  - [execing command that starts with 2 fails](https://core.tcl-lang.org/tcl/tktview/233990)
  - [arguments to TclCreatePipeline cannot start with '|'](https://core.tcl-lang.org/tcl/tktview/186235)
+ - [Tcl_GetInterpPath() and Tcl_GetParent() used freed memory](https://core.tcl-lang.org/tcl/tktview/257742)
  - [an error in an execution trace lost the frame of the traced command](https://core.tcl-lang.org/tcl/tktview/afa8c9)
  - ["binary format" with huge counts or offsets](https://core.tcl-lang.org/tcl/tktview/278858)
  - [directory creation temporarily changes the umask](https://core.tcl-lang.org/tcl/tktview/cd6092)

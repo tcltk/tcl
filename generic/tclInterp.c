@@ -273,7 +273,6 @@ static Tcl_CmdDeleteProc AliasObjCmdDeleteProc;
 static Tcl_Interp *	GetInterp(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static Tcl_Interp *	GetInterp2(Tcl_Interp *interp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
-static Tcl_InterpDeleteProc InterpInfoDeleteProc;
 static int		ChildBgerror(Tcl_Interp *interp,
 			    Tcl_Interp *childInterp, Tcl_Size objc,
 			    Tcl_Obj *const *objv);
@@ -897,17 +896,18 @@ TclInterpInit(
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, INIT_AUTO_PATH_CMD, InitAutoPathObjCmd,
 	    NULL, NULL);
-    Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
 }
 
 /*
  *---------------------------------------------------------------------------
  *
- * InterpInfoDeleteProc --
+ * TclInterpInfoDelete --
  *
  *	Invoked when an interpreter is being deleted. It releases all storage
- *	used by the parent/child/safe interpreter facilities.
+ *	used by the parent/child/safe interpreter facilities. It is called by
+ *	DeleteInterpProc after all Tcl_CallWhenDeleted callbacks, so that they
+ *	can still use Tcl_GetParent() and Tcl_GetInterpPath(). [Bug 2577420]
  *
  * Results:
  *	None.
@@ -918,9 +918,8 @@ TclInterpInit(
  *---------------------------------------------------------------------------
  */
 
-static void
-InterpInfoDeleteProc(
-    TCL_UNUSED(void *),
+void
+TclInterpInfoDelete(
     Tcl_Interp *interp)		/* Interp being deleted. All commands for
 				 * child interps should already be deleted. */
 {
@@ -935,7 +934,7 @@ InterpInfoDeleteProc(
 
     parentPtr = &interpInfoPtr->parent;
     if (parentPtr->childTable.numEntries != 0) {
-	Tcl_Panic("InterpInfoDeleteProc: still exist commands");
+	Tcl_Panic("TclInterpInfoDelete: still exist commands");
     }
     Tcl_DeleteHashTable(&parentPtr->childTable);
 
@@ -972,11 +971,12 @@ InterpInfoDeleteProc(
      */
 
     if (childPtr->aliasTable.numEntries != 0) {
-	Tcl_Panic("InterpInfoDeleteProc: still exist aliases");
+	Tcl_Panic("TclInterpInfoDelete: still exist aliases");
     }
     Tcl_DeleteHashTable(&childPtr->aliasTable);
 
     Tcl_Free(interpInfoPtr);
+    ((Interp *) interp)->interpInfo = NULL;
 }
 
 /*
@@ -1458,6 +1458,9 @@ NRInterpCmd(
 	TclNewObj(resultPtr);
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
+	    if (((Child *) Tcl_GetHashValue(hPtr))->interpCmd == NULL) {
+		continue;
+	    }
 	    string = (char *) Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
 		    Tcl_NewStringObj(string, -1));
@@ -2689,6 +2692,10 @@ GetInterp(
 	    break;
 	}
 	childPtr = (Child *) Tcl_GetHashValue(hPtr);
+	if (childPtr->interpCmd == NULL) {
+	    searchInterp = NULL;
+	    break;
+	}
 	searchInterp = childPtr->childInterp;
 	if (searchInterp == NULL) {
 	    break;
@@ -3126,13 +3133,10 @@ ChildObjCmdDeleteProc(
     Tcl_Interp *childInterp = (Tcl_Interp *) clientData;
 				/* And for a child interp. */
 
+    Tcl_HashEntry *hPtr;
+
     childPtr = &INTERP_INFO(childInterp)->child;
-
-    /*
-     * Unlink the child from its parent interpreter.
-     */
-
-    Tcl_DeleteHashEntry(childPtr->childEntryPtr);
+    hPtr = childPtr->childEntryPtr;
 
     /*
      * Set to NULL so that when the InterpInfo is cleaned up in the child it
@@ -3145,6 +3149,14 @@ ChildObjCmdDeleteProc(
     if (childPtr->childInterp != NULL) {
 	Tcl_DeleteInterp(childPtr->childInterp);
     }
+
+    /*
+     * Unlink the child from its parent interpreter only now, so that
+     * Tcl_GetInterpPath() still works in the child's delete callbacks.
+     * [Bug 2577420] Note that childPtr may have been freed by now.
+     */
+
+    Tcl_DeleteHashEntry(hPtr);
 }
 
 /*

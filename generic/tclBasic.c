@@ -2033,6 +2033,9 @@ DeleteInterpProc(
 	Tcl_Free(hTablePtr);
 	iPtr->assocData = NULL;
     }
+    if (iPtr->interpInfo != NULL) {
+	TclInterpInfoDelete(interp);
+    }
 
     /*
      * Pop the root frame pointer and finish deleting the global
