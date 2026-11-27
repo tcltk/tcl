@@ -44,9 +44,9 @@ nog steeds aanvaard.
 * **Volgorde.** Een product heeft geordende velden; het kan ook
   **positioneel** worden opgebouwd (`set {pt}b Jean 12`, zoals de
   initialisatie van een C-struct). Een dict heeft geen positionele vorm.
-* **Eén enkel veld.** Een product aanvaardt het voorvoegsel `{T.veld}`:
-  `set {pt}c {pt.nom}Jean` zet `nom`, de andere velden krijgen hun
-  standaardwaarde (`Jean 0`). Het is dezelfde schrijfwijze als `{Val.i}5`
+* **Eén enkel veld.** Een product aanvaardt het voorvoegsel `{T/veld}`:
+  `set {pt}c {pt/nom}Jean` zet `nom`, de andere velden krijgen hun
+  standaardwaarde (`Jean 0`). Het is dezelfde schrijfwijze als `{Val/i}5`
   voor een som.
 * **Veldtypen.** Elk veld van een product heeft zijn eigen type
   (`{string}nom; {int}age`); een `dict(...)` heeft er één voor alle waarden
@@ -162,7 +162,7 @@ variabele OP DAT MOMENT heeft: het resultaat verandert daarna niet meer.
   hergebruikt: twee momentopnamen van hetzelfde type hebben hetzelfde type.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b:}A
+    set {mix}s1 {/b}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# een boom waarvan de waarden koppelingen zijn
@@ -180,7 +180,7 @@ het is niet hetzelfde.
 | | C-`union` | som |
 |---|---|---|
 | wat ze bevat | **dezelfde bytes**, op meerdere manieren gelezen | **één enkele** variant, die haar naam draagt |
-| wie weet welke geldig is | niemand: de programmeur moet het weten | de waarde zelf (`type get` geeft `S.x`) |
+| wie weet welke geldig is | niemand: de programmeur moet het weten | de waarde zelf (`type get` geeft `S/x`) |
 | de verkeerde variant lezen | toegestaan, je leest willekeurige bytes | onmogelijk: je opent de variant die je hebt |
 | grootte in een bestand | die van de grootste weergave | die van de gekozen variant |
 | keuze van de variant | geen, die bestaat niet | door een reeds gelezen veld (`S($tag)`) of door haar naam (`S(x)`) |
@@ -356,7 +356,7 @@ type binary decode {R(tp)} $octets
 ```
 
 `U(tp)` is een type met één variant: zijn grootte is bekend
-(`type binary {sizeof?}`), de gelezen waarde is `U(tp).tp` en er valt niets
+(`type binary {sizeof?}`), de gelezen waarde is `U(tp)/tp` en er valt niets
 te raden, zelfs als meerdere varianten dezelfde vorm hebben (wat de waarde
 vroeger dubbelzinnig maakte). `U($veld)` behoudt zijn betekenis: variant
 gekozen door een reeds gelezen veld. Als `$v` een gebonden parameter van het

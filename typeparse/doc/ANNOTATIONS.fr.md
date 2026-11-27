@@ -58,7 +58,7 @@ L'analogie s'arrête au calcul. Dans un complexe, la partie imaginaire participe
 L'annotation rend explicite l'« imaginaire » du développeur, ce qu'il sait de ses données et que Tcl ignorait :
 
 - un **type** fait vérifier chaque écriture dans une variable (`set {int}n abc` échoue) ;
-- une **étiquette** choisit où va une valeur (`set {pt}a {age:}12 {nom:}Jean`) ;
+- une **étiquette** choisit où va une valeur (`set {pt}a {/age}12 {/nom}Jean`) ;
 - une **représentation binaire** dit comment lire et écrire des octets (`{int(u,16,be)}version`) ;
 - une **note** marque une valeur pour qu'une procédure la reconnaisse (`note has $v mm`).
 
@@ -109,7 +109,7 @@ set {list.int}L 1 2 3
 type get $L          ;# list<int>
 ```
 
-**Où agit une annotation (v16m, piste B).** Une annotation n'agit que sur la **commande qui reçoit le mot**. Rien n'est résolu pendant la substitution : Tcl substitue tous les mots avant d'appeler la commande, et seule la commande sait si un mot est une valeur ou un nom de variable (`set {int}$nom 5` déclare la variable nommée par `$nom`). Si cette commande est un constructeur, elle résout l'annotation ; sinon l'annotation ne fait rien. Quand la commande finit, ce qui est encore en attente **expire** : une note, que plus aucun constructeur ne résout, même si la valeur a été rendue (`concat`, `return`), rangée dans une liste ou dans une variable, ou si le type est défini plus tard. Une étiquette `{nom:}` ou une annotation locale disparaît.
+**Où agit une annotation (v16m, piste B).** Une annotation n'agit que sur la **commande qui reçoit le mot**. Rien n'est résolu pendant la substitution : Tcl substitue tous les mots avant d'appeler la commande, et seule la commande sait si un mot est une valeur ou un nom de variable (`set {int}$nom 5` déclare la variable nommée par `$nom`). Si cette commande est un constructeur, elle résout l'annotation ; sinon l'annotation ne fait rien. Quand la commande finit, ce qui est encore en attente **expire** : une note, que plus aucun constructeur ne résout, même si la valeur a été rendue (`concat`, `return`), rangée dans une liste ou dans une variable, ou si le type est défini plus tard. Une étiquette `{/nom}` ou une annotation locale disparaît.
 
 ```tcl
 set s 3.0
@@ -147,7 +147,7 @@ type get $z          ;# px      ; note get $z : mm
 
 Cette pile n'existe que pour les annotations d'**un même mot**, reçues par un même constructeur. Une note posée avant son `type def` ne prend pas sens plus tard (v16m) : la commande qui l'a reçue l'a fait expirer.
 
-**Les étiquettes (v16l).** Un champ de produit ou une variante de somme se nomme par une **étiquette**, `{nom:}valeur` : `set {pt}a {age:}12`, `set {S}v {i:}5`. Une étiquette est une annotation locale : elle ne peut jamais être un type, donc un type global du même nom ne change rien, et `{nom}` sans deux-points est toujours un type ou une note. Elle est lue par le constructeur qui reçoit le mot ; à travers une autre commande (`set {pt}a [concat {age:}12]`), elle a expiré (v16m) et l'argument est positionnel. Une étiquette qu'aucun constructeur ne lit ne se range pas. L'ancienne forme `{age}12`, quand `age` nomme un champ et aucun type, est une erreur qui donne la nouvelle écriture.
+**Les étiquettes (v16l).** Un champ de produit ou une variante de somme se nomme par une **étiquette**, `{/nom}valeur` : `set {pt}a {/age}12`, `set {S}v {/i}5`. Une étiquette est une annotation locale : elle ne peut jamais être un type, donc un type global du même nom ne change rien, et `{nom}` sans deux-points est toujours un type ou une note. Elle est lue par le constructeur qui reçoit le mot ; à travers une autre commande (`set {pt}a [concat {/age}12]`), elle a expiré (v16m) et l'argument est positionnel. Une étiquette qu'aucun constructeur ne lit ne se range pas. L'ancienne forme `{age}12`, quand `age` nomme un champ et aucun type, est une erreur qui donne la nouvelle écriture.
 
 #### 2.4 Les annotations locales
 
@@ -347,7 +347,7 @@ vitesse: seen 2 times, first at e.tcl:4, via set
 
 ```
 type def NOM DÉFINITION        ;# définit un type nominal (ou une famille paramétrée)
-type def NOM                   ;# rend la définition (de S, d'une variante S.v, d'un champ P.f)
+type def NOM                   ;# rend la définition (de S, d'une variante S/v, d'un champ P/f)
 type alias NOM DÉFINITION      ;# donne un nom structurel à une définition
 type get VALEUR                ;# le type résolu d'une valeur (vide s'il n'y en a pas)
 type cast TYPE VALEUR          ;# le résolveur d'un constructeur, sans variable
@@ -496,17 +496,17 @@ type def mz {"MZ"}             ;# un seul littéral : une constante (signature d
 
 ```tcl
 type def S {{int}i, {string}s}
-set {S}v {i:}5                 ;# v vaut "i 5"
+set {S}v {/i}5                 ;# v vaut "i 5"
 set {S}v i 5                   ;# la même chose, écrite en clair
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# w vaut "s abc" : la variante choisie par le nom du type
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# w vaut "s abc" : la variante choisie par le nom du type
 ```
 
 **Union** — une valeur de l'une des formes, sans balise : la valeur est la charge seule, et l'alternative se calcule. Les alternatives doivent être disjointes (v16w, § 8.4).
 
 ```tcl
 type def U {{int}n | {list(2).int}paire}
-set {U}u 3 4                   ;# u vaut "3 4", de type U.paire
+set {U}u 3 4                   ;# u vaut "3 4", de type U/paire
 ```
 
 **Produit** — une `struct` : des champs nommés, ordonnés, chacun de son type.
@@ -514,7 +514,7 @@ set {U}u 3 4                   ;# u vaut "3 4", de type U.paire
 ```tcl
 type def pt {{string}nom ?= "?"; {int}age ?= 0}
 set {pt}a Jean 12              ;# positionnel
-set {pt}b {age:}12 {nom:}Jean  ;# étiquettes de champ (§ 8)
+set {pt}b {/age}12 {/nom}Jean  ;# étiquettes de champ (§ 8)
 $a(nom)                        ;# Jean
 ```
 
@@ -586,7 +586,7 @@ Le nom d'un `type def` peut porter des paramètres, déclarés comme des champs 
 
 ```tcl
 type def {pt({type}T)} {{$T}x; {$T}y ?= 0}
-set {pt(double)}p {x:}1.5      ;# 1.5 0
+set {pt(double)}p {/x}1.5      ;# 1.5 0
 type get $p                    ;# pt(double)
 type def {tree({type}T)} {{$T}value; {list.tree($T)}children}   ;# récursif
 ```
@@ -754,12 +754,12 @@ proc {pt}decale {{pt}p; {double}dx ?= 0; {double}dy ?= 0} {
     return $q
 }
 decale $a 1 1                  ;# positionnel
-decale $a {dy:}5               ;# positionnels, puis étiquettes
-decale {dy:}5 {p:}$a           ;# étiquettes seules, ordre libre
+decale $a {/dy}5               ;# positionnels, puis étiquettes
+decale {/dy}5 {/p}$a           ;# étiquettes seules, ordre libre
 ```
 
 - **Champs.** Chaque champ devient une variable locale qui porte son contrat (`set dx abc` dans le corps est refusé). Un défaut `?= v` rend le champ facultatif ; `?= [cmd]` est évalué à chaque appel, dans la procédure : il peut lire les champs précédents (`{int}b ?= [expr {$a * 2}]`).
-- **Appel.** Des arguments positionnels, puis des étiquettes `{nom:}` ; un positionnel après une étiquette est refusé, un champ donné deux fois aussi. Une étiquette qui ne nomme pas un champ reste sur la valeur si le champ visé est une somme (`ps {s:}abc` choisit la variante `s`), sinon c'est une erreur (`unknown argument label {zz:}: must be p:, dx: or dy:`). Messages : `wrong # args: should be "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx": expected floating-point number but got "abc"`.
+- **Appel.** Des arguments positionnels, puis des étiquettes `{/nom}` ; un positionnel après une étiquette est refusé, un champ donné deux fois aussi. Une étiquette qui ne nomme pas un champ reste sur la valeur si le champ visé est une somme (`ps {/s}abc` choisit la variante `s`), sinon c'est une erreur (`unknown argument label {/zz}: must be p:, dx: or dy:`). Messages : `wrong # args: should be "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx": expected floating-point number but got "abc"`.
 - **Types écrits dans la signature.** Le type d'un champ peut être un produit anonyme : la signature se lit d'elle-même, et une liste nue est vérifiée et devient la valeur du champ. Un champ dont le type est un produit **dont tous les champs ont un défaut** est facultatif : absent, il prend ces défauts. Une liste incomplète reste refusée (la règle des constructeurs : pour ne donner que certains champs, les nommer).
 
 ```tcl
@@ -793,15 +793,15 @@ incrv k 10                     ;# k est la variable de l'appelant
 ```
 
 - **Retour.** `proc {T}nom` : le résultat d'un retour normal (fin du corps, `return`, `return -code ok`) est casté en `T`, comme `type {T}mot` ; un échec est une erreur `return value {T}: …`. Une erreur, `break`, `return -level 2`, `tailcall` passent sans cast. Un `return {U}$x` dans le corps n'ajoute rien : `{U}` n'est qu'une note locale, qui expire avec la procédure (pas de cumul de types sur le retour).
-- **Étiquettes de retour.** Quand le type de retour est une somme, `return {v:}$x` choisit la variante `v` : `$x` est sa charge. Une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S.v}f` rend toujours la variante `v`. `return {v 4}` (la valeur écrite en clair, v16w) marche aussi. L'étiquette est lue aussi dans un corps non compilé (`eval`, `uplevel`, `switch -matchvar`, v16x) : le retour y est rendu dans le type de la procédure avant que l'étiquette expire.
+- **Étiquettes de retour.** Quand le type de retour est une somme, `return {/v}$x` choisit la variante `v` : `$x` est sa charge. Une étiquette qui n'est pas une variante, ou sur un type de retour qui n'est pas une somme, est une erreur. `proc {S/v}f` rend toujours la variante `v`. `return {v 4}` (la valeur écrite en clair, v16w) marche aussi. L'étiquette est lue aussi dans un corps non compilé (`eval`, `uplevel`, `switch -matchvar`, v16x) : le retour y est rendu dans le type de la procédure avant que l'étiquette expire.
 
 ```tcl
 type def R {{pt}point, {int}n}
 proc {R}g {w} {
-    if {$w eq "p"} { set {pt}z 1 2; return {point:}$z }
-    return {n:}4
+    if {$w eq "p"} { set {pt}z 1 2; return {/point}$z }
+    return {/n}4
 }
-type get [g p]                 ;# R.point
+type get [g p]                 ;# R/point
 ```
 
 - **Introspection.** `type proc nom` rend `args {…} return T` (la signature canonique, vide pour une procédure classique) ; `info args` rend les noms des champs, `info default` leurs défauts (`[cmd]` pour un défaut calculé).
@@ -979,7 +979,7 @@ construct   = "set {" , type , "}" , varname , "(" , path , ")" , value , { valu
 | conteneur | lecture | écriture |
 |---|---|---|
 | produit | `$a(nom)`, `$R(A.x)`, `$R(A.(x,y))` | `set a(nom) Léa` (revalidé) |
-| somme | `$v(i)` : la variante courante ; une autre variante, `$v(s)`, passe par la règle `type convert S.i S.s` s'il y en a une, sinon par le cast de la valeur courante (`{i}5` donne `5`) ; variantes de même forme sans règle, ou cast impossible : une erreur qui nomme les deux variantes (§ 8) | `set v(i) 6` ; `set v(s) abc` change la variante ; une partie d'une variante inactive (`set u(p.x) 1`) est refusée |
+| somme | `$v(i)` : la variante courante ; une autre variante, `$v(s)`, passe par la règle `type convert S/i S/s` s'il y en a une, sinon par le cast de la valeur courante (`{i}5` donne `5`) ; variantes de même forme sans règle, ou cast impossible : une erreur qui nomme les deux variantes (§ 8) | `set v(i) 6` ; `set v(s) abc` change la variante ; une partie d'une variante inactive (`set u(p.x) 1`) est refusée |
 | liste | `$L(2)`, `$L(end)`, `$L(1:3)`, `$L(0,2)` | `set L(1) 25`, `set L(0,2) 5 6` |
 | dict | `$D(a)`, `$D('end')`, `$D(a,b)` | `set D(a) 3` |
 | bitarray | `$b(3)` (un bit), `$b(1:4)` (une tranche : un entier `bitarray(4,…)`) | `set b(0) 1`, `set b(4:7) 0` |
@@ -989,7 +989,7 @@ Une lecture puis une réécriture du même chemin marche toujours : `set R(c) [s
 
 #### 7.4 Le chemin d'un type : `T(chemin)` (v17i)
 
-Un chemin sur un type désigne le **type** d'une partie, comme `$v(chemin)` en désigne la valeur : la liste est un tableau (un indice, `end`, `*` : le type des éléments), le produit et le dict sont des structs (un champ, une clé : son type), et `T(a.b)` descend. Dans un chemin, `S.v` est le type de la variante `v` d'une somme ; `S(v)` seul garde son sens (une valeur de `S` dont la variante est `v`).
+Un chemin sur un type désigne le **type** d'une partie, comme `$v(chemin)` en désigne la valeur : la liste est un tableau (un indice, `end`, `*` : le type des éléments), le produit et le dict sont des structs (un champ, une clé : son type), et `T(a.b)` descend. Dans un chemin, `S/v` est le type de la variante `v` d'une somme ; `S(v)` seul garde son sens (une valeur de `S` dont la variante est `v`).
 
 ```tcl
 type def Emplacement {{Emplacement_ref}référence; {Emplacement_propriétés}propriétés}
@@ -1011,8 +1011,8 @@ Un produit de *n* champs se construit de quatre façons, sans rien deviner :
 | forme | exemple | règle |
 |---|---|---|
 | positionnelle | `set {pt}a Jean 12` | exactement *n* valeurs, dans l'ordre des champs |
-| étiquettes de champ | `set {pt}a {age:}12 {nom:}Jean` | toutes les valeurs étiquetées ; ordre libre ; champs omis à leur défaut |
-| un seul champ | `set {pt}a {pt.nom}Jean` | les autres champs à leur défaut |
+| étiquettes de champ | `set {pt}a {/age}12 {/nom}Jean` | toutes les valeurs étiquetées ; ordre libre ; champs omis à leur défaut |
+| un seul champ | `set {pt}a {pt/nom}Jean` | les autres champs à leur défaut |
 | chemin + valeurs positionnelles | `set {pt}a(age,nom) 12 Jean` | une valeur par feuille du chemin (ou par groupe, § 8.3) |
 
 S'y ajoutent : **aucun argument** (`set {pt}a`, tous les champs à leur défaut) et **un produit du même type** (copie). Tout le reste est une erreur :
@@ -1026,28 +1026,28 @@ La forme nom/valeur nue (`set {pt}a nom Jean age 12`) **n'existe plus** : elle s
 
 #### 8.2 Les étiquettes de champ
 
-Chaque argument nomme son champ par une étiquette, `{champ:}valeur` (v16l). Une étiquette ne peut pas être confondue avec un type global du même nom.
+Chaque argument nomme son champ par une étiquette, `{/champ}valeur` (v16l). Une étiquette ne peut pas être confondue avec un type global du même nom.
 
 ```tcl
 type def paire {{string}nom; {int}age ?= 0}
 type def age int                       ;# ne change rien
-set {paire}p {nom:}jean {age:}12        ;# jean 12
-set {paire}p {nom:}zoe                  ;# zoe 0
-set {paire}p {nom}jean                  ;# {nom} is not a type: ... write {nom:}
-set v {age:}21                          ;# local annotation {age:} cannot be stored by "set"
+set {paire}p {/nom}jean {/age}12        ;# jean 12
+set {paire}p {/nom}zoe                  ;# zoe 0
+set {paire}p {nom}jean                  ;# {nom} is not a type: ... write {/nom}
+set v {/age}21                          ;# local annotation {/age} cannot be stored by "set"
 ```
 
 **Tout ou rien :**
 
 ```tcl
-set {paire}p {nom:}jean 12       ;# can't mix values named by a field label ({field:}value)
+set {paire}p {/nom}jean 12       ;# can't mix values named by a field label ({/field}value)
                                  ;#   and positional values in a paire constructor: name every field, or none
-set {paire}p {nom:}a {taille:}3  ;# unknown field "taille:" in paire
-set {paire}p {nom:}a {nom:}b     ;# duplicate field "nom" in paire
+set {paire}p {/nom}a {/taille}3  ;# unknown field "taille:" in paire
+set {paire}p {/nom}a {/nom}b     ;# duplicate field "nom" in paire
 set {paire}p {aut.nom}x         ;# aut.nom names a field of aut, not of paire
 ```
 
-Une valeur entre accolades s'étiquette aussi : `set {seg}s {a:}{1 2} {b:}{3 4}`.
+Une valeur entre accolades s'étiquette aussi : `set {seg}s {/a}{1 2} {/b}{3 4}`.
 
 #### 8.3 Chemin et valeurs positionnelles
 
@@ -1063,7 +1063,7 @@ set {rect}Q((A,B).*(x,y))    {5 6 7 8}    ;# avec dépliage : une valeur, à pla
 
 Chaque valeur a la forme que sa lecture rendrait ; les trois nombres ne coïncident que si les lectures coïncident.
 
-**La combinaison chemin + étiquettes n'existe pas** : `set {rect}R(A) {y:}2 {x:}1` est une erreur (`1 targets but 2 values`). Elle n'est pas prévue tant qu'un usage ne la demande pas.
+**La combinaison chemin + étiquettes n'existe pas** : `set {rect}R(A) {/y}2 {/x}1` est une erreur (`1 targets but 2 values`). Elle n'est pas prévue tant qu'un usage ne la demande pas.
 
 #### 8.4 Sommes, unions et listes
 
@@ -1092,15 +1092,15 @@ Une énumération (`{"on", "off"}`, ou `{"on" | "off"}`) a la même valeur dans 
 **Construire une somme.** Toutes ces écritures donnent `s 5` :
 
 ```tcl
-set {S}v {s:}5                 ;# l'étiquette : un raccourci pour la variante
+set {S}v {/s}5                 ;# l'étiquette : un raccourci pour la variante
 set {S}v s 5                   ;# en clair : la variante, puis sa charge
-set {S.s}v 5                   ;# par le type de la variante
+set {S/s}v 5                   ;# par le type de la variante
 set {S}v(s) 5                  ;# par le chemin
 set {S}v [read $f]             ;# par la chaîne "s 5"
 set {S}v 5                     ;# refusé : value "5" names no variant of the sum S: a value of
-                               ;# a sum is the name of its variant, then its value, as {i 5}, or {i:}5
-set {list.S}L {i:}1 {s:}a      ;# chaque élément : "i 1", "s a"
-lappend L {s:}x                ;# lappend et lset reçoivent l'étiquette de l'élément
+                               ;# a sum is the name of its variant, then its value, as {i 5}, or {/i}5
+set {list.S}L {/i}1 {/s}a      ;# chaque élément : "i 1", "s a"
+lappend L {/s}x                ;# lappend et lset reçoivent l'étiquette de l'élément
 ```
 
 Une valeur déjà typée du type d'une variante entre dans la somme (`set {int}n 5; set {W}w $n` donne `i 5` si `W` n'a qu'une variante `int`, sinon il faut l'étiquette).
@@ -1109,14 +1109,14 @@ Une valeur déjà typée du type d'une variante entre dans la somme (`set {int}n
 
 ```tcl
 type def segment {{string}texte, {{string}cible; {list.segment}contenu}lien}
-set {segment.lien}s {cible:}$url {contenu:}$segs     ;# étiquettes, ordre libre, défauts
-set {segment.lien}s $url $segs                       ;# positionnel
+set {segment/lien}s {/cible}$url {/contenu}$segs     ;# étiquettes, ordre libre, défauts
+set {segment/lien}s $url $segs                       ;# positionnel
 set {segment}s(lien.(cible,contenu)) $url $segs      ;# chemin à travers la somme
 set {segment}s($v.($champs)) {*}$valeurs             ;# le même, calculé
-type def segment.lien                                ;# {string}cible; {list.segment}contenu
+type def segment/lien                                ;# {string}cible; {list.segment}contenu
 ```
 
-La valeur est `lien {URL SEGMENTS}`. Le premier pas d'un chemin choisit la variante (une seule pour tous les chemins), la suite construit la valeur de son type ; un chemin traverse aussi une somme champ d'un produit (`set {P}r(n.i,m) 4 5`). Les messages nomment le produit anonyme d'une variante `S.v`.
+La valeur est `lien {URL SEGMENTS}`. Le premier pas d'un chemin choisit la variante (une seule pour tous les chemins), la suite construit la valeur de son type ; un chemin traverse aussi une somme champ d'un produit (`set {P}r(n.i,m) 4 5`). Les messages nomment le produit anonyme d'une variante `S/v`.
 
 **Lire.** `$v(s)` rend la charge, typée ; `$f(w)` lit directement un champ de la charge quand le nom n'est pas une variante (`forme.rect` : `$f(w)` comme `$f(rect.w)`). `type variant $v` rend le nom de la variante (son texte pour un littéral). Une valeur de somme est une liste de deux éléments : `lassign $v nom charge` marche aussi sans les types.
 
@@ -1133,14 +1133,14 @@ switch [type variant $v] { i {…} s {…} }
 
 ```tcl
 type def temp {{double}celsius, {double}fahrenheit}
-type convert temp.celsius temp.fahrenheit {{x} {expr {$x*9/5.0 + 32}}}
-set {temp}t {celsius:}100      ;# t vaut "celsius 100"
+type convert temp/celsius temp/fahrenheit {{x} {expr {$x*9/5.0 + 32}}}
+set {temp}t {/celsius}100      ;# t vaut "celsius 100"
 set t(fahrenheit)              ;# 212.0 : lecture d'une variante inactive, par la règle
-set u {temp.fahrenheit}$t      ;# cast explicite : u vaut "fahrenheit 212.0"
-type cast temp.fahrenheit $t   ;# idem
+set u {temp/fahrenheit}$t      ;# cast explicite : u vaut "fahrenheit 212.0"
+type cast temp/fahrenheit $t   ;# idem
 ```
 
-La lecture d'une variante inactive et le cast `{S.v}` (ou `type cast S.v`) prennent, dans l'ordre : la règle ; refus si les deux variantes ont la même forme (un cast identité dirait qu'un celsius est un fahrenheit : `… both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}`) ; sinon le cast ordinaire entre les types des deux variantes (`{int}i, {string}s` : `{i}5` lu par `$v(s)` donne `5`). Une règle n'intervient jamais dans l'écriture (`set t(fahrenheit) 50` change de variante sans convertir). Pas d'enchaînement (une règle a → b et une règle b → c ne font pas a → c), pas de réciproque supposée.
+La lecture d'une variante inactive et le cast `{S/v}` (ou `type cast S/v`) prennent, dans l'ordre : la règle ; refus si les deux variantes ont la même forme (un cast identité dirait qu'un celsius est un fahrenheit : `… both have the same form, so reading one as the other needs a rule: type convert temp/celsius temp/fahrenheit {{x} ...}`) ; sinon le cast ordinaire entre les types des deux variantes (`{int}i, {string}s` : `{i}5` lu par `$v(s)` donne `5`). Une règle n'intervient jamais dans l'écriture (`set t(fahrenheit) 50` change de variante sans convertir). Pas d'enchaînement (une règle a → b et une règle b → c ne font pas a → c), pas de réciproque supposée.
 
 Une liste reçoit ses éléments un par un : `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Un seul argument est **un** élément.
 
@@ -1274,7 +1274,7 @@ Les messages suivent l'usage de Tcl : en anglais, et ils nomment la valeur, le t
 | champ inconnu | `unknown field "zz" in pt` ; `pt has no field "zz"` (chemin) | `TCL TYPE FIELD` ; `TCL TYPE PATH` |
 | champ sans valeur ni défaut | `field "y" of rect has no value and no default` | `TCL TYPE FIELD` |
 | mauvais nombre de valeurs | `wrong # args: pt needs 2 values; to name fields …` | `TCL WRONGARGS` |
-| étiquettes et positions mêlées | `can't mix values named by a field label ({field:}value) and positional values in a pt constructor: name every field, or none` | `TCL TYPE FIELD` |
+| étiquettes et positions mêlées | `can't mix values named by a field label ({/field}value) and positional values in a pt constructor: name every field, or none` | `TCL TYPE FIELD` |
 | champ en double | `duplicate field "nom" in paire` | `TCL TYPE FIELD` |
 | taille dépendante non respectée | `field "items" of Batch holds 1 elements, but its size says 3 ($n)` | `TCL TYPE FIELD SIZE` |
 | clé de dict manquante ou interdite | `key "nom" is missing in fiche` ; `key "zz" is not allowed in fiche` | `TCL TYPE DICT` |
@@ -1507,8 +1507,8 @@ puts [type {c!}export point]
 ;#     double y;
 ;# } point;
 ;# _Static_assert(sizeof(point) == 16, "point: size");
-;# _Static_assert(offsetof(point, x) == 0, "point.x: offset");
-;# _Static_assert(offsetof(point, y) == 8, "point.y: offset");
+;# _Static_assert(offsetof(point, x) == 0, "point/x: offset");
+;# _Static_assert(offsetof(point, y) == 8, "point/y: offset");
 ```
 
 `tcl::unsupported::abi` donne ce que ces calculs utilisent : `byteOrder`, `pointer`, et pour `i8 … i64 f32 f64 ptr` la taille et l'alignement dans une structure (ce que `tcl_platform` ne dit pas).
@@ -1620,7 +1620,7 @@ bash typeparse/maj.sh [typeparse.zip]   # extrait, copie les sources de types, a
 | produit | `struct` : champs nommés et ordonnés |
 | somme | une variante parmi plusieurs, nommée |
 | variante | l'une des branches d'une somme |
-| étiquette | annotation locale qui nomme le champ ou la variante d'un argument : `{age:}12`, `{i:}5` (v16l) |
+| étiquette | annotation locale qui nomme le champ ou la variante d'un argument : `{/age}12`, `{/i}5` (v16l) |
 | chemin | index d'une valeur typée : `R(A.(x,y))` |
 | pathindex | objet qui porte un index et ses parties substituées |
 | lien | `var.T` (vers une variable) ou `*(…).T` (vers une adresse binaire) |

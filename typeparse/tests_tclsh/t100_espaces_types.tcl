@@ -31,7 +31,7 @@ t "proc args"              {proc ::geom::norme {{point}p} {expr {hypot($p(x), $p
 namespace eval geom { type def {grille({int}n)} {list($n).point} }
 t "famille dans geom"      {set {geom::grille(2)}M {1 2} {3 4}; list [type get $M] [type get [lindex $M 0]]}
 namespace eval geom { type def S {{point}at, "none"} }
-t "somme"                  {set {geom::S}s {at:}{1 2}; list [type get $s] $s}
+t "somme"                  {set {geom::S}s {/at}{1 2}; list [type get $s] $s}
 t "type forget"            {namespace eval geom {type forget S}; catch {type def ::geom::S} m; set m}
 set keep $::geom::P
 namespace delete geom

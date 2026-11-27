@@ -50,7 +50,7 @@ type def A {{u8}o; {at($o).*(//,u8).rec}r}
 essai "at + lien" A [set {A}a(o,r) 4 {9 9}]
 
 type def H0 {{u8}m; {*(//,u8,null).rec}r = {0 0}}
-puts "lien nul à défaut : [type binary decode H0 "\x01\x00"] [binary encode hex [type binary encode H0 [set {H0}z {m:}3]]]"
+puts "lien nul à défaut : [type binary decode H0 "\x01\x00"] [binary encode hex [type binary encode H0 [set {H0}z {/m}3]]]"
 set fr [type binary decode H [type binary encode H $h] -linkdepth 0]
 puts "-linkdepth 0 : $fr(r) [type get $fr(r)]"
 type def boucle {{u8}v; {*(//,u8).boucle}s}

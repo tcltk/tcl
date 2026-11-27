@@ -26,15 +26,15 @@ puts [type binary decode cnt "\x00"]
 
 # --- 3. taille lue dans un autre champ / size from another field
 type def tlv {{int(u,8)}tag; {int(u,16,be)}len; {string(raw,$len)}data}
-set {tlv}t {tag:}9 {len:}3 {data:}abc
+set {tlv}t {/tag}9 {/len}3 {/data}abc
 puts [hex [type binary encode tlv $t]]
 puts [type binary decode tlv [type binary encode tlv $t]]
-attempt {type binary encode tlv [set {tlv}bad {tag:}9 {len:}4 {data:}abc]}
+attempt {type binary encode tlv [set {tlv}bad {/tag}9 {/len}4 {/data}abc]}
 attempt {type binary decode tlv "\x09\x00\x05ab"}
 
 # --- expression : la longueur inclut l'en-tête / expression: length includes header
 type def msg {{int(u,8)}len; {string(utf-8,$len - 1)}text}
-puts [hex [type binary encode msg [set {msg}m {len:}4 {text:}abc]]]
+puts [hex [type binary encode msg [set {msg}m {/len}4 {/text}abc]]]
 puts [type binary decode msg "\x04abc"]
 
 # --- le nombre vient d'un champ / count from a field
@@ -51,8 +51,8 @@ attempt {type binary mauvais}
 type def pp {{int(u,8)}x; {int(u,8)}y}
 type def corps {{pp}1, {string(utf-8,z)}2, {list(int(u,8)).int(u,8)}3}
 type def paquet {{int(u,8)}tag; {corps($tag)}body; {int(u,8)}end = 255}
-set {pp}p1 {x:}3 {y:}4
-set {paquet}q(tag,body) 1 {1:}$p1
+set {pp}p1 {/x}3 {/y}4
+set {paquet}q(tag,body) 1 {/1}$p1
 puts [hex [type binary encode paquet $q]]
 set d [type binary decode paquet [type binary encode paquet $q]]
 puts "$d [type get $d(body)] $d(body.1.x)"
@@ -61,10 +61,10 @@ puts "$d2 [type get $d2(body)]"
 set d3 [type binary decode paquet "\x03\x02\x0a\x0b\xff"]
 puts "$d3 [type get $d3(body)]"
 attempt {type binary decode paquet "\x07\x00"}
-set {pp}p2 {x:}1 {y:}2
+set {pp}p2 {/x}1 {/y}2
 # FR : le sélecteur et la variante portée par la valeur doivent concorder :
 #      refusé dès la construction / EN: refused at construction
-attempt {set {paquet}bad(tag,body) 2 {1:}$p2}
+attempt {set {paquet}bad(tag,body) 2 {/1}$p2}
 puts [type binary paquet]
 
 # --- 5. position ailleurs / located value

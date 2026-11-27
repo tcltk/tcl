@@ -5,7 +5,7 @@
 # Résultat type (µs par appel, meilleur de 15 passes alternées) :
 #   A  typé, p déjà pt          1,15     B  classique + contrôles    1,17
 #   A  typé, p liste nue        1,25     C  classique sans contrôle  0,47
-#   B' contrôles + rend un pt   2,27     A  avec étiquette {dy:}1    1,7
+#   B' contrôles + rend un pt   2,27     A  avec étiquette {/dy}1    1,7
 # Le typage ne coûte rien de plus que les contrôles écrits à la main ; c'est
 # le contrôle lui-même qui coûte (~0,7 µs ici). Rendre un pt « à la main »
 # (type {pt}[…]) est plus cher que le cast de retour d'une procédure typée.
@@ -91,7 +91,7 @@ set cas {
     "C  classique sans contrôle"           {decaleN $l 1 1}
     "A  défauts (decaleT \$a)"             {decaleT $a}
     "B  défauts (decaleC \$l)"             {decaleC $l}
-    "A  étiquette ({dy:}1)"                {decaleT $a {dy:}1}
+    "A  étiquette ({/dy}1)"                {decaleT $a {/dy}1}
     "A2 produits anonymes, listes nues"    {decale2 $l {1 1}}
     "B  équivalent (0 1)"                  {decaleC $l 0 1}
     "A  appel compilé (boucle)"            {boucleT 1000}

@@ -41,9 +41,9 @@ construcción) o `$variable`. En un producto, el antiguo `=` sigue aceptado.
 * **Orden.** Un producto tiene campos ordenados; también se construye de
   forma **posicional** (`set {pt}b Jean 12`, como la inicialización de un
   struct de C). Un dict no tiene forma posicional.
-* **Un solo campo.** Un producto acepta el prefijo `{T.campo}`:
-  `set {pt}c {pt.nom}Jean` fija `nom`, los demás campos toman su valor por
-  defecto (`Jean 0`). Es la misma escritura que `{Val.i}5` para una suma.
+* **Un solo campo.** Un producto acepta el prefijo `{T/campo}`:
+  `set {pt}c {pt/nom}Jean` fija `nom`, los demás campos toman su valor por
+  defecto (`Jean 0`). Es la misma escritura que `{Val/i}5` para una suma.
 * **Tipos de los campos.** Cada campo de un producto tiene su propio tipo
   (`{string}nom; {int}age`); un `dict(...)` tiene uno solo para todos los
   valores (`.string`).
@@ -157,7 +157,7 @@ variable EN ESE INSTANTE: el resultado ya no cambia después.
   dos instantáneas del mismo tipo tienen el mismo tipo.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b:}A
+    set {mix}s1 {/b}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# árbol cuyos valores son enlaces
@@ -175,7 +175,7 @@ Para quien viene de C: una **suma** (`{{A}x, {B}y}`) se parece a una
 | | `union` de C | suma |
 |---|---|---|
 | lo que contiene | los **mismos bytes**, leídos de varias formas | **una sola** variante, que lleva su nombre |
-| quién sabe cuál es válida | nadie: el programador debe saberlo | el propio valor (`type get` da `S.x`) |
+| quién sabe cuál es válida | nadie: el programador debe saberlo | el propio valor (`type get` da `S/x`) |
 | leer la variante equivocada | permitido, se leen bytes cualesquiera | imposible: se accede a la variante que se tiene |
 | tamaño en un archivo | el de la vista más grande | el de la variante elegida |
 | elección de la variante | ninguna, no la hay | por un campo ya leído (`S($tag)`) o por su nombre (`S(x)`) |
@@ -349,7 +349,7 @@ type binary decode {R(tp)} $octets
 ```
 
 `U(tp)` es un tipo de una sola variante: su tamaño se conoce
-(`type binary {sizeof?}`), el valor leído es `U(tp).tp` y no hay nada que
+(`type binary {sizeof?}`), el valor leído es `U(tp)/tp` y no hay nada que
 adivinar, aunque varias variantes tengan la misma forma (lo que antes volvía
 ambiguo el valor). `U($campo)` conserva su sentido: variante elegida por un
 campo ya leído. Si `$v` es un parámetro ligado del tipo, se aplica el primer

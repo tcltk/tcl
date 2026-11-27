@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17z"
+#define TCL_TYPES_VERSION "v18a"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -231,6 +231,15 @@ struct TclType {
 #define TclSumLabeled(tp) ((tp)->kind == TCLT_SUM && (tp)->binTag == NULL)
 
 /*
+ * v18a : une étiquette s'écrit {/nom} (champ d'un produit, variante d'une
+ * somme) ; le nom suit la barre. L'ancienne écriture {nom:} est refusée
+ * (TclLabelIsOld) avec un message qui donne la nouvelle.
+ */
+#define TclLabelIs(t, l)	((l) > 1 && (t)[0] == '/')
+#define TclLabelIsOld(t, l)	((l) > 1 && (t)[0] != '/' && (t)[0] != '-' \
+	&& (t)[0] != '@' && (t)[(l) - 1] == ':' && (t)[(l) - 2] != ':')
+
+/*
  * v16u : les descripteurs appartiennent à la table de types d'un
  * interpréteur ; une valeur qui en garde un (une référence de type, un
  * tampon de cases) garde la table en vie : elle survit à l'interpréteur
@@ -339,6 +348,7 @@ int	TclAnnotCastWord(Tcl_Interp *interp, Tcl_Obj *objPtr,
 Tcl_Size TclAnnotLabelIndex(const TclType *tp, const char *text);
 int	TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text);
 Tcl_Obj *TclAnnotLabelOf(Tcl_Obj *objPtr);
+int	TclAnnotCheckOldLabel(Tcl_Interp *interp, Tcl_Obj *objPtr);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	    Tcl_Obj **resultPtr);
 /*

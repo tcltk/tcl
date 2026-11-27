@@ -21,7 +21,7 @@ puts "rgb : [lr $c]"
 type def forme {{double}cote, {double}rayon}
 type def objet {{string}nom; {forme}f}
 proc lf {o} {list $o(f) [type get $o(f)] $o(nom) [type get $o(nom)]}
-set {objet}o boule {rayon:}2.0
+set {objet}o boule {/rayon}2.0
 puts "somme : [lf $o]"
 type def boite {{list.any}contenu; {double}x}
 set {list.any}C {int}1 {string}a

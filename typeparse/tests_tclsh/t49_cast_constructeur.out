@@ -7,7 +7,7 @@ N5    ERREUR: missing close-parenthesis
 in type "int("
 N6    ok: px
 N7    ok: {} xyz
-N8    ok: Shape.circle
+N8    ok: Shape/circle
 -- côté valeur, variable libre : set y {A}$x
 V1    ok: 
 V2    ok: mm
@@ -37,7 +37,7 @@ C9    ERREUR: type mismatch: expected mm but got double (use an explicit cast)
 C10   ok: mm
 C11   ok: mm@zz
 C12   ERREUR: type mismatch: expected mm but got px (use an explicit cast)
-C13   ok: Shape.circle
+C13   ok: Shape/circle
 C14   ERREUR: type mismatch: expected int(u,8) but got int (use an explicit cast)
 -- casts
 K1    ERREUR: unknown way to cast the value from mm to kg

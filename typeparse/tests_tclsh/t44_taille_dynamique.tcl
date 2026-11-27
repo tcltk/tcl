@@ -26,7 +26,7 @@ attempt {set {Chain}bad(n,rest) 3 {7 8 9}}
 puts "--- champs omis : le défaut compte / omitted fields: the default counts"
 type def Pair {{u8}n = 2; {list($n).u8}xs = {1 2}}
 puts [set {Pair}p1]
-attempt {set {Pair}p2 {n:}3}
+attempt {set {Pair}p2 {/n}3}
 puts "--- copie et lecture binaire / copy and binary read"
 puts [type binary decode Batch [type binary encode Batch $a -align natural] -align natural]
 puts "--- la modification champ par champ n'est pas contrôlée (état intermédiaire légitime) mais l'encodage la vérifie"

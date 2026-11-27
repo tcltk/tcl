@@ -41,7 +41,7 @@ foreach : erreur attrapée: 1 {unmatched open brace in list}
 lassign : erreur attrapée: 1 {unmatched open brace in list}
 compilées dans une procédure: 3.0-4.0 12.0 x y {x 4.0 y 5.0} 3.0 4.0 1 {unmatched open brace in list}
 --- listes typées : lappend et lset reçoivent l'élément
-list.any, list.S: double string S.s S.i
+list.any, list.S: double string S/s S/i
 au niveau global: int string
 --- notes expirées : des métadonnées
 note posée, passée par concat: 5 {} mm

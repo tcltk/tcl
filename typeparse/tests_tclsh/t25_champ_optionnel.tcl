@@ -1,5 +1,5 @@
 type def p2 {{string}nom ?= "?"; {int}age ?= 3; {string}ville = "Lyon"}
-set {p2}a {p2.nom}Jean
+set {p2}a {p2/nom}Jean
 puts $a
 set {p2}b
 puts $b

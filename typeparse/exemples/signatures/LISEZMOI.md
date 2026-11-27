@@ -44,7 +44,7 @@ wrong # args: should be "chercher ?-exact|-glob|-regexp? ?-nocase? ?-all? ?-debu
 | `args` ailleurs qu'en dernier | 288 (rejetée) | `{T}args...` n'importe où ; les champs d'après se prennent depuis la fin |
 | groupes répétés (`varList list ?varList list ...?`) | — | `{{list}vars; {list}valeurs}args...` : un produit s'étale sur ses champs |
 | valeurs par défaut, arguments obligatoires | 457 | `{int}n ?= 0` ; sans `?=`, obligatoire |
-| arguments nommés | 457, 479 | `-debut 2`, ou une étiquette à l'appel : `decale $p {dy:}5` |
+| arguments nommés | 457, 479 | `-debut 2`, ou une étiquette à l'appel : `decale $p {/dy}5` |
 | drapeaux | 457 (`-switch`) | `{flag}-nocase` |
 | options exclusives | — | une somme : `{"exact", "glob", "regexp"}-mode` |
 | lien vers une variable de l'appelant | 457 (`-upvar`), 460 (`*a`) | `{var.int}a`, et en option `{var.int}-compte` |

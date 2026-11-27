@@ -25,5 +25,5 @@ set a(genre) 1;                  puts "sélecteur changé : [type get $a(corps)]
 binary scan [type binary encode req $a] cu* o; puts "encodé : $o"
 set {c_pwm}p 9 200
 attempt {set {req}c 1 $p}
-attempt {set {req}d 3 {4:}{9 1}}
+attempt {set {req}d 3 {/4}{9 1}}
 attempt {type binary decode req "\x09\x01"}

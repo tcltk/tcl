@@ -3907,7 +3907,7 @@ ConstructLevel(Tcl_Interp *interp, TclType *tp, const PathSet *set,
 	} else if (ConstructLevel(interp, vt, set, flat, idx, cnt, d + 1, &c,
 		NULL) != TCL_OK) {
 	    if (!vt->nominal) {
-		Tcl_Obj *nm = Tcl_ObjPrintf("%s.%s", tp->name, vn);
+		Tcl_Obj *nm = Tcl_ObjPrintf("%s/%s", tp->name, vn);
 
 		Tcl_IncrRefCount(nm);
 		TclTypeResultRename(interp, vt->name, Tcl_GetString(nm));

@@ -10,7 +10,7 @@
   par `te::lire` et le rend à droite.
 
 N'emploie que des formes communes à la v16k et à la v16l (constructeurs positionnels, chemins,
-variantes nommées par le type `{segment.lien}`) ; `test.tcl` donne la même sortie sur les deux.
+variantes nommées par le type `{segment/lien}`) ; `test.tcl` donne la même sortie sur les deux.
 
 ## Le modèle
 
@@ -64,7 +64,7 @@ te::document \
   liste des segments. Le document obtenu est **le même** que celui écrit à la main avec
   `te::para`, `te::m`, `te::lien` (testé), et l'aller-retour par le widget aussi.
 * Erreurs : balise inconnue (avec la liste des styles), attribut inconnu ou manquant
-  (`unknown field "href" in segment.lien`), `[a b]` sans `--`, crochet seul ; un style hors du
+  (`unknown field "href" in segment/lien`), `[a b]` sans `--`, crochet seul ; un style hors du
   type : `value "surligne" matches no variant of nomstyle`.
 
 **Un document entier : `te::ecrire`.** Le script s'exécute dans un interpréteur sûr
@@ -90,7 +90,7 @@ L'analogie avec HTML est directe : l'élément est la variante, les attributs se
 le contenu son champ `{list.segment}contenu`. Chaque balise est construite par un **chemin calculé à
 travers la somme**, `set {segment}s($nom.($champs,contenu)) {*}$valeurs` (v16o) : aucune table des
 balises, c'est le type qui refuse une variante inconnue, un attribut inconnu ou manquant, un style
-hors de `nomstyle` ; une balise inconnue se reconnaît par `type def segment.$nom`, qui rend la
+hors de `nomstyle` ; une balise inconnue se reconnaît par `type def segment/$nom`, qui rend la
 définition d'une variante.
 
 ## Des noms de tags `type@notes`
@@ -101,10 +101,10 @@ du nœud, puis ses attributs comme notes, nommés par les champs du type.
 
 | tag | porte |
 |---|---|
-| `bloc.para`, `bloc.puces`, `bloc.code` | un paragraphe, une liste à puces, du code (tout le bloc) |
-| `bloc.titre@niveau=2` | un titre de niveau 2 (`$b(titre.niveau)`) |
-| `segment.marque@style=gras` | un passage du style `gras` (`$s(marque.style)`) |
-| `segment.lien@cible="https://tcl.tk"` | un lien vers `https://tcl.tk` (`$s(lien.cible)`) |
+| `bloc/para`, `bloc/puces`, `bloc/code` | un paragraphe, une liste à puces, du code (tout le bloc) |
+| `bloc/titre@niveau=2` | un titre de niveau 2 (`$b(titre.niveau)`) |
+| `segment/marque@style=gras` | un passage du style `gras` (`$s(marque.style)`) |
+| `segment/lien@cible="https://tcl.tk"` | un lien vers `https://tcl.tk` (`$s(lien.cible)`) |
 
 Un tag porte la **tête** d'un nœud (sa variante et son attribut simple) ; ses enfants sont dans les
 plages qu'il couvre. Ces tags ne sont **pas configurés** : ils disent ce qu'est le texte, pas son
@@ -128,7 +128,7 @@ Un ensemble de chemins, dans la syntaxe des sommes et des chemins de la TIP :
   seul enfant sans parenthèses (`police.poids=bold`), guillemets seulement s'il le faut. Un même
   sens donne un même nom, donc Tk fusionne bien deux plages voisines de même sens ; relire puis
   réécrire une forme canonique la redonne à l'identique (testé).
-* Plus d'encodage d'URL : `segment.lien@cible="https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2"`
+* Plus d'encodage d'URL : `segment/lien@cible="https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2"`
   se relit à l'identique.
 * `te::Tag T ?clé valeur…?` écrit un nom (une clé peut être un chemin : `police.taille`) ;
   `te::LireNotes` / `te::EcrireNotes` passent du texte au dict plat `chemin → {} | {valeur}`.
@@ -148,8 +148,8 @@ BADCHAR. Il faudrait que la TIP sache relire cette forme (`type parse`, piste 7)
 ## L'apparence : des tags d'aspect calculés
 
 Tk ne cumule pas les polices : quand deux tags donnent `-font`, celui de plus haute priorité (le
-dernier créé) remplace l'autre. Configurer `segment.marque@gras` et `segment.marque@italique`
-ne peut donc pas donner « gras dans italique » ; un bloc configuré après les marques (`bloc.puces`)
+dernier créé) remplace l'autre. Configurer `segment/marque@gras` et `segment/marque@italique`
+ne peut donc pas donner « gras dans italique » ; un bloc configuré après les marques (`bloc/puces`)
 les masquait même toutes, et un paragraphe sans style prenait la police par défaut du widget
 (TkFixedFont).
 
@@ -170,7 +170,7 @@ aspect@couleur="#1d2433",police.(poids=bold,taille=18)   un titre de niveau 1
 * `te::habiller w` refait tous les aspects d'après les tags du document, après une édition. La
   démo l'appelle après Ctrl-B / Ctrl-I, qui posent la marque sur la sélection, ou la retirent si
   toute la sélection l'a déjà.
-* `te::lire` ignore les tags d'aspect : le document ne dépend que des tags `bloc.…`/`segment.…`.
+* `te::lire` ignore les tags d'aspect : le document ne dépend que des tags `bloc/…`/`segment/…`.
 * Un lien prend le style `lien` de la table, ou à défaut un bleu souligné.
 
 ## Relire le widget : `te::lire`
@@ -179,7 +179,7 @@ Le widget ne garde pas d'arbre : un B-arbre de lignes, et dans chaque ligne une 
 textes et de bascules de tags. `te::lire w` refait le document à partir de
 `$w dump -text -tag 1.0 end` :
 
-1. les plages des tags `bloc.…` et `segment.…` ; les autres (`sel`, un tag de l'application)
+1. les plages des tags `bloc/…` et `segment/…` ; les autres (`sel`, un tag de l'application)
    sont ignorés ;
 2. les blocs sont les plages de `para`, `titre`, `puces`, `code` ; le texte hors de tout bloc
    (tapé à la main) devient des paragraphes ;
@@ -212,14 +212,14 @@ vers la même cible (le widget en fait une seule plage), rien de vide.
    (gras, italique, ...)`, avec le chemin `marque.style`.
 2. **La déduction de variante est dangereuse avec des sommes qui acceptent tout.** Un texte nu
    passé comme bloc (`te::document ... {pas un bloc}`) était accepté **sans erreur** comme
-   `bloc.puces` : `list.list.segment` accepte n'importe quelle liste, car `segment.texte` accepte
+   `bloc/puces` : `list.list.segment` accepte n'importe quelle liste, car `segment/texte` accepte
    n'importe quelle chaîne. Réglé en v16n (`{-strict}`), puis pour toutes les sommes en v16w,
    qui écrivait la variante dans la valeur (`para {…}`, `texte {Un }`). Depuis la v17z, la
    variante est une métadonnée et la valeur est la charge seule, mais rien n'est deviné pour
    autant : une valeur nue n'est déduite que si une seule variante l'accepte
    (`value "pas un bloc" fits variants puces, para and code of ::te::bloc: write
-   {puces:}{pas un bloc}`) ; les constructeurs `te::para`, `te::m`… la nomment, et
-   `type canonic` l'écrit (`{::te::bloc.para}{{Un } {{marque:}{gras texte}}}`) pour un passage
+   {/puces}{pas un bloc}`) ; les constructeurs `te::para`, `te::m`… la nomment, et
+   `type canonic` l'écrit (`{::te::bloc/para}{{Un } {{/marque}{gras texte}}}`) pour un passage
    par la chaîne. `type is {disjoint?}bloc` montre que toutes ses variantes se recouvrent.
 3. **Construction programmatique par noms.** Dépassé : le chemin d'un produit se calcule
    (`set {style}s([join [dict keys $args] ,]) {*}[dict values $args]`, sans `eval`), et depuis la
@@ -245,10 +245,10 @@ vers la même cible (le widget en fait une seule plage), rien de vide.
    `value "surligne" matches no variant of nomstyle`.
 
 8. **Une variante de somme se construit par ses champs** (réglé en v16o). Avant, sa valeur était
-   un seul argument : ni étiquettes, ni chemin. Maintenant `set {segment.lien}s {cible:}…
-   {contenu:}…`, `set {segment}s(lien.(cible,contenu)) …`, et `type def segment.lien` rend ses
+   un seul argument : ni étiquettes, ni chemin. Maintenant `set {segment/lien}s {/cible}…
+   {/contenu}…`, `set {segment}s(lien.(cible,contenu)) …`, et `type def segment/lien` rend ses
    champs. Le gabarit n'a plus de table.
 
 Côté annotations (débat du 2 novembre) : toutes les annotations de cet exemple sont écrites sur des
-mots que reçoit un constructeur (`set {segment}s {segment.marque}$x`). Les pistes B et C ne
+mots que reçoit un constructeur (`set {segment}s {segment/marque}$x`). Les pistes B et C ne
 changeraient rien ici ; l'exemple ne fait pas pencher la balance.

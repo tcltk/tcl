@@ -9,13 +9,13 @@ positionnel après étiquette: ERREUR positional argument "1.0 2.0" after labell
 trop: ERREUR wrong # args: should be "decale p ?dx? ?dy?"
 manque: ERREUR wrong # args: should be "decale p ?dx? ?dy?"
 manque, avec étiquette: ERREUR missing argument "p"
-étiquette inconnue: ERREUR unknown argument label {zz:}: must be p:, dx: or dy:
+étiquette inconnue: ERREUR unknown argument label {/zz}: must be p:, dx: or dy:
 mauvais type: ERREUR argument "dx": expected floating-point number but got "abc"
 contrat dans le corps: ERREUR expected integer but got "x"
 défaut calculé: 42
 défaut calculé, champ avant: 4 8
-variante d'un argument: S.s
-argument somme strict, nu: S.s
+variante d'un argument: S/s
+argument somme strict, nu: S/s
 appel compilé: {4.0 4.0}
 --- le reste : {list.T}args
 args: 10
@@ -41,12 +41,12 @@ récursion: 3628800 int
 eval dans le corps: ERREUR return value {int}: expected integer but got "x"
 coroutine: 1 2
 --- étiquettes : la variante d'une somme rendue
-{point:}: {1.0 2.0} R.point
-{n:}: 4 R.n
+{/point}: {1.0 2.0} R/point
+{/n}: 4 R/n
 somme stricte, valeur nue: 7
-variante inconnue: ERREUR label {zz:} on a return value: R has no variant "zz"
-étiquette, pas une somme: ERREUR label {zz:} on a return value: the return type int is not a sum
-{S.s}nom : toujours s: S.s
+variante inconnue: ERREUR label {/zz} on a return value: R has no variant "zz"
+étiquette, pas une somme: ERREUR label {/zz} on a return value: the return type int is not a sum
+{S/s}nom : toujours s: S/s
 --- introspection, compatibilité
 type proc: args {{pt}p; {double}dx ?= 0; {double}dy ?= 0} return pt record {{pt}p; {double}dx; {double}dy}
 type proc, classique: args {} return {} record {{any}a; {any}b; {list}args}

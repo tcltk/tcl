@@ -40,7 +40,7 @@ foreach f $q {puts "champ        : <$f> [llength $f]"}
 
 puts "--- sommes, listes de produits"
 type def S {{point}at, "none"}
-set {S}s1 {at:}$P
+set {S}s1 {/at}$P
 set {S}s2 none
 puts "somme        : [llength $s1] [llength $s2] [type get [lindex $s1 0]]"
 set {list.point}LP {1 2} {3 4}

@@ -1,17 +1,17 @@
 == la valeur est la charge
-étiquette                          5 S.s
+étiquette                          5 S/s
 expr sur la charge                 10
 chemin v(i)                        5 int
-une seule variante                 abc S.s
-deux variantes : erreur            ERREUR value "5" fits variants i and s of S: write {i:}5, or set {S}v(i) 5
-même forme : erreur                ERREUR value "5" fits variants i and j of A: write {i:}5, or set {A}v(i) 5
+une seule variante                 abc S/s
+deux variantes : erreur            ERREUR value "5" fits variants i and s of S: write {/i}5, or set {S}v(i) 5
+même forme : erreur                ERREUR value "5" fits variants i and j of A: write {/i}5, or set {A}v(i) 5
 littéral : lui-même                auto M
 littéral contre variante           L2
-rien de collant                    value "8" fits variants i and s of S: write {i:}8
+rien de collant                    value "8" fits variants i and s of S: write {/i}8
 cast vers la variante              int
 cast vers string                   5
 égalité en valeur                  1
-conversion par cast                212.0 temp.fahrenheit
+conversion par cast                212.0 temp/fahrenheit
 == variantes et littéraux
 variant -of S                      i s
 variant -of E (aucune)             
@@ -28,19 +28,19 @@ is {enum?}                         1 0 0
 is {sum?} d'une valeur             1
 variant $v                         s
 variant d'un littéral : vide       <>
-réétiqueter                        5 A.j A.i
+réétiqueter                        5 A/j A/i
 réétiqueter : charge refusée       ERREUR expected integer but got "abc"
 réétiqueter vers un littéral       ERREUR type variant: M has no variant "auto" (a literal of it is its own value: write it)
-réétiqueter n'est pas convertir    100.0 temp.fahrenheit
+réétiqueter n'est pas convertir    100.0 temp/fahrenheit
 == la forme chaîne
-variante écrite : i                {{S.i}5} ≡
+variante écrite : i                {{S/i}5} ≡
 déduite : une seule variante       {{S}abc} ≡
-variante écrite : s                {{S.s}5} ≡
-même forme                         {{A.j}5} ≡
-dans une liste                     {{list.S}{{{s:}5} {{i:}6} x}} ≡
-dans un produit                    {{P}{{{s:}5} {{j:}7}}} ≡
-relu : les variantes               A.j A.i
-par la chaîne nue : erreur         ERREUR value "5" fits variants i and j of A: write {i:}5
+variante écrite : s                {{S/s}5} ≡
+même forme                         {{A/j}5} ≡
+dans une liste                     {{list.S}{{{/s}5} {{/i}6} x}} ≡
+dans un produit                    {{P}{{{/s}5} {{/j}7}}} ≡
+relu : les variantes               A/j A/i
+par la chaîne nue : erreur         ERREUR value "5" fits variants i and j of A: write {/i}5
 variante inconnue                  ERREUR type parse: S has no variant "zz"
-étiquette inconnue : un texte      {{zz:}5}
+étiquette inconnue : un texte      {{/zz}5}
 charge refusée                     ERREUR expected integer but got "abc"

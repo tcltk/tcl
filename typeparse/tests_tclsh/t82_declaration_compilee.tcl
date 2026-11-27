@@ -25,7 +25,7 @@ puts "déjà typée : [p6 $q]"
 proc p7 {} {( N is nuage = ((1.0, 2.0), (3.0, 4.0)); [list $N [expr {[tcl::unsupported::compact info $N] ne ""}]] )}
 puts "compacte : [p7]"
 proc p8 {s} {( S is forme = $s; [list $S [type get $S]] )}
-puts "somme : [p8 {cote:}2.0] [p8 {nom:}carré]"
+puts "somme : [p8 {/cote}2.0] [p8 {/nom}carré]"
 proc p9 {} {
     upvar 0 B A
     expr {A is point = (5.0, 6.0)}

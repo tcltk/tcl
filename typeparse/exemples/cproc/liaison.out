@@ -6,7 +6,7 @@ poly::aire {{0.0 0.0} {x 0.0}}           = 1  | argument "pg": expected floating
 poly::aire {{0.0 0.0 0.0}}               = 1  | argument "pg": ::poly::point needs 2 values but got 3
 poly::aire                               = 1  | wrong # args: should be "poly::aire pg"
 poly::aire a b                           = 1  | wrong # args: should be "poly::aire pg"
-poly::aire {pg:}$G                       = 0 double | 8.0
+poly::aire {/pg}$G                       = 0 double | 8.0
 poly::contient $G $P                     = 0 int | 1
 poly::contient $G $A                     = 1  | argument "P": type mismatch: expected ::poly::point but got ::poly::autre (use an explicit cast)
 poly::contient $G {2.0 1.0}              = 0 int | 1
@@ -19,7 +19,7 @@ poly::deplace $G 1.0                     = 0 ::poly::polygone | {1.0 0.0} {5.0 0
 poly::deplace $G 1.0 2.0                 = 0 ::poly::polygone | {1.0 2.0} {5.0 2.0} {5.0 6.0}
 poly::deplace $G -1.0 -2.0               = 0 ::poly::polygone | {-1.0 -2.0} {3.0 -2.0} {3.0 2.0}
 poly::deplace $G x                       = 1  | argument "dx": expected floating-point number but got "x"
-poly::deplace $G {dy:}3.0 {dx:}1.0       = 0 ::poly::polygone | {1.0 3.0} {5.0 3.0} {5.0 7.0}
+poly::deplace $G {/dy}3.0 {/dx}1.0       = 0 ::poly::polygone | {1.0 3.0} {5.0 3.0} {5.0 7.0}
 poly::boite $G                           = 0 ::poly::boite | 0.0 0.0 4.0 4.0
 poly::point 1 2                          = 0 ::poly::point | 1.0 2.0
 24 appels, 0 différence(s)

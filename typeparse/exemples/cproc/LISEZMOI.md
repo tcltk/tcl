@@ -13,7 +13,7 @@ cproc {point}decale {{point}p; {double}dx ?= 0} {
 C'est la troisième étape de la démarche : un prototype en Tcl, puis le Tcl
 typé, puis le C pour ce qui doit aller vite, **sans toucher aux appelants**. La
 signature reste celle d'une procédure typée : liaison des arguments, défauts,
-étiquettes (`decale {dx:}5 {p:}{0 0}`), options et drapeaux (`{flag}-strict`),
+étiquettes (`decale {/dx}5 {/p}{0 0}`), options et drapeaux (`{flag}-strict`),
 `--`, messages d'erreur, type du résultat, espace de noms des types. Tout cela
 est fait par Tcl, comme pour `proc`.
 
@@ -201,12 +201,12 @@ un corps non compilé aussi (v16x) :
 
 - **Une somme ne se convertit pas en `string`.** Une variante littérale qu'on
   veut rendre comme simple texte s'écrit `{}$v`.
-- **`return {v:}[list …]` perd une somme stricte imbriquée.** Si la charge de
-  la variante contient une somme stricte (`return {span:}[list $el $en]`), la
-  variante de `$el` ne passe pas. `set {cspan}s $el $en; return {span:}$s` la
+- **`return {/v}[list …]` perd une somme stricte imbriquée.** Si la charge de
+  la variante contient une somme stricte (`return {/span}[list $el $en]`), la
+  variante de `$el` ne passe pas. `set {cspan}s $el $en; return {/span}$s` la
   garde.
 - **`switch -regexp -matchvar` fait expirer l'étiquette.** Son corps n'est pas
-  compilé, et l'étiquette d'un `return {v:}…` expire avant le contrôle du
+  compilé, et l'étiquette d'un `return {/v}…` expire avant le contrôle du
   retour. Sans `-matchvar`, tout va bien.
 
 **Étape 3.** La partie de `cproc` qui tourne souvent n'est pas le générateur

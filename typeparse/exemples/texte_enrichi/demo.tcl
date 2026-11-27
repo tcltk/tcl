@@ -55,7 +55,7 @@ te::rendre .t $doc ouvrir
 # sur la sélection, puis refait l'apparence (te::habiller).
 proc basculer {style} {
     if {[.t tag ranges sel] eq ""} return
-    set tag [te::Tag segment.marque style $style]
+    set tag [te::Tag segment/marque style $style]
     set plages [.t tag nextrange $tag sel.first]
     if {[llength $plages] && [.t compare [lindex $plages 0] <= sel.first]
 	    && [.t compare [lindex $plages 1] >= sel.last]} {

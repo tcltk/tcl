@@ -62,7 +62,7 @@ namespace eval ::cproc {
 		      {int}verbose = 0}
 
     # l'état, sous contrat
-    set {cconfig}cfg {cc:}gcc
+    set {cconfig}cfg {/cc}gcc
     set {list.cdef}pending {*}{}
 }
 
@@ -70,7 +70,7 @@ namespace eval ::cproc {
 # nomme par sa valeur)
 proc {string}::cproc::Variant {v} {
     set t [type get $v]
-    set i [string last . $t]
+    set i [string last / $t]
     if {$i >= 0} {return [string range $t $i+1 end]}
     # une variante littérale : sa valeur, sans le type de la somme (une
     # somme ne se caste pas en string)
@@ -259,18 +259,18 @@ proc {list.field}::cproc::ParseSig {{string}sig} {
 proc {defval}::cproc::DefVal {{string}d} {
     set d [string trim $d]
     if {$d eq ""} {return none}
-    if {[string index $d 0] eq "\["} {return {computed:}$d}
+    if {[string index $d 0] eq "\["} {return {/computed}$d}
     if {[string index $d 0] eq "\{" && [string index $d end] eq "\}"} {
-	return {const:}[string range $d 1 end-1]
+	return {/const}[string range $d 1 end-1]
     }
     if {[string index $d 0] eq "\"" && [string index $d end] eq "\""} {
 	set d [string range $d 1 end-1]
     }
     if {[string first "\\" $d] >= 0 || [string first "\$" $d] >= 0
 	    || [string first "\[" $d] >= 0} {
-	return {computed:}$d
+	return {/computed}$d
     }
-    return {const:}$d
+    return {/const}$d
 }
 
 # ----------------------------------------------------------------------
@@ -280,14 +280,14 @@ proc {defval}::cproc::DefVal {{string}d} {
 proc {kind}::cproc::Classify {{flag}-ret; {string}ns; {string}t} {
     set t [string trim $t]
     # (des if, pas switch -regexp -matchvar : son corps, non compilé, ferait
-    # expirer l'étiquette de return {num:}... avant le contrôle du retour)
-    if {[regexp {^double(\(64\))?$} $t]} {return {num:}{double double}}
-    if {$t eq "double(32)"} {return {num:}{float float}}
-    if {$t eq "int"}        {return {num:}{wide Tcl_WideInt}}
-    if {$t eq "flag"}       {return {num:}{int int}}
+    # expirer l'étiquette de return {/num}... avant le contrôle du retour)
+    if {[regexp {^double(\(64\))?$} $t]} {return {/num}{double double}}
+    if {$t eq "double(32)"} {return {/num}{float float}}
+    if {$t eq "int"}        {return {/num}{wide Tcl_WideInt}}
+    if {$t eq "flag"}       {return {/num}{int int}}
     if {$t eq "string"}     {return str}
     if {[regexp {^int\(([su]),(8|16|32|64)\)$} $t -> su bits]} {
-	return {num:}[list fix [expr {$su eq "u" ? "uint" : "int"}]${bits}_t]
+	return {/num}[list fix [expr {$su eq "u" ? "uint" : "int"}]${bits}_t]
     }
     if {[regexp {^list(\(\d+\))?\.(.+)$} $t -> - et]} {
 	if {$ret} {
@@ -297,11 +297,11 @@ proc {kind}::cproc::Classify {{flag}-ret; {string}ns; {string}t} {
 	set {kind}e [Classify $ns $et]
 	switch -- [Variant $e] {
 	    struct {
-		set {celem}el {struct:}$e(struct)
+		set {celem}el {/struct}$e(struct)
 		set en $e(struct.name)
 	    }
 	    num {
-		set {celem}el {num:}$e(num)
+		set {celem}el {/num}$e(num)
 		set en [string map {{ } _} $e(num.ctype)]
 	    }
 	    default {
@@ -309,10 +309,10 @@ proc {kind}::cproc::Classify {{flag}-ret; {string}ns; {string}t} {
 			given to C must be numbers or products"
 	    }
 	}
-	# (construit d'abord : return {span:}[list $el $en] perdrait la
+	# (construit d'abord : return {/span}[list $el $en] perdrait la
 	# variante de $el, une somme stricte dans la charge)
 	set {cspan}sp $el $en
-	return {span:}$sp
+	return {/span}$sp
     }
     # un type défini : son texte (un alias ou un nominal de scalaire se
     # résout), ou une struct
@@ -334,7 +334,7 @@ proc {kind}::cproc::Classify {{flag}-ret; {string}ns; {string}t} {
 	return -code error "cproc: type \"$t\" is not a product (a sum or a\
 		list cannot be given to C yet)"
     }
-    return {struct:}[list $last(name) $last(qual) $ns $t]
+    return {/struct}[list $last(name) $last(qual) $ns $t]
 }
 
 # Le texte de type {c!}export, découpé en blocs : un par type, avec son nom
@@ -502,8 +502,8 @@ proc {string}::cproc::Gen {{list.cdef}procs} {
 
 # un élément de span, vu comme un kind (pour son type C)
 proc {kind}::cproc::ElemKind {{celem}e} {
-    if {[Variant $e] eq "struct"} {return {struct:}$e(struct)}
-    return {num:}$e(num)
+    if {[Variant $e] eq "struct"} {return {/struct}$e(struct)}
+    return {/num}$e(num)
 }
 
 proc {string}::cproc::Proto {{cdef}p} {

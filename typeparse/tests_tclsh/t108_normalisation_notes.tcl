@@ -15,7 +15,7 @@ t "argument typé"           {proc f {{int}x} {return $x}; f 0x10}
 t "list.double"             {set {list.double}L {*}{1 2e1}; set L}
 t "dict.int"                {set {dict.int}D a 0x10; set D}
 t "produit"                 {type def pt108 {{string}nom; {int}age}; set {pt108}p Jean 0x0C; set p}
-t "somme"                   {type def S108 {{int}i, {double}d}; set {S108}s {d:}1; list $s [type get $s]}
+t "somme"                   {type def S108 {{int}i, {double}d}; set {S108}s {/d}1; list $s [type get $s]}
 t "nominal"                 {type def v108 double; set {v108}v 2e1; set v}
 t "lappend sous contrat"    {set {list.double}M 1; lappend M 2e1; set M}
 t "double : division réelle" {set {double}x 5; expr {$x / 2}}
@@ -28,4 +28,4 @@ t "list.double, lindex"     {set {list.double}D {vitesse}12.5 3; list [tn [linde
 t "dict.int, chemin"        {set {dict.int}M a {poids}3 b 4; list [tn $M(a)] [tn $M(b)]}
 t "{dict}, dict get"        {set {dict}N a {poids}3; tn [dict get $N a]}
 t "scalaire typé et noté"   {set a {mm}3; set {int}b $a; tn $b}
-t "étiquette : pas une note" {type def S2 {{int}i, {string}s}; set {list.S2}L {i:}1 {s:}a; lmap e $L {type get $e}}
+t "étiquette : pas une note" {type def S2 {{int}i, {string}s}; set {list.S2}L {/i}1 {/s}a; lmap e $L {type get $e}}

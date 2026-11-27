@@ -1,0 +1,35 @@
+== étiquettes
+champ {/x}                           1.0 2.0
+variante {/celsius}                  50.0 temp/celsius
+variante inconnue                    ERREUR: label {/kelvin} names no variant of temp
+ancienne étiquette refusée           ERREUR: label {celsius:} is now written {/celsius}
+ancienne, champ                      ERREUR: label {x:} is now written {/x}
+ancienne, en retour                  ERREUR: label {celsius:} is now written {/celsius}
+retour étiqueté                      temp/fahrenheit
+argument nommé                       9
+élément de liste                     {list.temp}{{{/celsius}1.0} {{/fahrenheit}2.0}}
+relu                                 celsius fahrenheit
+== membres X/m
+type def point/x                     double
+type def temp/celsius                double
+{temp/celsius}u                      temp/celsius
+{point/x}d : le type du champ        4.0 double
+type cast temp/fahrenheit            temp/fahrenheit
+type include temp temp/celsius       1
+type variant -of temp/celsius        celsius fahrenheit
+champ inconnu                        ERREUR: point has no field "z"
+pas un produit                       ERREUR: int is neither a product nor a sum: "/z" names nothing in it
+ancien S.v refusé                    ERREUR: a variant of a type is now written with "/": temp/celsius
+ancien P.f refusé                    ERREUR: a field of a type is now written with "/": point/x
+étiquette qualifiée {point/x}        1.0 2.0
+== expr is
+tc is temp                           1
+tc is temp/celsius                   1
+tc is temp/fahrenheit                0
+is temp/kelvin                       ERREUR: temp has no variant "kelvin"
+w is list(2).int                     1
+dans une procédure                   1
+== nom de variante = nom de type
+{/int}5                              5 V/int
+{/string}5                           5 V/string {{V/string}5}
+num/int                              num/int

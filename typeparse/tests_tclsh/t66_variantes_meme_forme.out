@@ -1,32 +1,32 @@
 -- la valeur dit sa variante
-B 5 : i, d et s l'acceptent    1 value "5" fits variants i, d and s of B: write {i:}5, or set {B}v(i) 5
-B 2.5                          1 value "2.5" fits variants d and s of B: write {d:}2.5, or set {B}v(d) 2.5
-B abc                          0 B.s
-A 5 : i et j                   1 value "5" fits variants i and j of A: write {i:}5, or set {A}v(i) 5
-C {1 2} : p et q               1 value "1 2" fits variants p and q of C: write {p:}{1 2}, or set {C}v(p) {1 2}
+B 5 : i, d et s l'acceptent    1 value "5" fits variants i, d and s of B: write {/i}5, or set {B}v(i) 5
+B 2.5                          1 value "2.5" fits variants d and s of B: write {/d}2.5, or set {B}v(d) 2.5
+B abc                          0 B/s
+A 5 : i et j                   1 value "5" fits variants i and j of A: write {/i}5, or set {A}v(i) 5
+C {1 2} : p et q               1 value "1 2" fits variants p and q of C: write {/p}{1 2}, or set {C}v(p) {1 2}
 W : variantes sans nom         1 variant 1 of the sum has no name: a label or a path chooses a variant by its name; name it ({int}name), or write a union with "|" if the value itself tells the alternatives apart
 A en clair                     1 wrong # args: a sum value takes exactly one argument
 A par la chaîne                1 value "j 5" matches no variant of A
-A {j:}5                        0 A.j
-A v(j) 5                       0 A.j
-type cast A 5                  1 value "5" fits variants i and j of A: write {i:}5
-type cast A {j:}5              0 A.j
-type cast B {s:}5              0 B.s
+A {/j}5                        0 A/j
+A v(j) 5                       0 A/j
+type cast A 5                  1 value "5" fits variants i and j of A: write {/i}5
+type cast A {/j}5              0 A/j
+type cast B {/s}5              0 B/s
 -- la variante survit
-copie                          0 A.j
-liste                          0 A.j A.i
-liste nue                      1 value "7" fits variants i and j of A: write {i:}7
-lappend                        0 A.j
-lappend nu                     1 value "3" fits variants i and j of A: write {i:}3
-produit                        0 {5 1} A.j
-produit {a:}                   0 A.j
-B {s:}5 dans une liste         0 B.s
+copie                          0 A/j
+liste                          0 A/j A/i
+liste nue                      1 value "7" fits variants i and j of A: write {/i}7
+lappend                        0 A/j
+lappend nu                     1 value "3" fits variants i and j of A: write {/i}3
+produit                        0 {5 1} A/j
+produit {/a}                   0 A/j
+B {/s}5 dans une liste         0 B/s
 -- modifications : la valeur garde ou change sa variante
-set v 8                        1 value "8" fits variants i and j of A: write {i:}8
-incr v                         1 value "6" fits variants i and j of A: write {i:}6
-set v(i) 8                     0 A.i
-set v {A.i}8                   0 A.i
-L(0) 4                         1 value "4" fits variants i and j of A: write {i:}4
-lset L 0 9                     1 value "9" fits variants i and j of A: write {i:}9
-r(a) 7                         1 value "7" fits variants i and j of A: write {i:}7
-r(n) 2                         0 A.j
+set v 8                        1 value "8" fits variants i and j of A: write {/i}8
+incr v                         1 value "6" fits variants i and j of A: write {/i}6
+set v(i) 8                     0 A/i
+set v {A/i}8                   0 A/i
+L(0) 4                         1 value "4" fits variants i and j of A: write {/i}4
+lset L 0 9                     1 value "9" fits variants i and j of A: write {/i}9
+r(a) 7                         1 value "7" fits variants i and j of A: write {/i}7
+r(n) 2                         0 A/j

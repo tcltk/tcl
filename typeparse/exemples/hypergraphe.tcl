@@ -110,10 +110,10 @@ puts "\n=== A. données vivantes avec des liens ==="
 type def auteur {{string}nom; {int}articles = 0}
 type def papier {{string}titre; {list.var(typed).auteur}auteurs}
 
-set {auteur}alice {nom:}alice
-set {auteur}bob {nom:}bob
-set {auteur}carol {nom:}carol
-set {auteur}dave {nom:}dave
+set {auteur}alice {/nom}alice
+set {auteur}bob {/nom}bob
+set {auteur}carol {/nom}carol
+set {auteur}dave {/nom}dave
 
 set {papier}pa(titre,auteurs) "Types et liens" {alice bob carol}
 set {papier}pb(titre,auteurs) "Sommes et variants" {carol dave}
@@ -147,7 +147,7 @@ puts "type : [type get $avant]"
 # un auteur supprimé : erreur franche, qui dit où
 unset bob
 puts "\nauteur supprimé : [catch {type deref $pa} msg] $msg"
-set {auteur}bob {nom:}bob {articles:}2;# on le recrée
+set {auteur}bob {/nom}bob {/articles}2;# on le recrée
 
 # une variable non typée n'est pas acceptée comme auteur
 set intrus "x"
@@ -172,6 +172,6 @@ proc masque_de {papier etiquettes} {
 }
 set carol(nom) carol                          ;# nom d'origine
 set noms {alice bob carol dave}
-set {hg(4)}G {labels:}$noms {edges:}[list [masque_de pa $noms] [masque_de pb $noms]]
+set {hg(4)}G {/labels}$noms {/edges}[list [masque_de pa $noms] [masque_de pb $noms]]
 puts "pa -> [format %04b $G(edges.0)]   pb -> [format %04b $G(edges.1)]"
 puts "carol est dans les deux : intersection = [join [noms $noms [expr {$G(edges.0) & $G(edges.1)}]] ", "]"

@@ -40,9 +40,9 @@ can be a literal, `[script]` (evaluated at each construction) or
 * **Order.** A product has ordered fields; it can also be built
   **positionally** (`set {pt}b Jean 12`, like initializing a C struct). A
   dict has no positional form.
-* **A single field.** A product accepts the `{T.field}` prefix:
-  `set {pt}c {pt.nom}Jean` sets `nom`, the other fields take their default
-  (`Jean 0`). It is the same notation as `{Val.i}5` for a sum.
+* **A single field.** A product accepts the `{T/field}` prefix:
+  `set {pt}c {pt/nom}Jean` sets `nom`, the other fields take their default
+  (`Jean 0`). It is the same notation as `{Val/i}5` for a sum.
 * **Field types.** Each field of a product has its own type
   (`{string}nom; {int}age`); a `dict(...)` has a single one for all its
   values (`.string`).
@@ -151,7 +151,7 @@ MOMENT: the result no longer changes afterwards.
   snapshots of the same type have the same type.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b:}A
+    set {mix}s1 {/b}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# a tree whose values are links
@@ -169,7 +169,7 @@ is not the same thing.
 | | C `union` | sum |
 |---|---|---|
 | what it holds | the **same bytes**, read in several ways | **a single** variant, which carries its name |
-| who knows which one is valid | nobody: the programmer must know | the value itself (`type get` gives `S.x`) |
+| who knows which one is valid | nobody: the programmer must know | the value itself (`type get` gives `S/x`) |
 | reading the wrong variant | allowed, you read arbitrary bytes | impossible: you access the variant you have |
 | size in a file | that of the largest view | that of the chosen variant |
 | choice of the variant | none, there is none | by a field already read (`S($tag)`) or by its name (`S(x)`) |
@@ -344,7 +344,7 @@ type binary decode {R(tp)} $octets
 ```
 
 `U(tp)` is a single-variant type: its size is known
-(`type binary {sizeof?}`), the value read is `U(tp).tp` and there is
+(`type binary {sizeof?}`), the value read is `U(tp)/tp` and there is
 nothing to guess, even if several variants have the same shape (which made
 the value ambiguous before). `U($field)` keeps its meaning: a variant chosen
 by a field already read. If `$v` is a bound parameter of the type, the first

@@ -182,23 +182,23 @@ Une valeur sans annotation rend la chaîne vide. Pour tester le type d'une
 variable par son nom, l'opérateur `is` de expr reste l'outil. À appliquer
 après tous les autres patches (-p1, depuis la racine de l'arbre).
 
-## elements-types.patch : éléments de liste typés, `{i}5`, `Val.i`
+## elements-types.patch : éléments de liste typés, `{i}5`, `Val/i`
 
 À appliquer après type-get.patch et avertissements.patch (-p1, racine de
 l'arbre ; 4 fichiers : tclTypes.c, tclAnnotObj.c, tclTypedVar.c, tclTypePath.c).
 
 - `foreach`, `lmap`, `lindex`, `lrange`... sur une liste `list.T` rendent des
-  éléments enveloppés dans le type T : `type get $e` -> int, Complex, Val.i.
+  éléments enveloppés dans le type T : `type get $e` -> int, Complex, Val/i.
   L'enveloppe est posée une fois, dans le contenu de la liste, à la
   première lecture (chaîne inchangée). Les listes de strings (`{list}`,
   `list.string`) ne sont PAS enveloppées : une valeur string est un seul
   élément pour les commandes de liste, ce qui casserait `lindex $L 2 1`
   sur {a b {c d}}. Leur type se lit par `$L(i)`.
 - Liste de sommes : `set {list.Val}L {i}5 {s}hello` est accepté ; la balise
-  est conservée (type get -> Val.i / Val.s), y compris par `$L(i)`.
+  est conservée (type get -> Val/i / Val/s), y compris par `$L(i)`.
   Sans balise, la variante est déduite par revalidation.
-- `Val.i` s'écrit aussi `{Val.i}5`, comme `{Val}{i}5` ; `set {Val.s}w 7`
-  choisit la variante s. `type get` rend `Val.i` pour une somme.
+- `Val/i` s'écrit aussi `{Val/i}5`, comme `{Val}{i}5` ; `set {Val/s}w 7`
+  choisit la variante s. `type get` rend `Val/i` pour une somme.
 - Conséquence : une variable qui reçoit une valeur typée prend ce type
   (comme avec `set`). Réutiliser le même nom de variable de boucle pour
   des éléments de types différents -> "type mismatch" ; `unset e` entre
@@ -361,8 +361,8 @@ La règle positionnelle est conservée. Test : `tests_tclsh/t23_ambiguite_produi
 ## produit-champ.patch  (à appliquer après produit-ambigu.patch)
 
 Même écriture pour les champs d'un produit que pour les variantes d'une somme :
-`set {paire}p {paire.nom}Jean` fixe le seul champ `nom` ; les autres champs
-prennent leur défaut (`Jean 0`). Le préfixe `{T.champ}` n'est reconnu que si
+`set {paire}p {paire/nom}Jean` fixe le seul champ `nom` ; les autres champs
+prennent leur défaut (`Jean 0`). Le préfixe `{T/champ}` n'est reconnu que si
 `T` est le type construit et seulement pour UN argument ; champ inexistant :
 « unknown field "zz" in paire » ; un autre type (`{aut.nom}x`) : message
 dédié depuis v15l. Le préfixe n'a jamais de sens de champ en dehors d'un
@@ -973,7 +973,7 @@ nomment par **étiquette** :
     set {paire}p(age,nom) 15 lea        ;# chemin, inchangé
 
 * **Constructeur** (`BuildProductEx`) : copie d'un produit du même type (1 argument),
-  `{T.champ}valeur`, *n* valeurs pour *n* champs = positionnel, 0 argument = tous les
+  `{T/champ}valeur`, *n* valeurs pour *n* champs = positionnel, 0 argument = tous les
   défauts, construction nommée interne (chemin, étiquettes). Tout le reste :
   « wrong # args: T needs n values; to name fields (the others take their default), write
   {field}value or set {T}var(field,...) value... ». L'essai des deux lectures et l'erreur
@@ -1257,7 +1257,7 @@ Source de types : `tclTypedVar.c`. Pas de patch noyau.
 - Maintenant : `aut.nom names a field of aut, not of paire`, que l'étiquette étrangère soit seule,
   mêlée à des étiquettes de `paire` (`{aut.nom}x {n}3`) ou partout. Champ inexistant dans l'autre
   produit : `aut.zz: aut has no field "zz", and the value being built is a paire`.
-- Inchangé : `{nom}x {n}3`, `{paire.nom}x {paire.n}3`, `x 3`.
+- Inchangé : `{nom}x {n}3`, `{paire/nom}x {paire/n}3`, `x 3`.
 - Tests : `t65_champ_etranger` ; `t24_produit_champ.out` régénéré (ligne 7 : le nouveau message).
 - Exemple `niveau2.tcl` : le refus « selector type is 2 but … variant 1 » a lieu dès la construction
   (depuis la correction du sélecteur `S($champ)`) ; le `catch` entoure maintenant le `set`.
@@ -1268,7 +1268,7 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypedVar.c`, `tclTypePath.c`,
 
 - Avant : `set {A}v 5` avec `A = {int}i, {int}j` prenait `i` sans rien dire. Pire, une variante choisie
   (`{j}5`) se perdait dans une liste (`set {list.A}L $v`), un produit (`set {R}r $v 1`), une
-  modification (`incr v`, `set v 8`, `lset`, `set L(0) …`) et dans `type cast A {j}5` : relue `A.i`.
+  modification (`incr v`, `set v 8`, `lset`, `set L(0) …`) et dans `type cast A {j}5` : relue `A/i`.
 - Déduction (`ValidateG`, `tclTypes.c`) : parmi les variantes qui acceptent la valeur, celles qu'aucune
   autre ne bat (strictement plus spécifique). Une seule : c'est elle (`{int}i, {string}s` : `5` donne
   `i`, comme avant). Plusieurs : `value "5" fits variants i and j of A equally: write {i}5`, et
@@ -1287,15 +1287,15 @@ Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypedVar.c`, `tclTypePath.c`,
 
 Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypePath.c`, `tclAnnotObj.c`. Pas de patch noyau.
 
-- `type convert S.a S.b {{x} ...}` : une règle d'une variante vers une autre de la même somme (clé
-  `S.a\1S.b` dans la table des conversions). Refus : sommes différentes, variante inconnue, même
+- `type convert S/a S/b {{x} ...}` : une règle d'une variante vers une autre de la même somme (clé
+  `S/a\1S.b` dans la table des conversions). Refus : sommes différentes, variante inconnue, même
   variante, variante mêlée à un type.
 - `TclTypeVariantConvert` (`tclTypes.c`) : la règle ; sinon, variantes de même forme : erreur qui propose
   la règle ; sinon le cast ordinaire entre les types des variantes. Utilisée par la lecture d'une
   variante inactive (`$t(fahrenheit)`, `tclTypePath.c`, remplace le cast de v15k) et par le cast
-  `{S.b}$v` (`TclAnnotSettle`), qui ignorait jusqu'ici la variante demandée (`{temp.fahrenheit}$t`
-  restait `temp.celsius`).
-- `type cast S.v valeur` : accepté (avant : `unknown type "v"`).
+  `{S/b}$v` (`TclAnnotSettle`), qui ignorait jusqu'ici la variante demandée (`{temp/fahrenheit}$t`
+  restait `temp/celsius`).
+- `type cast S/v valeur` : accepté (avant : `unknown type "v"`).
 - Tranche la question ouverte de v15k : cast pour des variantes de formes différentes, règle ou refus
   pour des variantes de même forme.
 - Test `t67_conversion_variantes`.
@@ -1919,7 +1919,7 @@ Patch noyau : `jeton-annot-2048.patch` (`tcl.h` seul). Sources de types : `tclTy
   compilation incrémentale à la main donnait 28 tests faux.
 - `tests_tclsh` : les 52 tests avec sortie passent.
 
-### v16l — cast immédiat de `{T}$x` ; étiquettes `{nom:}` (2 novembre 2026)
+### v16l — cast immédiat de `{T}$x` ; étiquettes `{/nom}` (2 novembre 2026)
 
 Patch noyau : `cast-immediat-etiquettes.patch` (`tclCompile.c`, `tclParse.c`, `tclCompCmdsSZ.c`).
 Sources de types : `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypes.c` (un message), `tclTypes.h`.
@@ -1932,21 +1932,21 @@ Sources de types : `tclAnnotObj.c`, `tclTypedVar.c`, `tclTypes.c` (un message), 
   avant, l'erreur naissait en écrivant `r` et échappait au `catch`). Un nom inconnu reste une note.
   `{T}[cmd]`, `{T}[(...)]`, `{T}"..."` et `{T}littéral` gardent leur sens : empilés, résolus par le
   constructeur qui les reçoit (lui seul sait si le mot est une valeur ou un nom de variable).
-- **Étiquettes `{nom:}`.** Les champs d'un produit et les variantes d'une somme se nomment par une
-  annotation locale finie par `:` : `set {pt}a {age:}12`, `set {S}v {i:}5`, `type cast S {s:}x`,
-  `set {list.S}L {i:}1 {s:}a`, `set {msg}m(t,body) 1 {1:}$p`. Une étiquette ne peut pas être un type :
+- **Étiquettes `{/nom}`.** Les champs d'un produit et les variantes d'une somme se nomment par une
+  annotation locale finie par `:` : `set {pt}a {/age}12`, `set {S}v {/i}5`, `type cast S {/s}x`,
+  `set {list.S}L {/i}1 {/s}a`, `set {msg}m(t,body) 1 {/1}$p`. Une étiquette ne peut pas être un type :
   la règle « le contexte du constructeur passe avant les types globaux » disparaît. `{nom}` est
   toujours un type ou une note ; l'ancienne étiquette `{nom}`, quand `nom` nomme un champ ou une
   variante et aucun type, est une erreur qui donne la nouvelle écriture (`TCL TYPE LABEL`).
   Une étiquette est lue par le constructeur qui reçoit le mot, même à travers une commande ; une
   étiquette qu'aucun constructeur ne lit ne se range pas (`TCL TYPE LOCALANNOT`). Une étiquette
   portée par une variable (`set v {age}21`, puis `$v`) n'existe plus. Sur une variable sous contrat
-  d'une somme : `set v {S.s}abc`.
+  d'une somme : `set v {S/s}abc`.
 - Exemple corrigé au passage : `exemples/executable.tcl` échouait (`type "elf" takes parameters`) :
   `{elf}$V` voulait nommer la variante `elf`, mais `elf` est aussi un type paramétré, qui l'emportait.
-  Avec `{elf:}$V`, il va jusqu'au bout (et la forme nom/valeur nue de son hypergraphe est réécrite
+  Avec `{/elf}$V`, il va jusqu'au bout (et la forme nom/valeur nue de son hypergraphe est réécrite
   avec des étiquettes).
-- Migration : tests (`{champ}` → `{champ:}` dans 33 fichiers), `layout/filebinary.tcl` (sommes et
+- Migration : tests (`{champ}` → `{/champ}` dans 33 fichiers), `layout/filebinary.tcl` (sommes et
   référentiels), exemples. Sorties attendues changées, et pourquoi : t45 et t49 H1–H3 (cast
   immédiat), t54, t65, t66, t67, t89 (écriture et messages des étiquettes ; t54 cas 10 : une étiquette
   ne se range pas). Nouveau test `t92_cast_etiquettes`.
@@ -1973,7 +1973,7 @@ Patch noyau : `piste-b-expiration.patch` (`tclBasic.c`, `tclCmdAH.c`, `tclCmdIL.
   qu'il a inscrit (`return {T}$x`, une commande sortie en erreur). Expirer change **en place**
   l'état de l'objet (partagé par ses copies) : texte brut et notes en attente deviennent des notes
   expirées, sous une marque (un élément vide de la liste des notes), affichées mais jamais résolues ;
-  une étiquette `{nom:}` ou une annotation locale disparaît. Une valeur neuve d'un constructeur qui
+  une étiquette `{/nom}` ou une annotation locale disparaît. Une valeur neuve d'un constructeur qui
   garde une note en attente est inscrite aussi : la note rangée par `set v {mm}5` expire avec `set`.
   Les notes expirées suivent la valeur construite (`TclAnnotKeepExpired`).
 - **Les boucles reçoivent leurs listes.** `foreach`, `lmap`, `dict for`, `dict map` résolvent
@@ -2019,7 +2019,7 @@ fin de structure).
   accepte la liste vide, qui est aussi un dict vide ; une variante littérale est validée contre
   l'autre variante.
 - **`type def {-strict}S`** : la variante d'une valeur nue n'est jamais devinée (`value "5" names
-  no variant of the strict sum S: write {i:}value or {S.i}value`, code `TCL TYPE STRICT`). Une
+  no variant of the strict sum S: write {/i}value or {S/i}value`, code `TCL TYPE STRICT`). Une
   valeur déjà typée, une étiquette, le nom de la variante dans le type passent ; une variante
   littérale se nomme par sa valeur ; dans une variable typée, la variante courante reste.
   **`type def {-deduce}S`** : la plus stricte gagne (le comportement d'avant). **`type is
@@ -2045,7 +2045,7 @@ Pas de patch noyau. Sources de types : `tclTypedVar.c`, `tclTypePath.c`, `tclTyp
 `tclTypes.h`.
 
 - **Une variante dont le type est un produit se construit par ses champs** :
-  `set {segment.lien}s {cible:}$u {contenu:}$c` (étiquettes, ordre libre, défauts),
+  `set {segment.lien}s {/cible}$u {/contenu}$c` (étiquettes, ordre libre, défauts),
   `set {segment.lien}s $u $c` (positionnel). Avant : `a sum value takes exactly one argument`.
   Un seul argument sans étiquette reste la valeur entière (la liste des champs).
   `TclSetAnnotatedCmd` construit le produit de la variante, puis la valeur prend la variante.
@@ -2059,7 +2059,7 @@ Pas de patch noyau. Sources de types : `tclTypedVar.c`, `tclTypePath.c`, `tclTyp
   {list.segment}contenu` ; `type def pt.x` → `double`. Un type nommé s'écrit par son nom ; les
   variantes d'une somme sortent dans l'ordre interne (triées) ; les options (`{-strict}`) ne font
   pas partie de la définition (`type is {strict?}S`).
-- Messages : le produit anonyme d'une variante est nommé `S.v` (`unknown field "href" in
+- Messages : le produit anonyme d'une variante est nommé `S/v` (`unknown field "href" in
   segment.lien`, au lieu de `prod<cible:string;…>`) ; `unknown field "taille"` sans le `:` de
   l'étiquette (t92).
 - La leçon 3 du texte enrichi était dépassée : le chemin d'un **produit** se calcule déjà
@@ -2083,10 +2083,10 @@ Patch noyau `procs-typees.patch` (après `annot-fallthrough.patch`) : `tclInt.h`
 - **La liste d'arguments est un produit** : `proc {pt}decale {{pt}p; {double}dx ?= 0; {double}dy
   ?= 0} {…}`. Chaque champ devient une variable locale sous contrat ; `?= v` / `?= [cmd]` (évalué
   dans la procédure, peut lire les champs précédents) ; à l'appel, positionnels puis étiquettes
-  `{dy:}5` ; un dernier `{list.T}args` reçoit le reste ; `{var.T}n` lie `n` à la variable de
+  `{/dy}5` ; un dernier `{list.T}args` reçoit le reste ; `{var.T}n` lie `n` à la variable de
   l'appelant (upvar automatique, valeur courante vérifiée). Messages : `wrong # args: should be
   "decale p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx" given twice`, `positional argument
-  "…" after labelled arguments`, `unknown argument label {zz:}: must be p:, dx: or dy:`,
+  "…" after labelled arguments`, `unknown argument label {/zz}: must be p:, dx: or dy:`,
   `argument "dx": expected floating-point number but got "abc"`.
 - **Types écrits dans la signature** : `{{double}x; {double}y}p` (produit anonyme : une liste nue
   est vérifiée et devient le champ ; les messages le nomment par son texte, pas `prod<…>`). Un
@@ -2096,9 +2096,9 @@ Patch noyau `procs-typees.patch` (après `annot-fallthrough.patch`) : `tclInt.h`
   de niveau 1 et de code ok) est casté en `T` ; erreur `return value {T}: …` (les options du
   `return` sont oubliées). Erreur, `break`, `return -level 2`, `tailcall`, `yield` passent sans
   cast. `return {U}$x` n'est qu'une note locale (elle expire avec le corps) : pas de cumul.
-- **Étiquettes de retour** : type de retour somme, `return {point:}$z` choisit la variante
-  (`{-strict}` l'exige) ; `label {zz:} on a return value: R has no variant "zz"`, `… the return
-  type int is not a sum`. `proc {S.v}f` : toujours la variante `v`.
+- **Étiquettes de retour** : type de retour somme, `return {/point}$z` choisit la variante
+  (`{-strict}` l'exige) ; `label {/zz} on a return value: R has no variant "zz"`, `… the return
+  type int is not a sum`. `proc {S/v}f` : toujours la variante `v`.
 - **Introspection** : `type proc nom` → `args {…} return T` ; `info args` rend les champs,
   `info default` leurs défauts (`[cmd]` pour un défaut calculé).
 - **Compatibilité** : une liste Tcl valide reste classique (`{a {b 2} args}`, `{a;}`) ; typée si
@@ -2490,7 +2490,7 @@ Patch noyau `retour-etiquette.patch` (après `execute-lecture-typee.patch`) : `t
 `tclTypes.h`. Nouveau test `t102_retour_etiquette.tcl`.
 
 Une annotation expire à la fin de la commande qui reçoit le mot (piste B). Dans un corps
-compilé, `return {v:}$x` sort du bytecode du corps, et `TclTypedProcReturn` lit l'étiquette avant
+compilé, `return {/v}$x` sort du bytecode du corps, et `TclTypedProcReturn` lit l'étiquette avant
 l'expiration. Sous `eval`, `uplevel` ou dans un `switch -matchvar`, le `return` est une commande
 d'un script non compilé (`TclEvalEx`) ou d'un bytecode imbriqué : l'étiquette expirait avant le
 contrôle du retour. `TclAnnotExpireFromRet(interp, mark, code)` remplace l'expiration à ces deux
@@ -2520,7 +2520,7 @@ Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.
   (variante et charge depuis V) et `TclSumMake` (V depuis la variante et la charge) sont les deux
   seules portes. `ValidateG` décode et valide la charge dans le type de la variante ; un indice
   de variante n'y fait que contrôler. `TclTypeComplete` avec une variante désignée (étiquette,
-  `S.v`) reçoit la **charge** et fait la valeur ; `FillDefaults` complète la charge.
+  `S/v`) reçoit la **charge** et fait la valeur ; `FillDefaults` complète la charge.
 - **Union `|`** : nouveau lexème `UNION` au rang de `,`, `TB_UNION`, `TypeItem.isUnion` ;
   `TclTypesFinishSum(…, isUnion)` ; nom canonique `union<…>` ; `sumMode` vaut
   `TCLT_SUM_TAGGED` ou `TCLT_SUM_UNION` (copié par `CopyInto`). Une union est l'ancienne somme à
@@ -2530,12 +2530,12 @@ Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.
   refusés avec un message ; plus d'avertissement sur stderr. `{{double}r}cercle` (un champ seul,
   nommé) est un produit à un champ.
 - **Construction** (`tclTypedVar.c`) : `BuildSum` accepte `set {S}v nom charge`, l'étiquette
-  (charge conformée puis `TclSumMake`), le chemin `set {S}v(i) 5`, `set {S.v}x …` d'une variante
+  (charge conformée puis `TclSumMake`), le chemin `set {S}v(i) 5`, `set {S/v}x …` d'une variante
   produit, l'injection d'une valeur du type d'une variante (erreur si deux variantes ont ce
   type) ; une union accepte plusieurs arguments (la liste). `LabeledElems` : les éléments
   étiquetés d'une liste de sommes (`lappend`, `lset`) deviennent `nom charge`. `TclAnnotSettle`
   : une étiquette sous le type d'une somme vaut aussi sur une valeur typée d'un autre type
-  (`return {const:}$d`, `d` une `string`). `{none:}` nomme une variante littérale.
+  (`return {/const}$d`, `d` une `string`). `{/none}` nomme une variante littérale.
 - **Chemins** (`tclTypePath.c`) : `Step`, `SetIn`, `ConstructLevel`, `DerefWalk` décodent et
   refont `nom charge` ; un nom qui n'est pas une variante est un pas dans la charge courante
   (`$f(w)` d'un `forme.rect`), si elle est un conteneur.
@@ -2554,7 +2554,7 @@ Pas de patch noyau. Sources de types : `tclTypes.c`, `tclTypes.h`, `tclTypesInt.
 Migration : les options des sommes retirées des tests et des exemples ; `inter` (géométrie),
 `intersection` et `found` (tcllib) deviennent des unions ; `t94` réécrit (sommes et unions),
 `t66` (variantes de même forme) et `t18` adaptés, les sorties des autres tests mises à jour
-(valeurs `nom charge`). Reste : l'étiquette `return {v:}…` dans un corps non compilé (`eval`,
+(valeurs `nom charge`). Reste : l'étiquette `return {/v}…` dans un corps non compilé (`eval`,
 `uplevel`, `switch -matchvar`) expire avant le contrôle ; `return [list v …]` marche partout.
 
 ### Exemple `zip` (6 novembre 2026, sur v16u)
@@ -2576,12 +2576,12 @@ Trois points du modèle relevés en typant `cproc`, à reprendre dans le noyau :
 - **Somme vers `string`.** Une valeur d'une somme (même une variante littérale) ne se caste
   pas en `string` (`unknown way to cast the value from ::cproc::kind to string`) ; `{}$v` donne
   son texte. À décider : `string` accepte-t-il toute valeur (son texte) ?
-- **`return {v:}[list …]`.** Quand la charge de la variante contient une somme stricte
-  (`return {span:}[list $el $en]`, `el` de type `celem.num`), la variante de `$el` est perdue :
+- **`return {/v}[list …]`.** Quand la charge de la variante contient une somme stricte
+  (`return {/span}[list $el $en]`, `el` de type `celem.num`), la variante de `$el` est perdue :
   le cast de la charge depuis une liste relit l'élément par son texte. `set {cspan}s $el $en`
   la garde.
 - **`switch -regexp -matchvar`.** Son corps n'est pas compilé ; l'étiquette d'un `return
-  {v:}…` y expire avant le contrôle du retour (`value "double double" names no variant of the
+  {/v}…` y expire avant le contrôle du retour (`value "double double" names no variant of the
   strict sum`). Sans `-matchvar` (corps compilé), correct.
 
 La liaison directe de `cproc` lit la représentation d'une valeur annotée (`ptr1` = V, `ptr2` =
@@ -2624,7 +2624,7 @@ t108.
   `{dict.int}`, `{list.any}`) ; un élément noté sans type se lit comme un
   élément du type de la liste, avec ses notes (`lindex`, chemins) :
   `{double vitesse}`. `TclAnnotCarryNotes` (seules les notes voyagent, pas
-  une étiquette `{v:}` ni une option `{-x}`) ; `MakeAnnotated` reprend les
+  une étiquette `{/v}` ni une option `{-x}`) ; `MakeAnnotated` reprend les
   notes d'un contenu seulement noté ; une liste dont un élément est noté
   reste ordinaire (pas de cases : elles ne gardent pas les notes).
 * **Coût** : `lappend` d'un double à une `list.double` 0,23 → 0,31 µs ;
@@ -2760,7 +2760,7 @@ Sans patch noyau (`tclTypes.c`, `tclAnnotObj.c`, `tclTypedVar.c`,
 * **`TclMeta`** (`tclTypes.h`) : `TCL_META_BARE`, `_TYPED`, `_NOTED`,
   `_TYPED_NOTED`, des bits (`TCL_META_ANY` = 15). `TclAnnotMeta(v)` : un
   texte brut non résolu (`list {int}5`, `{this}6`) est une note ; une
-  étiquette `{v:}` ou une option `{-x}` ne compte pas.
+  étiquette `{/v}` ou une option `{-x}` ne compte pas.
 * **Types** `bare`, `typed`, `noted`, `typednoted` intégrés (noms réservés),
   `any` = 15 (`TclType.metaMask`). `TclTypeMetaMask` : le masque d'un
   méta-type, ou d'une union de méta-types (`type def annotee {noted |
@@ -2945,3 +2945,15 @@ v16z ; TclOO, v17j, `MethodSig`). Trois copies du même code.
   `proc`) ; les 78 tests de `tests_tclsh` ;
 * `oo*.test`, `proc*.test`, `apply.test`, `info.test`, `namespace.test` : 1311 tests,
   0 échec.
+
+## v18a — membres-barre.patch : `{/nom}` et `S/v` (27 novembre 2026)
+
+`membres-barre.patch` (à appliquer en dernier, voir `ORDRE.txt`) :
+
+* `tclCompExpr.c` : l'opérande de droite de `is` lit des noms, `.`, `/membre` et des groupes
+  entre parenthèses alternés (`x is temp/celsius`, `x is opt(int)/some`,
+  `x is list(2).int`, qui s'arrêtait avant à la première parenthèse fermante) ;
+* `tclCompCmdsSZ.c` : `set {S}v {/i}5` compilé reconnaît l'étiquette à sa barre initiale
+  (avant : au « : » final).
+
+Le reste (étiquettes, `X/m`, messages) est dans les fichiers du prototype ; voir `REPRISE.md`.

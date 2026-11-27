@@ -38,7 +38,7 @@ T N4  {set {-v}y 5}
 T N5  {set {int(}y 5}
 T N6  {set {mm}y 5; set {px}y 6; show $y}
 T N7  {set {mm}y 5; set {}y abc; list [show $y] [set y xyz]}
-T N8  {set {Shape}y {circle:}3.0; show $y}
+T N8  {set {Shape}y {/circle}3.0; show $y}
 
 puts "-- côté valeur, variable libre : set y {A}\$x"
 T V1  {set y 5; show $y}
@@ -71,7 +71,7 @@ T C9  {set x 5; set {mm}y {double}$x; show $y}
 T C10 {set {mm}y 1; set x 5; set y $x; show $y}
 T C11 {set {mm}y 1; set x 5; set y {zz}$x; show $y}
 T C12 {set {mm}y 1; set x 5; set y {px}$x}
-T C13 {set x 3.0; set {Shape}y {circle:}$x; show $y}
+T C13 {set x 3.0; set {Shape}y {/circle}$x; show $y}
 T C14 {set {int(u,8)}w 5; set {int}n 7; set w $n}
 
 puts "-- casts"

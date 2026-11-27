@@ -21,7 +21,7 @@ que TIP 764 fournit déjà les morceaux :
 | actant `1,1` | un argument de la signature : `{Service}demandeur` |
 | actant `1,+` | un champ variadique : `{T}args...` |
 | circonstant `0,*` | une option : `{string}-but ?= ""` |
-| `[demandeur HSE]` à la création | une étiquette : `{nom:}"Service HSE"` |
+| `[demandeur HSE]` à la création | une étiquette : `{/nom}"Service HSE"` |
 | conséquences Produit, Conduit, Détruit | une précondition `\conduit` une postcondition, dans le type de l'actant |
 | la convolution créée, gardée | la **convolution réifiée** : `type call`, l'appel comme valeur typée du produit de ses actants et circonstants, rendue et rangée dans un journal |
 
@@ -247,7 +247,7 @@ ni une convolution imbriquée déjà achevée.
 
 Ce qui marche sans rien ajouter : les attributs, les fiches, les signatures
 (actants, circonstants, usage, contrôles), les étiquettes qui traversent un
-constructeur TclOO (`Service create ::HSE {nom:}"Service HSE"`), les chemins à
+constructeur TclOO (`Service create ::HSE {/nom}"Service HSE"`), les chemins à
 travers des produits imbriqués.
 
 **La réification de l'appel** est faite par le noyau depuis la v16z :

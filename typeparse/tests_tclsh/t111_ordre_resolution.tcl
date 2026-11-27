@@ -34,7 +34,7 @@ proc via_arg  {T x} {
     r {::f_$T $x}
 }
 set cas {
-  "même type"                  S          {[type cast S.i 5]}
+  "même type"                  S          {[type cast S/i 5]}
   "variante (int→S)"           S          {[type cast int 5]}
   "élargissement int→double"   double     {[type cast int 2]}
   "nominal→base"               double     {[type cast Celsius 3]}

@@ -14,7 +14,7 @@ foreach {U T} {
  double mm  mm double  mm px  int pair  pair int  pair pair
  double int  double int(s,32)  double int(s,64)  double int(u,8)  double double(32)  double(32) double
  num int  num double  num int(u,8)  num mm  double num  int num  string num
- temp temp.celsius  double temp.celsius  double temp
+ temp temp/celsius  double temp/celsius  double temp
  S int  S string  E3 E2  E2 E3
  list.int list.pair  list.pair list.int  list.double list.int  list(2).int list.int  list.int list(2).int
  point pt2  point point  var.int var.pair  var.int var.int
@@ -32,8 +32,8 @@ proc t {nom script} {
     puts [format "%-40s %s" $nom $r]
 }
 puts "== type eq : les types seuls"
-type convert temp.fahrenheit temp.celsius {{f} {expr {($f - 32) * 5 / 9.0}}}
-set {temp}a {celsius:}10.0; set {temp}b {celsius:}20.0; set {temp}c {fahrenheit:}10.0
+type convert temp/fahrenheit temp/celsius {{f} {expr {($f - 32) * 5 / 9.0}}}
+set {temp}a {/celsius}10.0; set {temp}b {/celsius}20.0; set {temp}c {/fahrenheit}10.0
 t "même variante, valeurs différentes"   {type eq $a $b}
 t "même valeur, variantes différentes"   {list [expr {$a eq $c}] [type eq $a $c]}
 t "nu et typé"                           {type eq 5 [type {int}5]}
@@ -49,7 +49,7 @@ t "num abc"                              {set {num}n abc}
 t "variantes"                            {type variant -of num}
 t "redéfinir num"                        {type def num {{int}i | {double}d}}
 t "oublier num"                          {type forget num}
-t "{double:}5"                           {set {num}n {double:}5; list $n [type get $n]}
+t "{/double}5"                           {set {num}n {/double}5; list $n [type get $n]}
 puts "== int -> double : exact, ou une erreur"
 t "5"                                    {set {double}x {int}5; set x}
 t "2^53"                                 {set {double}x {int}9007199254740992; set x}

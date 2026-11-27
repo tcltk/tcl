@@ -1,11 +1,11 @@
 même type
-    set:  5 S.i
-    cast: 5 S.i
-    arg:  5 S.i
+    set:  5 S/i
+    cast: 5 S/i
+    arg:  5 S/i
 variante (int→S)
-    set:  5 S.i
-    cast: 5 S.i
-    arg:  5 S.i
+    set:  5 S/i
+    cast: 5 S/i
+    arg:  5 S/i
 élargissement int→double
     set:  2.0 double
     cast: 2.0 double
@@ -15,9 +15,9 @@ nominal→base
     cast: 3.0 double
     arg:  3.0 double
 variante avant règle
-    set:  10.0 S2.c
-    cast: 10.0 S2.c
-    arg:  10.0 S2.c
+    set:  10.0 S2/c
+    cast: 10.0 S2/c
+    arg:  10.0 S2/c
 règle : explicite
     set:  ERREUR type mismatch: expected Fahrenheit but got Celsius (use an explicit cast)
     cast: 50.0 Fahrenheit

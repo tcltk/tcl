@@ -22,8 +22,8 @@ num            ⊇ mm             1
 double         ⊇ num            0
 int            ⊇ num            0
 string         ⊇ num            1
-temp           ⊇ temp.celsius   1
-double         ⊇ temp.celsius   1
+temp           ⊇ temp/celsius   1
+double         ⊇ temp/celsius   1
 double         ⊇ temp           1
 S              ⊇ int            0
 S              ⊇ string         0
@@ -50,14 +50,14 @@ nominal et sa base                       0
 les notes ne comptent pas                1
 addition d'unités                        -12.222222222222221 -2.2222222222222214
 == num
-num 5                                    5 num.int
-num 5.0                                  5.0 num.double
-num 0x10                                 16 num.int
+num 5                                    5 num/int
+num 5.0                                  5.0 num/double
+num 0x10                                 16 num/int
 num abc                                  ERREUR value "abc" matches no variant of num
 variantes                                int double
 redéfinir num                            ERREUR type "num" is already defined
 oublier num                              ERREUR type "num" is built in: it cannot be forgotten
-{double:}5                               5.0 num.double
+{/double}5                               5.0 num/double
 == int -> double : exact, ou une erreur
 5                                        5.0
 2^53                                     9007199254740992.0

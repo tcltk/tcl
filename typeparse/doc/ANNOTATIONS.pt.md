@@ -288,8 +288,8 @@ type def mz {"MZ"}             ;# um só literal: uma constante (assinatura de f
 ```tcl
 type def S {{int}i, {string}s}
 set {S}v {i}5
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# a variante escolhida pelo nome do tipo
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# a variante escolhida pelo nome do tipo
 ```
 
 **Produto** — um `struct`: campos com nome, ordenados, cada um do seu tipo.
@@ -532,7 +532,7 @@ Um produto de *n* campos constrói-se de quatro maneiras, sem adivinhar nada:
 |---|---|---|
 | posicional | `set {pt}a Jean 12` | exatamente *n* valores, pela ordem dos campos |
 | etiquetas de campo | `set {pt}a {age}12 {nom}Jean` | todos os valores etiquetados; ordem livre; os campos omitidos recebem o seu valor por omissão |
-| um só campo | `set {pt}a {pt.nom}Jean` | os outros campos recebem o seu valor por omissão |
+| um só campo | `set {pt}a {pt/nom}Jean` | os outros campos recebem o seu valor por omissão |
 | caminho + valores posicionais | `set {pt}a(age,nom) 12 Jean` | um valor por folha do caminho (ou por grupo, § 8.3) |
 
 Juntam-se **nenhum argumento** (`set {pt}a`, todos os campos com o valor por omissão) e **um produto do mesmo tipo** (cópia). Tudo o resto é um erro:
@@ -588,12 +588,12 @@ Cada valor tem a forma que a sua leitura devolveria; os três números só coinc
 Uma soma constrói-se com a sua variante em etiqueta, ou pelo nome da variante no tipo:
 
 ```tcl
-set {S}v {i}5                  ;# S.i
-set {S.s}w abc                 ;# S.s
+set {S}v {i}5                  ;# S/i
+set {S/s}w abc                 ;# S/s
 set {list.S}L {i}1 {s}a        ;# cada elemento mantém a sua variante
 ```
 
-Sem etiqueta, a variante é deduzida do valor, pela ordem das variantes: `set {S}u 5` dá `S.i`. Quando várias variantes têm a mesma forma (`{string}a, {string}b`), a primeira serve sempre: para escolher, etiquetar (`{b}y`).
+Sem etiqueta, a variante é deduzida do valor, pela ordem das variantes: `set {S}u 5` dá `S/i`. Quando várias variantes têm a mesma forma (`{string}a, {string}b`), a primeira serve sempre: para escolher, etiquetar (`{b}y`).
 
 Uma lista recebe os seus elementos um a um: `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Um só argumento é **um** elemento.
 

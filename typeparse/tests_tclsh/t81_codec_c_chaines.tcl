@@ -29,13 +29,13 @@ type def pp {{u16le}a; {u16le}b}
 type def corps {{pp}1, {string(raw,3)}2, {u32le}7}
 type def bloc {{u8}genre; {corps($genre)}corps; {u8}fin = 255}
 set {pp}p 5 6
-set {bloc}b1(genre,corps) 1 {1:}$p
-set {bloc}b2(genre,corps) 2 {2:}xyz
-set {bloc}b7(genre,corps) 7 {7:}99
+set {bloc}b1(genre,corps) 1 {/1}$p
+set {bloc}b2(genre,corps) 2 {/2}xyz
+set {bloc}b7(genre,corps) 7 {/7}99
 foreach b [list $b1 $b2 $b7] {essai "bloc [lindex $b 0]" bloc $b}
 type def corps2 {{u8}AA, {u16le}BB}
 type def bloc2 {{string(raw,2)}k; {corps2($k)}v}
-set {bloc2}c(k,v) BB {BB:}513
+set {bloc2}c(k,v) BB {/BB}513
 essai "balise txt" bloc2 $c
 set d [type binary decode bloc [type binary encode bloc $b1]]
 puts "variante relue : [type get $d(corps)] $d(corps.1.b)"

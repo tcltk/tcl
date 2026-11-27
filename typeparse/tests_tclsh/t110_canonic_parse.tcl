@@ -41,7 +41,7 @@ t "list d'un type d'espace"   {ar [type cast list.::g110::P {{1 2}}]}
 t "cases (-compact)"          {type canonic [type cast {-compact}list.double {1 2}]}
 
 puts "== sommes et unions"
-t "somme : la variante"       {ar [type cast S110.d 2]}
+t "somme : la variante"       {ar [type cast S110/d 2]}
 t "littéral"                  {ar [type cast opt110 none]}
 t "union : lue du contenu"    {ar [type cast num110 0x1F]}
 t "list.num110"               {ar [type cast list.num110 {1 2.0 0x10}]}

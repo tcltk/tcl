@@ -33,7 +33,7 @@ t "set _ {int}\$s"               {list [catch {set _ {int}$s} r] $r}
 t "set {int}i 5"                 {set {int}i 5; type get $i}
 t "nom calculé : déclaration"    {set nom compteur; set {int}$nom 5; type get $compteur}
 t "nom calculé : \[set nom\]"    {set nom c2; set {double}[set nom] 2; type get $c2}
-t "étiquettes"                   {set {pt}q {y:}4 {x:}3; list $q(x) $q(y)}
+t "étiquettes"                   {set {pt}q {/y}4 {/x}3; list $q(x) $q(y)}
 t "contrat"                      {set {int}k 1; list [catch {set k {int}$s} e] $e}
 
 puts "--- type {T}mot : le cast explicite"
@@ -78,9 +78,9 @@ proc listes {} {
     lset A 0 {double}2.5
     set r [lmap e $A {type get $e}]
     type def S {{int}i, {string}s}
-    set {list.S}L {i:}1
-    lset L 0 {s:}abc
-    lappend L {i:}7
+    set {list.S}L {/i}1
+    lset L 0 {/s}abc
+    lappend L {/i}7
     lappend r {*}[lmap e $L {type get $e}]
 }
 t "list.any, list.S"             {listes}

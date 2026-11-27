@@ -288,8 +288,8 @@ type def mz {"MZ"}             ;# één letterlijke waarde: een constante (besta
 ```tcl
 type def S {{int}i, {string}s}
 set {S}v {i}5
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# de variant gekozen via de naam van het type
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# de variant gekozen via de naam van het type
 ```
 
 **Product** — een `struct`: benoemde, geordende velden, elk met een eigen type.
@@ -532,7 +532,7 @@ Een product met *n* velden wordt op vier manieren opgebouwd, zonder iets te rade
 |---|---|---|
 | positioneel | `set {pt}a Jean 12` | precies *n* waarden, in de volgorde van de velden |
 | veldlabels | `set {pt}a {age}12 {nom}Jean` | alle waarden gelabeld; vrije volgorde; weggelaten velden krijgen hun standaardwaarde |
-| één veld | `set {pt}a {pt.nom}Jean` | de andere velden krijgen hun standaardwaarde |
+| één veld | `set {pt}a {pt/nom}Jean` | de andere velden krijgen hun standaardwaarde |
 | pad + positionele waarden | `set {pt}a(age,nom) 12 Jean` | één waarde per blad van het pad (of per groep, § 8.3) |
 
 Daarbij komen **geen argument** (`set {pt}a`, alle velden op hun standaardwaarde) en **een product van hetzelfde type** (kopie). Al het andere is een fout:
@@ -588,12 +588,12 @@ Elke waarde heeft de vorm die haar lezing zou geven; de drie aantallen vallen al
 Een som wordt opgebouwd met haar variant als label, of via de naam van de variant in het type:
 
 ```tcl
-set {S}v {i}5                  ;# S.i
-set {S.s}w abc                 ;# S.s
+set {S}v {i}5                  ;# S/i
+set {S/s}w abc                 ;# S/s
 set {list.S}L {i}1 {s}a        ;# elk element behoudt zijn variant
 ```
 
-Zonder label wordt de variant uit de waarde afgeleid, in de volgorde van de varianten: `set {S}u 5` geeft `S.i`. Als meerdere varianten dezelfde vorm hebben (`{string}a, {string}b`), past altijd de eerste: label om te kiezen (`{b}y`).
+Zonder label wordt de variant uit de waarde afgeleid, in de volgorde van de varianten: `set {S}u 5` geeft `S/i`. Als meerdere varianten dezelfde vorm hebben (`{string}a, {string}b`), past altijd de eerste: label om te kiezen (`{b}y`).
 
 Een lijst ontvangt haar elementen één voor één: `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Eén argument is **één** element.
 

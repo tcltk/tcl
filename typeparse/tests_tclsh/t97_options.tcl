@@ -69,7 +69,7 @@ t "défaut pas une variante" {proc dv {{"a","b"}-m ?= c} {}}
 t "info default"          {list [info default trier -index v] $v [info default trier -decreasing v] $v}
 t "type proc"             {dict get [type proc trier] args}
 t "{flag} hors procédure" {set {flag}f 1; type get $f}
-t "option et étiquette"   {proc oe {{flag}-v; {int}a; {int}b ?= 0} {list $v $a $b}; oe -v 1 {b:}5}
+t "option et étiquette"   {proc oe {{flag}-v; {int}a; {int}b ?= 0} {list $v $a $b}; oe -v 1 {/b}5}
 t "option et args"        {proc oa {{flag}-v; {list.int}args} {list $v $args}; oa -v 1 2 3}
 t "argument -5"           {proc on {{flag}-v; {int}a} {list $v $a}; on -5}
 t "valeur commençant par -" {on -- -x}

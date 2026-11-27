@@ -6,10 +6,10 @@ ok: variantes foreach
 ok: L(2) garde la balise
 ok: lindex L 2
 ok: union, sans balise
-ok: refus {i:}abc
-ok: refus Val.zz
-ok: set {Val.s}w 7
-ok: {Val}{Val.i}
+ok: refus {/i}abc
+ok: refus Val/zz
+ok: set {Val/s}w 7
+ok: {Val}{Val/i}
 ok: type get élément string
 ok: Q(0)
 ok: lindex Q 2 1

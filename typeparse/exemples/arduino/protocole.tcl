@@ -68,7 +68,7 @@ proc ard::xor {octets} {
 proc ard::trame {genre corps} {
     variable GENRES
     set code [dict get $GENRES $genre]
-    set {entete}e {genre:}$code
+    set {entete}e {/genre}$code
     set utile [type binary encode c_$genre $corps]
     set octets [type binary encode entete $e]$utile
     append octets [binary format cu [ard::xor [binary format cu $code]$utile]]
@@ -136,19 +136,19 @@ proc ard::demander {genre corps} {
 
 proc ard::pinMode {broche mode} {
     set m [dict get {INPUT 0 OUTPUT 1 INPUT_PULLUP 2} $mode]
-    set {c_mode}c {broche:}$broche {mode:}$m
+    set {c_mode}c {/broche}$broche {/mode}$m
     ard::demander mode $c
 }
 proc ard::digitalWrite {broche niveau} {
     set n [dict get {LOW 0 HIGH 1 0 0 1 1} $niveau]
-    set {c_ecrire}c {broche:}$broche {niveau:}$n
+    set {c_ecrire}c {/broche}$broche {/niveau}$n
     ard::demander ecrire $c
 }
 proc ard::analogRead {broche} {
-    set {c_lire}c {broche:}$broche
+    set {c_lire}c {/broche}$broche
     ard::demander lire $c
 }
 proc ard::analogWrite {broche rapport} {
-    set {c_pwm}c {broche:}$broche {rapport:}$rapport
+    set {c_pwm}c {/broche}$broche {/rapport}$rapport
     ard::demander pwm $c
 }

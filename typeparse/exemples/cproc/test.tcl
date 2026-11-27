@@ -51,7 +51,7 @@ puts "salut        : [salut monde] [catch {salut {}} m] $m"
 puts "miroir       : [miroir {{1 2} {3 4}}] [type get [miroir {{1 2} {3 4}}]]"
 puts "erreur Tcl   : [catch {decale {1 x}} m] $m"
 puts "args         : [catch {decale} m] $m"
-puts "étiquette    : [decale {dx:}5 {p:}{0 0}]"
+puts "étiquette    : [decale {/dx}5 {/p}{0 0}]"
 namespace eval g {
     type def v {{double}a; {double}b}
     cproc {v}::g::somme {{v}u; {v}w} { return (v){u.a + w.a, u.b + w.b}; }

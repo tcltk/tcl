@@ -39,42 +39,42 @@ proc lire_png {octets} {
 	switch -- $nom {
 	    IHDR {
 		binary scan $data IuIucucucucucu w h dep ct comp fil inter
-		set {ihdr}e {width:}$w {height:}$h {depth:}$dep {colortype:}$ct {compression:}$comp {filter:}$fil {interlace:}$inter
-		lappend blocs [set {bloc}b {IHDR:}$e]
+		set {ihdr}e {/width}$w {/height}$h {/depth}$dep {/colortype}$ct {/compression}$comp {/filter}$fil {/interlace}$inter
+		lappend blocs [set {bloc}b {/IHDR}$e]
 	    }
 	    tEXt {
 		lassign [split $data \x00] mot txt
-		set {texte}t {keyword:}$mot {text:}$txt
-		lappend blocs [set {bloc}b {tEXt:}$t]
+		set {texte}t {/keyword}$mot {/text}$txt
+		lappend blocs [set {bloc}b {/tEXt}$t]
 	    }
 	    IDAT {
-		set {donnees}d {hex:}[binary encode hex $data]
-		lappend blocs [set {bloc}b {IDAT:}$d]
+		set {donnees}d {/hex}[binary encode hex $data]
+		lappend blocs [set {bloc}b {/IDAT}$d]
 	    }
 	    IEND {
-		lappend blocs [set {bloc}b {IEND:}{}]
+		lappend blocs [set {bloc}b {/IEND}{}]
 	    }
 	    default {
-		set {autre}a {name:}$nom {hex:}[binary encode hex $data]
-		lappend blocs [set {bloc}b {inconnu:}$a]
+		set {autre}a {/name}$nom {/hex}[binary encode hex $data]
+		lappend blocs [set {bloc}b {/inconnu}$a]
 	    }
 	}
 	incr pos [expr {12 + $len}]
     }
-    set {png}p {signature:}$sig {chunks:}$blocs
+    set {png}p {/signature}$sig {/chunks}$blocs
     return $p
 }
 
 # --- description : on aiguille sur le TYPE de chaque bloc --------------------
 proc decrire {b} {
     switch -- [type get $b] {
-	bloc.IHDR    {format "IHDR   image %d x %d, %d bits, type de couleur %d" \
+	bloc/IHDR    {format "IHDR   image %d x %d, %d bits, type de couleur %d" \
 			  $b(IHDR.width) $b(IHDR.height) $b(IHDR.depth) $b(IHDR.colortype)}
-	bloc.tEXt    {format "tEXt   %s = %s" $b(tEXt.keyword) $b(tEXt.text)}
-	bloc.IDAT    {format "IDAT   %d octets de pixels compressés" \
+	bloc/tEXt    {format "tEXt   %s = %s" $b(tEXt.keyword) $b(tEXt.text)}
+	bloc/IDAT    {format "IDAT   %d octets de pixels compressés" \
 			  [expr {[string length $b(IDAT.hex)] / 2}]}
-	bloc.IEND    {format "IEND   fin de l'image"}
-	bloc.inconnu {format "????   bloc %s ignoré" $b(inconnu.name)}
+	bloc/IEND    {format "IEND   fin de l'image"}
+	bloc/inconnu {format "????   bloc %s ignoré" $b(inconnu.name)}
     }
 }
 
@@ -86,5 +86,5 @@ foreach b $image(chunks) {
 
 # --- ce que le système de types garantit --------------------------------------
 puts "variantes : [lmap b $image(chunks) {type get $b}]"
-if {[catch {set {bloc}x {IHDR:}{4 2 8}} m]} {puts "IHDR incomplet : $m"}
-if {[catch {set {bloc}y {inconnu:}{seulement-un-champ}} m]} {puts "bloc inconnu mal formé : $m"}
+if {[catch {set {bloc}x {/IHDR}{4 2 8}} m]} {puts "IHDR incomplet : $m"}
+if {[catch {set {bloc}y {/inconnu}{seulement-un-champ}} m]} {puts "bloc inconnu mal formé : $m"}

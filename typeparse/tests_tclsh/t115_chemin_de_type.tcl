@@ -1,6 +1,6 @@
 # t115 (v17i) : T(chemin), le type d'une partie, comme $v(chemin) en est la
 #   valeur : list <=> tableau (indice, end, *), dict et produit <=> struct
-#   (clé, champ) ; T(a.b) descend ; S.v dans un chemin : le type de la
+#   (clé, champ) ; T(a.b) descend ; S/v dans un chemin : le type de la
 #   variante. S(v) seul garde son sens (la variante choisie).
 proc t {s} {puts [format "%-62s %s" $s [expr {[catch {uplevel 1 $s} r] ? "ERREUR $r" : $r}]]}
 type def Emplacement_propriétés {{string}code; {int}stock ?= 0; {int}max ?= 10}

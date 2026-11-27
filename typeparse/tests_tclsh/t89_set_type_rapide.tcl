@@ -29,7 +29,7 @@ essai "entier refusé" {p4}
 proc p5 {} { set {point}A 1.0 }
 essai "arité" {p5}
 
-proc p6 {} { set {point}A {x:}1.0 {y:}2.0; set A }
+proc p6 {} { set {point}A {/x}1.0 {/y}2.0; set A }
 essai "champs nommés" {p6}
 
 proc p7 {} { set p [set {point}P 1 2]; set {seg}S $P $P; list $S [type get $S] }

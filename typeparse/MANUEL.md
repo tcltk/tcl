@@ -43,9 +43,9 @@ défaut peut être un littéral, `[script]` (calculé à chaque construction) ou
 * **Ordre.** Un produit a des champs ordonnés ; il se construit aussi en
   **positionnel** (`set {pt}b Jean 12`, comme l'initialisation d'une struct
   C). Un dict n'a pas de forme positionnelle.
-* **Un seul champ.** Un produit accepte le préfixe `{T.champ}` : 
-  `set {pt}c {pt.nom}Jean` fixe `nom`, les autres champs prennent leur
-  défaut (`Jean 0`). C'est la même écriture que `{Val.i}5` pour une somme.
+* **Un seul champ.** Un produit accepte le préfixe `{T/champ}` : 
+  `set {pt}c {pt/nom}Jean` fixe `nom`, les autres champs prennent leur
+  défaut (`Jean 0`). C'est la même écriture que `{Val/i}5` pour une somme.
 * **Types des champs.** Chaque champ d'un produit a son propre type
   (`{string}nom; {int}age`) ; un `dict(...)` en a un seul pour toutes les
   valeurs (`.string`).
@@ -59,15 +59,15 @@ champs. Un produit se construit maintenant de trois façons, sans rien deviner :
 
 * **positionnel** : autant de valeurs que de champs, dans l'ordre
   (`set {pt}b Jean 12`) ;
-* **étiquettes de champ** : `set {pt}a {age}12 {nom}Jean`. L'étiquette est
-  l'annotation la plus récente de chaque argument ; elle est lue dans le
-  contexte du produit, donc un nom de champ passe avant un type global du même
-  nom (`type def age int` ne change rien), comme le nom d'une variante pour
-  une somme. Ordre libre, les champs omis prennent leur défaut. **Tout ou
-  rien** : mélanger étiquettes et valeurs positionnelles est une erreur
-  (`can't mix values named by a field annotation …`), une étiquette inconnue
-  aussi (`unknown field "taille" in pt`). Une valeur qui porte son étiquette
-  en variable compte (`set v {age}12; set {pt}a {nom}Jean $v`) ;
+* **étiquettes de champ** : `set {pt}a {/age}12 {/nom}Jean`. L'étiquette
+  s'écrit `{/nom}` (v18a ; avant : `{nom:}`, refusé désormais avec un message
+  qui donne la nouvelle écriture). La barre la distingue de tout type : un
+  nom de champ ou de variante peut aussi être un nom de type. Ordre libre, les
+  champs omis prennent leur défaut. **Tout ou rien** : mélanger étiquettes et
+  valeurs positionnelles est une erreur (`can't mix values named by a field
+  label ({/field}value) …`), une étiquette inconnue aussi
+  (`unknown field "taille" in pt`). Une valeur qui porte son étiquette en
+  variable compte (`set v {/age}12; set {pt}a {/nom}Jean $v`) ;
 * **chemin** : `set {pt}a(age,nom) 12 Jean`, utile quand les noms sont
   calculés ou les valeurs entre accolades.
 
@@ -253,7 +253,7 @@ CET INSTANT : le résultat ne change plus ensuite.
   instantanés du même type ont le même type.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b:}A
+    set {mix}s1 {/b}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# arbre dont les valeurs sont des liens
@@ -270,7 +270,7 @@ pas la même chose.
 | | `union` du C | somme |
 |---|---|---|
 | ce qu'elle contient | les **mêmes octets**, lus de plusieurs façons | **une seule** variante, qui porte son nom |
-| qui sait laquelle est valide | personne : le programmeur doit le savoir | la valeur elle-même (`type get` donne `S.x`) |
+| qui sait laquelle est valide | personne : le programmeur doit le savoir | la valeur elle-même (`type get` donne `S/x`) |
 | lire la mauvaise variante | permis, on lit des octets quelconques | impossible : on accède à la variante qu'on a |
 | taille dans un fichier | celle de la plus grande vue | celle de la variante choisie |
 | choix de la variante | aucun, il n'y en a pas | par un champ déjà lu (`S($tag)`) ou par son nom (`S(x)`) |
@@ -278,7 +278,7 @@ pas la même chose.
 Conséquences :
 * Il n'y a **pas d'`union` du C dans ce modèle**, volontairement : on garde les garde-fous.
   Une somme ne peut pas être lue « de travers ». Sa variante est une **métadonnée**, comme son
-  type (v17z) : la valeur est la charge seule, `type get` donne `S.x`, et rien n'est deviné
+  type (v17z) : la valeur est la charge seule, `type get` donne `S/x`, et rien n'est deviné
   (voir ci-dessous). L'**union** `{A}x | {B}y` n'est pas non plus une union C : elle accepte une
   valeur de l'une des formes, ses alternatives doivent être disjointes, et la valeur montre
   elle-même laquelle elle est.
@@ -292,19 +292,19 @@ Conséquences :
 ### La variante, une métadonnée (v17z)
 
     type def S {{int}i, {string}s}
-    set {S}v {s:}5            ;# la valeur est 5, type get $v donne S.s
+    set {S}v {/s}5            ;# la valeur est 5, type get $v donne S/s
     expr {$v * 2}             ;# 10 : une somme se lit comme sa variante
-    set {S}w abc              ;# une seule variante l'accepte : S.s
-    set {S}w 5                ;# erreur : fits variants i and s of S: write {i:}5
+    set {S}w abc              ;# une seule variante l'accepte : S/s
+    set {S}w 5                ;# erreur : fits variants i and s of S: write {/i}5
 
 * **La valeur est la charge.** La variante suit la valeur comme son type (copies, arguments,
   retours, éléments de liste, champs) ; `$v(i)` lit la charge en vérifiant la variante.
 * **Rien n'est deviné.** Une valeur nue n'est déduite que si une seule variante l'accepte ; un
-  littéral (`"auto"`) se reconnaît toujours. Sinon, une erreur montre l'étiquette (`{i:}5`) ou
-  le chemin (`set v(i) 5`). Rien n'est collant non plus : `set v 8` sur un `S.s` redéduit.
+  littéral (`"auto"`) se reconnaît toujours. Sinon, une erreur montre l'étiquette (`{/i}5`) ou
+  le chemin (`set v(i) 5`). Rien n'est collant non plus : `set v 8` sur un `S/s` redéduit.
   (La règle « la plus stricte gagne » reste celle des unions, donc de `num`.)
 * **Égalité en valeur, identité par les types.** `eq`, `==`, les clés de dict comparent la
-  valeur : `{i:}5` et `{s:}5` sont égaux. `type eq $a $b` compare les types seuls, variante
+  valeur : `{/i}5` et `{/s}5` sont égaux. `type eq $a $b` compare les types seuls, variante
   comprise (ni la valeur ni les notes) :
 
       if {![type eq $a $b]} {set b [type cast [type get $a] $b]}   ;# fahrenheit -> celsius
@@ -312,15 +312,15 @@ Conséquences :
 
 * **Par la chaîne.** Hors de l'interpréteur (fichier, socket, C), la variante se perd comme le
   type ; relue, une valeur ambiguë est une erreur. `type canonic` écrit la variante quand la
-  chaîne ne la dit pas (`{S.s}5`, et `{s:}5` pour un élément d'une structure :
-  `{list.S}{{{s:}5} 6 x}`), `type parse` la relit.
+  chaîne ne la dit pas (`{S/s}5`, et `{/s}5` pour un élément d'une structure :
+  `{list.S}{{{/s}5} 6 x}`), `type parse` la relit.
 * **Variantes et littéraux.** Une variante nommée porte une charge et s'atteint par un chemin ;
   un littéral est sa propre valeur (`type get` d'un littéral donne le type seul, `M`).
 
 | commande | rend |
 |---|---|
 | `type variant $v` | la variante nommée de la valeur ; vide pour un littéral |
-| `type variant $v NAME` | la même charge sous la variante NAME (réétiqueter ; convertir, c'est `type cast S.NAME $v`) |
+| `type variant $v NAME` | la même charge sous la variante NAME (réétiqueter ; convertir, c'est `type cast S/NAME $v`) |
 | `type variant -of T ?NAME?` | les variantes nommées de T, ou le type de la charge de NAME |
 | `type literal -of T` | les littéraux de T (les valeurs permises d'une énumération) |
 | `type is {sum?}T`, `{enum?}T` | une somme ; une énumération (que des littéraux). Pour une valeur : `type is {sum?}[type get $v]` |
@@ -328,17 +328,50 @@ Conséquences :
 * **Limite** : une somme placée directement dans la charge d'une autre (`opt(S)`) ne garde que
   la variante extérieure ; l'intérieure est redéduite à la lecture.
 
+### Membres : `{/nom}` et `X/m` (v18a)
+
+Un champ d'un produit et une variante d'une somme sont des **membres** de leur type. Ils
+s'écrivent tous avec la barre `/`, qu'on parle d'une valeur ou d'un type :
+
+| écriture | sens |
+|---|---|
+| `{/nom}valeur` | étiquette : la valeur va au champ ou à la variante `nom` du constructeur qui la lit |
+| `P/f` | le type du champ `f` du produit `P` (`type def point/x` → `double`) |
+| `S/v` | la variante `v` de la somme `S` : `{temp/celsius}4`, `type cast temp/fahrenheit $t`, `type get` |
+| `{P/f}valeur` | étiquette qualifiée, vérifiée contre `P` (`set {pt}a {pt/nom}Jean`) |
+| `x is S/v` | dans `expr` : la variable `x` est une valeur de `S`, de variante `v` |
+
+    type def temp {{double}celsius, {double}fahrenheit}
+    set {temp}t {/celsius}50        ;# type get $t -> temp/celsius
+    set {temp/celsius}u 4           ;# la même chose, par le type
+    expr {t is temp/celsius}        ;# 1
+
+* **Pourquoi la barre.** `.` compose les types (`list.int`) et `:` sépare les espaces de noms
+  (`::geo::point`) : ni l'un ni l'autre ne pouvait aussi désigner un membre sans risque de
+  collision. `/` n'entre dans aucun nom de type ; un membre ne se confond donc jamais avec un
+  type, et un nom de variante peut être aussi un nom de type (`{{int}int, {string}string}` :
+  `{/int}5`, `V/string`).
+* **Une seule écriture pour l'étiquette et le type** : `set {temp}t {/celsius}50` et
+  `set {temp/celsius}t 50` disent la même chose, l'une du côté de la valeur, l'autre du côté
+  du type.
+* **Anciennes écritures refusées**, avec la nouvelle dans le message : `{nom:}` donne
+  `label {nom:} is now written {/nom}`, `S.v` donne
+  `a variant of a type is now written with "/": S/v`.
+* Les **chemins** ne changent pas : `$p(x)`, `set {rect}R(A.x, A.y) …` (le point y imbrique).
+* À venir : enchaîner les membres (`mesure/some/celsius`, `list.temp/celsius`), quand une
+  variante deviendra un type à part entière.
+
 ### `type include`, `num`, `inexact` (v17z)
 
 `type include U T` : toute valeur de T entre dans U sans cast, sans vérification qui puisse
 échouer, et reste égale à elle-même (au sens de `==`). La base inclut ses raffinements, ses
 nominaux et ses prédicats (`int` ⊇ `int(u,8)`, `double` ⊇ `mm`, `int` ⊇ `pair`), jamais
 l'inverse ; deux nominaux sans lien ne s'incluent pas ; une somme inclut ses variantes
-(`type include temp temp.celsius`) ; les listes et dicts sont covariants, les liens `var.T`
+(`type include temp temp/celsius`) ; les listes et dicts sont covariants, les liens `var.T`
 invariants ; `double` n'inclut que les entiers exacts (`int(s,32)` oui, `int` non).
 
-`num` est intégré : une union de ses représentations, `num.int` et `num.double`, lue comme
-`expr` lit un nombre (`{num}5` → `num.int`, `{num}0x10` → 16, `{num}5.0` → `num.double`).
+`num` est intégré : une union de ses représentations, `num/int` et `num/double`, lue comme
+`expr` lit un nombre (`{num}5` → `num/int`, `{num}0x10` → 16, `{num}5.0` → `num/double`).
 
 Le passage d'un entier typé en `double` est **exact, ou une erreur** :
 `set {double}x {int}9007199254740993` est refusé (2^53 + 1 n'a pas de double). L'arrondi se
@@ -490,7 +523,7 @@ type binary decode {R(tp)} $octets
 ```
 
 `U(tp)` est un type d'une seule variante : sa taille est connue (`type binary {sizeof?}`),
-la valeur lue est `U(tp).tp` et il n'y a rien à deviner, même si plusieurs variantes
+la valeur lue est `U(tp)/tp` et il n'y a rien à deviner, même si plusieurs variantes
 ont la même forme (ce qui rendait la valeur ambiguë avant). `U($champ)`, lui, garde son
 sens : variante choisie par un champ déjà lu. Si `$v` est un paramètre lié du type, c'est
 le premier cas qui s'applique. Exemple : `exemples/tcl_obj.tcl` (`Tcl_ObjAs(twoPtrValue)`).

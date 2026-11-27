@@ -10,7 +10,7 @@
 #   à la construction du document, pas au rendu.
 #
 #   N'emploie que des formes communes à la v16k et à la v16l : constructeurs
-#   positionnels, chemins, variantes nommées par le type (`{segment.lien}`).
+#   positionnels, chemins, variantes nommées par le type (`{segment/lien}`).
 
 namespace eval te {
     variable styles {}		;# nom -> style (valeur typée)
@@ -96,7 +96,7 @@ proc te::styles {table} {
 
 proc te::seg {x} {
     if {[type get $x] eq ""} {
-	set {segment}s {segment.texte}$x
+	set {segment}s {segment/texte}$x
 	return $s
     }
     set {segment}s $x
@@ -111,29 +111,29 @@ proc te::segs {liste} {
 }
 
 proc te::m {style args} {
-    set {segment}s {segment.marque}[list $style [te::segs $args]]
+    set {segment}s {segment/marque}[list $style [te::segs $args]]
     return $s
 }
 proc te::lien {cible args} {
-    set {segment}s {segment.lien}[list $cible [te::segs $args]]
+    set {segment}s {segment/lien}[list $cible [te::segs $args]]
     return $s
 }
 
 proc te::para {args} {
-    set {bloc}b {bloc.para}[te::segs $args]
+    set {bloc}b {bloc/para}[te::segs $args]
     return $b
 }
 proc te::titre {n args} {
-    set {bloc}b {bloc.titre}[list $n [te::segs $args]]
+    set {bloc}b {bloc/titre}[list $n [te::segs $args]]
     return $b
 }
 proc te::puces {args} {
     set items [lmap item $args {te::segs $item}]
-    set {bloc}b {bloc.puces}$items
+    set {bloc}b {bloc/puces}$items
     return $b
 }
 proc te::code {texte} {
-    set {bloc}b {bloc.code}$texte
+    set {bloc}b {bloc/code}$texte
     return $b
 }
 proc te::document {args} {
@@ -251,7 +251,7 @@ proc te::Balise {interieur} {
     if {$notes eq "" && [dict exists $styles $nom]} {
 	set notes style=$nom			;# [gras -- …]
 	set nom marque
-    } elseif {[catch {type def segment.$nom}]} {
+    } elseif {[catch {type def segment/$nom}]} {
 	# type def S.v rend la définition d'une variante : ici, elle n'existe pas
 	return -code error -errorcode {TE GABARIT} "unknown tag \"$nom\":\
 	    must be a variant of segment or a style ([join [dict keys $styles] {, }])"
@@ -317,16 +317,16 @@ proc te::Ranger {cible args} {
 
 # Blocs écrits en gabarit : te::p, te::h, te::ul (un gabarit par puce).
 proc te::p {gabarit} {
-    set {bloc}b {bloc.para}[te::texte [string trim $gabarit]]
+    set {bloc}b {bloc/para}[te::texte [string trim $gabarit]]
     return $b
 }
 proc te::h {niveau gabarit} {
-    set {bloc}b {bloc.titre}[list $niveau [te::texte [string trim $gabarit]]]
+    set {bloc}b {bloc/titre}[list $niveau [te::texte [string trim $gabarit]]]
     return $b
 }
 proc te::ul {args} {
     set items [lmap g $args {te::texte [string trim $g]}]
-    set {bloc}b {bloc.puces}$items
+    set {bloc}b {bloc/puces}$items
     return $b
 }
 
@@ -338,8 +338,8 @@ proc te::ul {args} {
 # des valeurs typées de la TIP 764, T@notes : le nom canonique de la variante
 # du nœud, puis ses attributs comme notes.
 #
-#   bloc.para   bloc.puces   bloc.code   bloc.titre@niveau=2
-#   segment.marque@style=gras   segment.lien@cible="https://tcl.tk"
+#   bloc/para   bloc/puces   bloc/code   bloc/titre@niveau=2
+#   segment/marque@style=gras   segment/lien@cible="https://tcl.tk"
 #
 # Les notes sont un ensemble de chemins :
 #   ,          sépare les notes (l'ordre ne compte pas)
@@ -490,7 +490,7 @@ proc te::Jeton {texte iVar} {
     return [string range $texte {*}$r]
 }
 
-# te::Tag bloc.titre niveau 2  ->  bloc.titre@niveau=2
+# te::Tag bloc/titre niveau 2  ->  bloc/titre@niveau=2
 # Les clés peuvent être des chemins : te::Tag aspect police.taille 10
 proc te::Tag {T args} {
     if {[llength $args] == 0} {
@@ -507,7 +507,7 @@ proc te::Tag {T args} {
 # document (sel, un tag de l'application). Erreur si c'est un tag du
 # document mal formé.
 proc te::Tete {tag} {
-    if {![regexp {^(bloc|segment)\.([a-z]+)(?:@(.*))?$} $tag -> T sorte notes]} {
+    if {![regexp {^(bloc|segment)/([a-z]+)(?:@(.*))?$} $tag -> T sorte notes]} {
 	return {}
     }
     set attributs {bloc {para {} titre niveau puces {} code {}}
@@ -530,9 +530,9 @@ proc te::Tete {tag} {
 # Rendu dans un widget text
 # ------------------------------------------------------------------
 #
-# Chaque bloc est couvert par le tag de sa variante (bloc.para, bloc.titre@2…),
-# chaque passage marqué par segment.marque@style, chaque lien par
-# segment.lien@cible. Les blocs sont séparés par une ligne vide sans tag.
+# Chaque bloc est couvert par le tag de sa variante (bloc/para, bloc/titre@2…),
+# chaque passage marqué par segment/marque@style, chaque lien par
+# segment/lien@cible. Les blocs sont séparés par une ligne vide sans tag.
 #
 # Ces tags disent ce qu'est le texte, pas son apparence : ils ne sont pas
 # configurés. Tk ne cumule pas les polices de deux tags (la police du tag de
@@ -624,15 +624,15 @@ proc te::rendre {w doc {commandeLien {}}} {
     te::configurer $w
     foreach b $doc {
 	switch -- [namespace tail [type get $b]] {
-	    bloc.para {
-		te::Segments $w $b(para) [list [te::Tag bloc.para]] $commandeLien
+	    bloc/para {
+		te::Segments $w $b(para) [list [te::Tag bloc/para]] $commandeLien
 	    }
-	    bloc.titre {
+	    bloc/titre {
 		te::Segments $w $b(titre.contenu) \
-			[list [te::Tag bloc.titre niveau $b(titre.niveau)]] $commandeLien
+			[list [te::Tag bloc/titre niveau $b(titre.niveau)]] $commandeLien
 	    }
-	    bloc.puces {
-		set tag [te::Tag bloc.puces]
+	    bloc/puces {
+		set tag [te::Tag bloc/puces]
 		set premier 1
 		foreach item $b(puces) {
 		    set tags [list $tag [te::Aspect $w [list $tag]]]
@@ -644,8 +644,8 @@ proc te::rendre {w doc {commandeLien {}}} {
 		    te::Segments $w $item [list $tag] $commandeLien
 		}
 	    }
-	    bloc.code {
-		set tags [list [te::Tag bloc.code]]
+	    bloc/code {
+		set tags [list [te::Tag bloc/code]]
 		$w insert end $b(code) [linsert $tags end [te::Aspect $w $tags]]
 	    }
 	}
@@ -656,16 +656,16 @@ proc te::rendre {w doc {commandeLien {}}} {
 proc te::Segments {w segments tags commandeLien} {
     foreach s $segments {
 	switch -- [namespace tail [type get $s]] {
-	    segment.texte {
+	    segment/texte {
 		$w insert end $s(texte) [linsert $tags end [te::Aspect $w $tags]]
 	    }
-	    segment.marque {
+	    segment/marque {
 		te::Segments $w $s(marque.contenu) \
-			[linsert $tags end [te::Tag segment.marque style $s(marque.style)]] \
+			[linsert $tags end [te::Tag segment/marque style $s(marque.style)]] \
 			$commandeLien
 	    }
-	    segment.lien {
-		set tag [te::Tag segment.lien cible $s(lien.cible)]
+	    segment/lien {
+		set tag [te::Tag segment/lien cible $s(lien.cible)]
 		if {$commandeLien ne ""} {
 		    $w tag bind $tag <1> [list {*}$commandeLien $s(lien.cible)]
 		}
@@ -681,7 +681,7 @@ proc te::Segments {w segments tags commandeLien} {
 # ------------------------------------------------------------------
 #
 # « $w dump » rend une suite plate de textes et de bascules de tags. te::lire
-# en refait les plages, ne garde que les tags du document (bloc.…, segment.…),
+# en refait les plages, ne garde que les tags du document (bloc.…, segment/…),
 # puis :
 #   - les blocs sont les plages de para, titre, puces et code ; le texte hors
 #     de tout bloc (tapé par l'utilisateur) devient des paragraphes ;

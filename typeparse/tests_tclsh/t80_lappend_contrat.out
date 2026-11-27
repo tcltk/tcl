@@ -5,7 +5,7 @@ refus 2 : 1 point needs 2 values but got 3
 plusieurs : {0.0 0.0} {1.0 1.0} {2.0 2.0} {3.0 3.0} 4
 défaut absent : 1 pdef needs 2 values but got 1 ; D={1.0 2.0}
 compacte : {{0.5 1.5} {2.5 3.5} {4.5 5.5}} 1 1 {expected floating-point number but got "x"} {{0.5 1.5} {2.5 3.5} {4.5 5.5}}
-somme : 2.0 carré forme.cote forme.nom
+somme : 2.0 carré forme/cote forme/nom
 list.any : int string
 list(2) : 1 list(2)<point> needs exactly 2 elements but got 3
 pendant foreach : 4 {{0.0 0.0} {1.0 1.0} {9.0 9.0} {9.0 9.0}}

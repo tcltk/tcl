@@ -1,5 +1,5 @@
 # t95 : v16o. La variante d'une somme dont le type est un produit se construit
-# par ses champs : étiquettes (set {S.v}x {f:}a {g:}b), positionnel (set {S.v}x a b),
+# par ses champs : étiquettes (set {S.v}x {/f}a {/g}b), positionnel (set {S.v}x a b),
 # ou chemin à travers la somme (set {S}x(v.(f,g)) a b, calculable). type def NOM,
 # sans définition, rend la définition (de S, d'une variante S.v, d'un champ P.f).
 proc t {label script} {
@@ -10,17 +10,17 @@ type def seg {
     {{string}cible; {list.seg}contenu}lien,
     {{string}style; {list.seg}contenu ?= {}}marque
 }
-set c [list [type {seg.texte}abc]]
+set c [list [type {seg/texte}abc]]
 
 puts "--- étiquettes et positionnel"
-t "étiquettes"                   {set {seg.lien}s {cible:}u {contenu:}$c; list [type get $s] $s}
-t "ordre libre"                  {set {seg.lien}s {contenu:}$c {cible:}u; set s(lien.cible)}
-t "positionnel"                  {set {seg.lien}s u $c; list [type get $s] $s}
-t "un seul argument (la liste)"  {set {seg.lien}s [list u $c]; type get $s}
-t "défaut"                       {set {seg.marque}s {style:}gras; list [type get $s] $s}
-t "champ inconnu"                {set {seg.lien}s {href:}u {contenu:}$c}
-t "champ manquant"               {set {seg.lien}s {contenu:}$c}
-t "mélange"                      {set {seg.lien}s {cible:}u $c}
+t "étiquettes"                   {set {seg/lien}s {/cible}u {/contenu}$c; list [type get $s] $s}
+t "ordre libre"                  {set {seg/lien}s {/contenu}$c {/cible}u; set s(lien.cible)}
+t "positionnel"                  {set {seg/lien}s u $c; list [type get $s] $s}
+t "un seul argument (la liste)"  {set {seg/lien}s [list u $c]; type get $s}
+t "défaut"                       {set {seg/marque}s {/style}gras; list [type get $s] $s}
+t "champ inconnu"                {set {seg/lien}s {/href}u {/contenu}$c}
+t "champ manquant"               {set {seg/lien}s {/contenu}$c}
+t "mélange"                      {set {seg/lien}s {/cible}u $c}
 
 puts "--- chemin à travers la somme"
 t "lien.(cible,contenu)"         {set {seg}s(lien.(cible,contenu)) u $c; list [type get $s] $s}
@@ -42,11 +42,11 @@ puts "--- type def NOM : la définition"
 type def pt {{double}x ?= 0; {double}y}
 type def E {{int}code, {"ok","ko"}etat}
 type def D {dict(x, y?, z?=0).int}
-foreach n {seg seg.lien seg.texte pt pt.x style E E.etat D list(3).int int} {
+foreach n {seg seg/lien seg/texte pt pt/x style E E/etat D list(3).int int} {
     t "type def $n" [list type def $n]
 }
-t "variante inconnue"            {type def seg.zz}
-t "champ inconnu"                {type def pt.zz}
+t "variante inconnue"            {type def seg/zz}
+t "champ inconnu"                {type def pt/zz}
 t "type inconnu"                 {type def zz}
 foreach n {pt style E D} {
     set d [type def $n]

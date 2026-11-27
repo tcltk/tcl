@@ -8,7 +8,7 @@ type get [type cast Liste(*.propriétés.max) 4]                 int
 type def C {dict.int}; type get [type cast C(qqch) 4]          int
 type def K {dict(a, b).int}; list [type get [type cast K(a) 1]] [catch {type cast K(c) 1} m] $m int 1 {K has no key "c"}
 type def S {{int}i, {Emplacement}e}; type def P {{S}s}; type get [type cast P(s.e.référence) X] Emplacement_ref
-type get [type cast S(i) 5]                                    S(i).i
+type get [type cast S(i) 5]                                    S(i)/i
 type cast Emplacement(zz) 1                                    ERREUR Emplacement has no field "zz"
 type cast Emplacement(propriétés.stock.x) 1                    ERREUR int has no parts: "x" goes too far
 type cast Liste(a) 1                                           ERREUR Liste is a list: a type path names an element by an index, end or *, not "a"

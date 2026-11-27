@@ -20,7 +20,7 @@ puts "list.double: [montre [type cast list.double $p]]"
 # v17a : les doubles du point sont normalisés (3.0 4.0) : ils ne se lisent plus en int
 puts "list(2).int: [expr {[catch {type cast list(2).int $p} m] ? "refus : $m" : [montre $m]}]"
 puts "dict.any   : [type get [dict get [type cast dict.any $C] centre]]"
-set {S}s {p:}{3 4};  puts "somme      : [montre [type cast list $s]]"
+set {S}s {/p}{3 4};  puts "somme      : [montre [type cast list $s]]"
 puts "poly       : [montre [type cast list.point $P]]"
 puts "poly nu    : [montre [type cast list $P]]"
 puts "chaîne     : [string equal [type cast list $p] $p]"

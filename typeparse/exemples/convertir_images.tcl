@@ -39,29 +39,29 @@ proc png_lire {octets} {
 	switch -- $nom {
 	    IHDR {
 		binary scan $data IuIucucucucucu w h dep ct comp fil inter
-		set {ihdr}e {width:}$w {height:}$h {depth:}$dep {colortype:}$ct {compression:}$comp {filter:}$fil {interlace:}$inter
-		lappend blocs [set {bloc}b {IHDR:}$e]
+		set {ihdr}e {/width}$w {/height}$h {/depth}$dep {/colortype}$ct {/compression}$comp {/filter}$fil {/interlace}$inter
+		lappend blocs [set {bloc}b {/IHDR}$e]
 	    }
 	    tEXt {
 		lassign [split $data \x00] mot txt
-		set {texte}t {keyword:}$mot {text:}$txt
-		lappend blocs [set {bloc}b {tEXt:}$t]
+		set {texte}t {/keyword}$mot {/text}$txt
+		lappend blocs [set {bloc}b {/tEXt}$t]
 	    }
 	    IDAT {
-		set {donnees}d {hex:}[binary encode hex $data]
-		lappend blocs [set {bloc}b {IDAT:}$d]
+		set {donnees}d {/hex}[binary encode hex $data]
+		lappend blocs [set {bloc}b {/IDAT}$d]
 	    }
 	    IEND {
-		lappend blocs [set {bloc}b {IEND:}{}]
+		lappend blocs [set {bloc}b {/IEND}{}]
 	    }
 	    default {
-		set {autre}a {name:}$nom {hex:}[binary encode hex $data]
-		lappend blocs [set {bloc}b {inconnu:}$a]
+		set {autre}a {/name}$nom {/hex}[binary encode hex $data]
+		lappend blocs [set {bloc}b {/inconnu}$a]
 	    }
 	}
 	incr pos [expr {12 + $len}]
     }
-    set {png}p {signature:}$sig {chunks:}$blocs
+    set {png}p {/signature}$sig {/chunks}$blocs
     return $p
 }
 
@@ -69,15 +69,15 @@ proc png_ecrire {p} {
     set out $p(signature)
     foreach b $p(chunks) {
 	switch -- [type get $b] {
-	    bloc.IHDR {
+	    bloc/IHDR {
 		append out [png_bloc IHDR [binary format IuIuc5 $b(IHDR.width) $b(IHDR.height) \
 		    [list $b(IHDR.depth) $b(IHDR.colortype) $b(IHDR.compression) \
 			 $b(IHDR.filter) $b(IHDR.interlace)]]]
 	    }
-	    bloc.tEXt    {append out [png_bloc tEXt $b(tEXt.keyword)\x00$b(tEXt.text)]}
-	    bloc.IDAT    {append out [png_bloc IDAT [binary decode hex $b(IDAT.hex)]]}
-	    bloc.IEND    {append out [png_bloc IEND ""]}
-	    bloc.inconnu {append out [png_bloc $b(inconnu.name) [binary decode hex $b(inconnu.hex)]]}
+	    bloc/tEXt    {append out [png_bloc tEXt $b(tEXt.keyword)\x00$b(tEXt.text)]}
+	    bloc/IDAT    {append out [png_bloc IDAT [binary decode hex $b(IDAT.hex)]]}
+	    bloc/IEND    {append out [png_bloc IEND ""]}
+	    bloc/inconnu {append out [png_bloc $b(inconnu.name) [binary decode hex $b(inconnu.hex)]]}
 	}
     }
     return $out
@@ -95,14 +95,14 @@ proc png_vers_raster {p} {
     set idat ""
     foreach b $p(chunks) {
 	switch -- [type get $b] {
-	    bloc.IHDR {
+	    bloc/IHDR {
 		set w $b(IHDR.width); set h $b(IHDR.height)
 		set ct $b(IHDR.colortype)
 		if {$b(IHDR.depth) != 8 || $ct ni {0 2 6} || $b(IHDR.interlace) != 0} {
 		    error "PNG non géré (8 bits, gris/RVB/RVBA, sans entrelacement)"
 		}
 	    }
-	    bloc.IDAT {append idat [binary decode hex $b(IDAT.hex)]}
+	    bloc/IDAT {append idat [binary decode hex $b(IDAT.hex)]}
 	}
     }
     set bpp [dict get {0 1 2 3 6 4} $ct]
@@ -138,7 +138,7 @@ proc png_vers_raster {p} {
 	    }
 	}
     }
-    set {raster}r {width:}$w {height:}$h {pixels:}$pixels
+    set {raster}r {/width}$w {/height}$h {/pixels}$pixels
     return $r
 }
 
@@ -151,12 +151,12 @@ proc raster_vers_png {r} {
 	    append brut [binary decode hex [lindex $r(pixels) [expr {$y * $w + $x}]]]
 	}
     }
-    set {ihdr}e {width:}$w {height:}$h {depth:}8 {colortype:}2
-    set {donnees}d {hex:}[binary encode hex [zlib compress $brut]]
+    set {ihdr}e {/width}$w {/height}$h {/depth}8 {/colortype}2
+    set {donnees}d {/hex}[binary encode hex [zlib compress $brut]]
     set {list.bloc}blocs
-    lappend blocs [set {bloc}b1 {IHDR:}$e]
-    lappend blocs [set {bloc}b2 {IDAT:}$d]
-    lappend blocs [set {bloc}b3 {IEND:}{}]
+    lappend blocs [set {bloc}b1 {/IHDR}$e]
+    lappend blocs [set {bloc}b2 {/IDAT}$d]
+    lappend blocs [set {bloc}b3 {/IEND}{}]
     set {png}p(signature,chunks) "\x89PNG\r\n\x1a\n" $blocs;# (2 valeurs = positionnel : on nomme tout)
     return $p
 }
@@ -206,7 +206,7 @@ proc gif_sous_blocs_ecrire {data} {
 proc gif_lire {octets} {
     binary scan $octets a6 sig
     binary scan $octets @6susucucucu w h fl bg asp
-    set {ecran}e {width:}$w {height:}$h {flags:}$fl {background:}$bg {aspect:}$asp
+    set {ecran}e {/width}$w {/height}$h {/flags}$fl {/background}$bg {/aspect}$asp
     set pos 13
     set palette ""
     if {$fl & 0x80} {
@@ -226,21 +226,21 @@ proc gif_lire {octets} {
 		    249 {
 			set d [gif_sous_blocs_lire $octets pos]
 			binary scan $d cusucu pk delai transp
-			set {controle}c {delay:}$delai {transparent:}[expr {($pk & 1) ? $transp : -1}] {disposal:}[expr {($pk >> 2) & 7}]
-			lappend blocs [set {gblock}b {control:}$c]
+			set {controle}c {/delay}$delai {/transparent}[expr {($pk & 1) ? $transp : -1}] {/disposal}[expr {($pk >> 2) & 7}]
+			lappend blocs [set {gblock}b {/control}$c]
 		    }
 		    254 {
-			set {commentaire}c {text:}[gif_sous_blocs_lire $octets pos]
-			lappend blocs [set {gblock}b {comment:}$c]
+			set {commentaire}c {/text}[gif_sous_blocs_lire $octets pos]
+			lappend blocs [set {gblock}b {/comment}$c]
 		    }
 		    255 {
 			set d [gif_sous_blocs_lire $octets pos]
-			set {application}a {id:}[string range $d 0 10] {hex:}[binary encode hex [string range $d 11 end]]
-			lappend blocs [set {gblock}b {app:}$a]
+			set {application}a {/id}[string range $d 0 10] {/hex}[binary encode hex [string range $d 11 end]]
+			lappend blocs [set {gblock}b {/app}$a]
 		    }
 		    default {
-			set {extinconnue}x {label:}$label {hex:}[binary encode hex [gif_sous_blocs_lire $octets pos]]
-			lappend blocs [set {gblock}b {extension:}$x]
+			set {extinconnue}x {/label}$label {/hex}[binary encode hex [gif_sous_blocs_lire $octets pos]]
+			lappend blocs [set {gblock}b {/extension}$x]
 		    }
 		}
 	    }
@@ -249,14 +249,14 @@ proc gif_lire {octets} {
 		incr pos 9
 		binary scan $octets @${pos}cu mincode
 		incr pos
-		set {cadre}i {left:}$l {top:}$t {width:}$iw {height:}$ih {flags:}$f {mincode:}$mincode {lzw:}[binary encode hex [gif_sous_blocs_lire $octets pos]]
-		lappend blocs [set {gblock}b {frame:}$i]
+		set {cadre}i {/left}$l {/top}$t {/width}$iw {/height}$ih {/flags}$f {/mincode}$mincode {/lzw}[binary encode hex [gif_sous_blocs_lire $octets pos]]
+		lappend blocs [set {gblock}b {/frame}$i]
 	    }
-	    59 {lappend blocs [set {gblock}b {trailer:}{}]}
+	    59 {lappend blocs [set {gblock}b {/trailer}{}]}
 	    default {error "octet de bloc GIF inattendu : $intro"}
 	}
     }
-    set {gif}g {signature:}$sig {screen:}$e {palette:}$palette {blocks:}$blocs
+    set {gif}g {/signature}$sig {/screen}$e {/palette}$palette {/blocks}$blocs
     return $g
 }
 
@@ -267,27 +267,27 @@ proc gif_ecrire {g} {
     append out [binary decode hex $g(palette)]
     foreach b $g(blocks) {
 	switch -- [type get $b] {
-	    gblock.comment {append out \x21\xfe[gif_sous_blocs_ecrire $b(comment.text)]}
-	    gblock.control {
+	    gblock/comment {append out \x21\xfe[gif_sous_blocs_ecrire $b(comment.text)]}
+	    gblock/control {
 		set t $b(control.transparent)
 		set pk [expr {($b(control.disposal) << 2) | ($t >= 0)}]
 		append out \x21\xf9[gif_sous_blocs_ecrire \
 		    [binary format cusucu $pk $b(control.delay) [expr {max($t, 0)}]]]
 	    }
-	    gblock.app {
+	    gblock/app {
 		append out \x21\xff[gif_sous_blocs_ecrire \
 		    $b(app.id)[binary decode hex $b(app.hex)]]
 	    }
-	    gblock.frame {
+	    gblock/frame {
 		append out \x2c[binary format susususucuc $b(frame.left) $b(frame.top) \
 		    $b(frame.width) $b(frame.height) $b(frame.flags) $b(frame.mincode)]
 		append out [gif_sous_blocs_ecrire [binary decode hex $b(frame.lzw)]]
 	    }
-	    gblock.extension {
+	    gblock/extension {
 		append out \x21[binary format cu $b(extension.label)]
 		append out [gif_sous_blocs_ecrire [binary decode hex $b(extension.hex)]]
 	    }
-	    gblock.trailer {append out \x3b}
+	    gblock/trailer {append out \x3b}
 	}
     }
     return $out
@@ -387,7 +387,7 @@ proc gif_vers_raster {g} {
     set pal $g(palette)
     set couleurs [expr {[string length $pal] / 6}]
     foreach b $g(blocks) {
-	if {[type get $b] eq "gblock.frame"} {
+	if {[type get $b] eq "gblock/frame"} {
 	    set mincode $b(frame.mincode)
 	    set octets [binary decode hex $b(frame.lzw)]
 	    set entrelace [expr {$b(frame.flags) & 0x40}]
@@ -413,7 +413,7 @@ proc gif_vers_raster {g} {
     foreach i $indices {
 	lappend pixels [string range $pal [expr {6 * $i}] [expr {6 * $i + 5}]]
     }
-    set {raster}r {width:}$w {height:}$h {pixels:}$pixels
+    set {raster}r {/width}$w {/height}$h {/pixels}$pixels
     return $r
 }
 
@@ -430,12 +430,12 @@ proc raster_vers_gif {r} {
     set indices [lmap p $r(pixels) {dict get $idx $p}]
     set mincode [expr {max(2, $bits)}]
     set lzw [lzw_compresser $indices $mincode]
-    set {ecran}e {width:}$w {height:}$h {flags:}[expr {0x80 | ($bits - 1)}] {background:}0
-    set {cadre}f {left:}0 {top:}0 {width:}$w {height:}$h {flags:}0 {mincode:}$mincode {lzw:}[binary encode hex $lzw]
+    set {ecran}e {/width}$w {/height}$h {/flags}[expr {0x80 | ($bits - 1)}] {/background}0
+    set {cadre}f {/left}0 {/top}0 {/width}$w {/height}$h {/flags}0 {/mincode}$mincode {/lzw}[binary encode hex $lzw]
     set {list.gblock}blocs
-    lappend blocs [set {gblock}b1 {frame:}$f]
-    lappend blocs [set {gblock}b2 {trailer:}{}]
-    set {gif}g {screen:}$e {palette:}$palette {blocks:}$blocs
+    lappend blocs [set {gblock}b1 {/frame}$f]
+    lappend blocs [set {gblock}b2 {/trailer}{}]
+    set {gif}g {/screen}$e {/palette}$palette {/blocks}$blocs
     return $g
 }
 
@@ -452,7 +452,7 @@ if {[file normalize $::argv0] eq [file normalize [info script]]} {
 	    lappend pixels [format %02x%02x40 [expr {$x * 36}] [expr {$y * 80}]]
 	}
     }
-    set {raster}depart {width:}8 {height:}4 {pixels:}$pixels
+    set {raster}depart {/width}8 {/height}4 {/pixels}$pixels
     set png [png_ecrire [raster_vers_png $depart]]
     set gif [png_vers_gif $png]
     set png2 [gif_vers_png $gif]

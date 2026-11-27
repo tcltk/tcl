@@ -3,61 +3,61 @@ table -> gras italique titre1 titre2 titre3 code puce alerte
 un style -> 18 bold roman style
 style faux -> ERREUR value "gras" matches no variant of poids
 --- document
-type -> ::te::document {::te::bloc.titre ::te::bloc.para ::te::bloc.puces ::te::bloc.code}
+type -> ::te::document {::te::bloc/titre ::te::bloc/para ::te::bloc/puces ::te::bloc/code}
 --- refus à la construction
 style inconnu -> ERREUR value "grass" matches no variant of ::te::nomstyle
 titre de niveau 4 -> ERREUR value "4" matches no variant of ::te::niveau
-bloc inconnu -> ERREUR value "pas un bloc" fits variants puces, para and code of ::te::bloc: write {puces:}{pas un bloc}
+bloc inconnu -> ERREUR value "pas un bloc" fits variants puces, para and code of ::te::bloc: write {/puces}{pas un bloc}
 --- rendu
-  insert {Texte enrichi}              bloc.titre@niveau=1 aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18)
+  insert {Texte enrichi}              bloc/titre@niveau=1 aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18)
   insert {
 
 }                         
-  insert {Un }                        bloc.para aspect
-  insert texte                        bloc.para segment.marque@style=gras aspect@police.poids=bold
-  insert { avec un passage }          bloc.para aspect
-  insert {en italique, }              bloc.para segment.marque@style=italique aspect@police.pente=italic
-  insert {et gras dedans}             bloc.para segment.marque@style=italique segment.marque@style=gras aspect@police.(pente=italic,poids=bold)
-  insert .                            bloc.para aspect
+  insert {Un }                        bloc/para aspect
+  insert texte                        bloc/para segment/marque@style=gras aspect@police.poids=bold
+  insert { avec un passage }          bloc/para aspect
+  insert {en italique, }              bloc/para segment/marque@style=italique aspect@police.pente=italic
+  insert {et gras dedans}             bloc/para segment/marque@style=italique segment/marque@style=gras aspect@police.(pente=italic,poids=bold)
+  insert .                            bloc/para aspect
   insert {
 
 }                         
-  insert {• }                         bloc.puces aspect@marge=16
-  insert {premier point}              bloc.puces aspect@marge=16
+  insert {• }                         bloc/puces aspect@marge=16
+  insert {premier point}              bloc/puces aspect@marge=16
   insert {
-}                          bloc.puces aspect@marge=16
-  insert {• }                         bloc.puces aspect@marge=16
-  insert {second, avec un }           bloc.puces aspect@marge=16
-  tag bind segment.lien@cible=\"https://tcl.tk\" <1> {ouvrir https://tcl.tk}
-  insert lien                         bloc.puces segment.lien@cible=\"https://tcl.tk\" aspect@couleur=\"#2b5c8a\",marge=16,souligne=1
+}                          bloc/puces aspect@marge=16
+  insert {• }                         bloc/puces aspect@marge=16
+  insert {second, avec un }           bloc/puces aspect@marge=16
+  tag bind segment/lien@cible=\"https://tcl.tk\" <1> {ouvrir https://tcl.tk}
+  insert lien                         bloc/puces segment/lien@cible=\"https://tcl.tk\" aspect@couleur=\"#2b5c8a\",marge=16,souligne=1
   insert {
 
 }                         
-  insert {set {style}s(poids) bold}   bloc.code aspect@couleur=\"#4a5468\",police.(famille=Courier,taille=10)
+  insert {set {style}s(poids) bold}   bloc/code aspect@couleur=\"#4a5468\",police.(famille=Courier,taille=10)
   insert {
 
 }                         
   tags configurés : aspect@couleur=\"#1d2433\",police.(poids=bold,taille=18) aspect aspect@police.poids=bold aspect@police.pente=italic aspect@police.(pente=italic,poids=bold) aspect@marge=16 aspect@couleur=\"#2b5c8a\",marge=16,souligne=1 aspect@couleur=\"#4a5468\",police.(famille=Courier,taille=10)
 --- changer la table des styles
 nouvelle table -> gras rouge
-ancien document -> ::te::document ::te::bloc.para
+ancien document -> ::te::document ::te::bloc/para
 italique refusé -> ERREUR value "italique" matches no variant of ::te::nomstyle
-rouge accepté -> ::te::segment.marque
+rouge accepté -> ::te::segment/marque
 --- relire le widget (te::lire)
 aller-retour exact -> 1
-type relu -> ::te::bloc.titre ::te::bloc.para ::te::bloc.puces ::te::bloc.code ::te::bloc.para
-chevauchement, coupé -> {::te::segment.texte {Un }} {::te::segment.marque {gras texte}} {::te::segment.texte { avec un pas}} {::te::segment.marque {gras {{sage } {italique {{en it}}}}}} {::te::segment.marque {italique {{alique, } {gras {{et gras dedans}}}}}} {::te::segment.texte .}
+type relu -> ::te::bloc/titre ::te::bloc/para ::te::bloc/puces ::te::bloc/code ::te::bloc/para
+chevauchement, coupé -> {::te::segment/texte {Un }} {::te::segment/marque {gras texte}} {::te::segment/texte { avec un pas}} {::te::segment/marque {gras {{sage } {italique {{en it}}}}}} {::te::segment/marque {italique {{alique, } {gras {{et gras dedans}}}}}} {::te::segment/texte .}
 chevauchement, erreur -> ERREUR marque "gras" (3.20-3.30) and marque "italique" (3.25-3.52) overlap: they do not nest
 deux gras voisins fusionnent -> {gras {{Un texte}}} { avec un passage }
 tag non typé : ignoré -> 1
-tag typé, valeur hors du type -> ERREUR tag "segment.marque@style=surligne" at 3.0: value "surligne" matches no variant of ::te::nomstyle
-titre de niveau 7 -> ERREUR tag "bloc.titre@niveau=7" at 1.0: value "7" matches no variant of ::te::niveau
-texte hors bloc -> ::te::bloc.para {{Un paragraphe tapé à la main.}}
+tag typé, valeur hors du type -> ERREUR tag "segment/marque@style=surligne" at 3.0: value "surligne" matches no variant of ::te::nomstyle
+titre de niveau 7 -> ERREUR tag "bloc/titre@niveau=7" at 1.0: value "7" matches no variant of ::te::niveau
+texte hors bloc -> ::te::bloc/para {{Un paragraphe tapé à la main.}}
 --- les noms de tags
-  bloc.titre@niveau=2  ->  titre 2
-  bloc.para  ->  para
-  segment.marque@style=gras  ->  marque gras
-  segment.lien@cible="https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2"  ->  lien {https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2}
+  bloc/titre@niveau=2  ->  titre 2
+  bloc/para  ->  para
+  segment/marque@style=gras  ->  marque gras
+  segment/lien@cible="https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2"  ->  lien {https://wiki.tcl-lang.org/page/Été 2026?q=a.b&x=1_2}
 cible relue à l'identique -> 1
 --- la syntaxe des notes
   gras,rouge,italique -> gras,italique,rouge {gras {} rouge {} italique {}}
@@ -84,19 +84,19 @@ relu : les aspects sont ignorés -> {Un } {gras {{italique texte}}}
 même document qu'à la main -> 1
 mêmes types -> 1
 aller-retour -> 1
-un lien, attribut cité -> ::te::segment.lien https://a.b/c?x=1,2
+un lien, attribut cité -> ::te::segment/lien https://a.b/c?x=1,2
 crochets et barre échappés -> {un [crochet] et une barre \ seule}
 un -- dans le contenu -> {gras {{a -- b}}}
 balise inconnue -> ERREUR unknown tag "grass": must be a variant of segment or a style (gras, italique, titre1, titre2, titre3, code, puce, alerte)
-attribut inconnu -> ERREUR [lien@href=x]: unknown field "href" in ::te::segment.lien
-attribut manquant -> ERREUR [lien]: field "cible" of ::te::segment.lien has no value and no default
+attribut inconnu -> ERREUR [lien@href=x]: unknown field "href" in ::te::segment/lien
+attribut manquant -> ERREUR [lien]: field "cible" of ::te::segment/lien has no value and no default
 style hors du type -> ERREUR [marque@style=surligne]: value "surligne" matches no variant of ::te::nomstyle
 sans -- -> ERREUR [gras b]: write [head -- content]
 crochet non fermé -> ERREUR "[" without "]" in "a [gras -- b"
 --- te::ecrire : un interpréteur sûr, des noms courts
 même document -> 1
-types -> ::te::bloc.titre ::te::bloc.para ::te::bloc.puces
-code -> ::te::bloc.code
+types -> ::te::bloc/titre ::te::bloc/para ::te::bloc/puces
+code -> ::te::bloc/code
 pas de fichier -> ERREUR invalid command name "open"
 pas de te:: -> ERREUR invalid command name "te::p"
 erreur de balise -> ERREUR unknown tag "grass": must be a variant of segment or a style (gras, italique, titre1, titre2, titre3, code, puce, alerte)

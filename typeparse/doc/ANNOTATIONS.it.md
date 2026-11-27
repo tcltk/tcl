@@ -288,8 +288,8 @@ type def mz {"MZ"}             ;# un solo letterale: una costante (firma di file
 ```tcl
 type def S {{int}i, {string}s}
 set {S}v {i}5
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# la variante scelta dal nome del tipo
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# la variante scelta dal nome del tipo
 ```
 
 **Prodotto** — una `struct`: campi con nome, ordinati, ciascuno del suo tipo.
@@ -532,7 +532,7 @@ Un prodotto di *n* campi si costruisce in quattro modi, senza indovinare nulla:
 |---|---|---|
 | posizionale | `set {pt}a Jean 12` | esattamente *n* valori, nell'ordine dei campi |
 | etichette di campo | `set {pt}a {age}12 {nom}Jean` | tutti i valori etichettati; ordine libero; i campi omessi prendono il loro valore predefinito |
-| un solo campo | `set {pt}a {pt.nom}Jean` | gli altri campi prendono il loro valore predefinito |
+| un solo campo | `set {pt}a {pt/nom}Jean` | gli altri campi prendono il loro valore predefinito |
 | percorso + valori posizionali | `set {pt}a(age,nom) 12 Jean` | un valore per foglia del percorso (o per gruppo, § 8.3) |
 
 Si aggiungono **nessun argomento** (`set {pt}a`, tutti i campi al loro valore predefinito) e **un prodotto dello stesso tipo** (copia). Tutto il resto è un errore:
@@ -588,12 +588,12 @@ Ogni valore ha la forma che restituirebbe la sua lettura; i tre numeri coincidon
 Una somma si costruisce con la sua variante come etichetta, o con il nome della variante nel tipo:
 
 ```tcl
-set {S}v {i}5                  ;# S.i
-set {S.s}w abc                 ;# S.s
+set {S}v {i}5                  ;# S/i
+set {S/s}w abc                 ;# S/s
 set {list.S}L {i}1 {s}a        ;# ogni elemento conserva la sua variante
 ```
 
-Senza etichetta, la variante è dedotta dal valore, nell'ordine delle varianti: `set {S}u 5` dà `S.i`. Quando più varianti hanno la stessa forma (`{string}a, {string}b`), la prima va sempre bene: per scegliere, etichettare (`{b}y`).
+Senza etichetta, la variante è dedotta dal valore, nell'ordine delle varianti: `set {S}u 5` dà `S/i`. Quando più varianti hanno la stessa forma (`{string}a, {string}b`), la prima va sempre bene: per scegliere, etichettare (`{b}y`).
 
 Una lista riceve i suoi elementi uno per uno: `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Un solo argomento è **un** elemento.
 

@@ -13,7 +13,7 @@ variante sans nom: ERREUR variant 1 of the sum has no name: a label or a path ch
 union disjointe: 1
 union anonyme: 1
 union recouvrante : refusée: ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
-union int | double: {10 U3.i} {2.0 U3.d} {16 U3.i} {20.0 U3.d}
+union int | double: {10 U3/i} {2.0 U3/d} {16 U3/i} {20.0 U3/d}
 union int | string: ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 point | vecteur : refusée: ERREUR union: alternatives p and v can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 point , vecteur : somme: 0
@@ -23,21 +23,21 @@ variante produit à un champ: {double}r
 {-strict} n'existe plus: ERREUR type def: {-strict} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
 {-deduce} n'existe plus: ERREUR type def: {-deduce} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
 --- somme : la valeur est la charge, la variante une métadonnée
-nue : deux variantes: ERREUR value "5" fits variants i and s of S: write {i:}5, or set {S}v(i) 5
-{i:}5: 5 S.i
-{S.s}5: 5 S.s
+nue : deux variantes: ERREUR value "5" fits variants i and s of S: write {/i}5, or set {S}v(i) 5
+{/i}5: 5 S/i
+{S/s}5: 5 S/s
 en clair : refusé: ERREUR wrong # args: a sum value takes exactly one argument
-par la chaîne: ERREUR value "5" fits variants i and s of S: write {i:}5, or set {S}v(i) 5
-variante inconnue: ERREUR label {z:} names no variant of S
+par la chaîne: ERREUR value "5" fits variants i and s of S: write {/i}5, or set {S}v(i) 5
+variante inconnue: ERREUR label {/z} names no variant of S
 charge invalide: ERREUR expected integer but got "abc"
-type {S.i}5: S.i
-type cast S.i 5: S.i
-type cast S 5: ERREUR value "5" fits variants i and s of S: write {i:}5
-type cast S {i 5}: S.s
-point, vecteur: {1.0 2.0} PV.v 1.0
+type {S/i}5: S/i
+type cast S/i 5: S/i
+type cast S 5: ERREUR value "5" fits variants i and s of S: write {/i}5
+type cast S {i 5}: S/s
+point, vecteur: {1.0 2.0} PV/v 1.0
 littéral seul: vide Lit
-littéral : {n:}4: 4 Lit.n
-variante typée nue: 4 Lit.n
+littéral : {/n}4: 4 Lit/n
+variante typée nue: 4 Lit/n
 --- lire
 v(i): 5 int
 expr {$v(i) * 2}: 10
@@ -53,24 +53,24 @@ f(zz): ERREUR prod<w:double;h:double;> has no field "zz"
 --- la variante est une métadonnée
 égalité en valeur: 1
 clés de dict: 1
-liste par la chaîne: ERREUR value "1" fits variants i and s of S: write {i:}1
-lappend {s:}x: S.i S.s
-lappend nu: S.i S.s
-lset {s:}x: x
-produit: {5 3} S.s
-retour de procédure: S.s
-somme imbriquée: ERREUR value "5" fits variants i and s of S: write {i:}5
+liste par la chaîne: ERREUR value "1" fits variants i and s of S: write {/i}1
+lappend {/s}x: S/i S/s
+lappend nu: S/i S/s
+lset {/s}x: x
+produit: {5 3} S/s
+retour de procédure: S/s
+somme imbriquée: ERREUR value "5" fits variants i and s of S: write {/i}5
 --- modifier
-set v 8 : ambigu: ERREUR value "8" fits variants i and s of S: write {i:}8
+set v 8 : ambigu: ERREUR value "8" fits variants i and s of S: write {/i}8
 set v(i) 8: 8
 set v(s) x : change: x
 incr v(i): 6
 --- union : la valeur est la charge
-n: 5 U.n n
-paire: {3 4} U.paire paire
+n: 5 U/n n
+paire: {3 4} U/paire paire
 u(paire): 3 4
 expr direct: 10
-étiquette qui confirme: U.paire
+étiquette qui confirme: U/paire
 étiquette fausse: ERREUR expected integer but got "3 4"
 rien ne passe: ERREUR value "abc" matches no variant of U
 --- casts
@@ -80,7 +80,7 @@ somme -> int : sa variante: int
 union -> int: int
 union -> list.int: list<int>
 int -> S : deux variantes ?: 5
-int -> F: 5 F.n
+int -> F: 5 F/n
 proc {string} <- énumération: vert
 proc {int} <- somme: 5
 proc {int} <- v(i): 5

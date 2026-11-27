@@ -17,7 +17,7 @@ set tests {
     {poly::aire {{0.0 0.0 0.0}}}
     {poly::aire}
     {poly::aire a b}
-    {poly::aire {pg:}$G}
+    {poly::aire {/pg}$G}
     {poly::contient $G $P}
     {poly::contient $G $A}
     {poly::contient $G {2.0 1.0}}
@@ -30,7 +30,7 @@ set tests {
     {poly::deplace $G 1.0 2.0}
     {poly::deplace $G -1.0 -2.0}
     {poly::deplace $G x}
-    {poly::deplace $G {dy:}3.0 {dx:}1.0}
+    {poly::deplace $G {/dy}3.0 {/dx}1.0}
     {poly::boite $G}
     {poly::point 1 2}
 }

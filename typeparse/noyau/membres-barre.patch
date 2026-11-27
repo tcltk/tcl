@@ -1,0 +1,65 @@
+--- a/generic/tclCompExpr.c	2026-11-27 11:00:23.672960538 +0100
++++ b/generic/tclCompExpr.c	2026-11-27 11:00:23.659018809 +0100
+@@ -1017,21 +1017,29 @@
+ 	    const char *q = start, *qe = start + numBytes;
+ 	    Tcl_Obj *typeName;
+ 
+-	    while (q < qe && (isalnum(UCHAR(*q)) || *q == '_' || *q == ':'
+-		    || *q == '.')) {
+-		q++;
+-	    }
+-	    if (q < qe && *q == '(') {
+-		int d = 0;
++	    /* v18a : noms, « . », « /membre » et groupes entre parenthèses
++	     * alternés : list(2).int, temp/celsius, opt(int)/some */
++	    while (q < qe) {
++		if (isalnum(UCHAR(*q)) || *q == '_' || *q == ':' || *q == '.'
++			|| (*q & 0x80)) {
++		    q++;
++		} else if (*q == '/' && q + 1 < qe
++			&& (isalnum(UCHAR(q[1])) || q[1] == '_')) {
++		    q++;
++		} else if (*q == '(') {
++		    int d = 0;
+ 
+-		while (q < qe) {
+-		    if (*q == '(') {
+-			d++;
+-		    } else if (*q == ')' && --d == 0) {
++		    while (q < qe) {
++			if (*q == '(') {
++			    d++;
++			} else if (*q == ')' && --d == 0) {
++			    q++;
++			    break;
++			}
+ 			q++;
+-			break;
+ 		    }
+-		    q++;
++		} else {
++		    break;
+ 		}
+ 	    }
+ 	    typeName = Tcl_NewStringObj(start, q - start);
+--- a/generic/tclCompCmdsSZ.c	2026-11-27 11:00:23.660616585 +0100
++++ b/generic/tclCompCmdsSZ.c	2026-11-27 11:00:29.649420539 +0100
+@@ -164,14 +164,14 @@
+ 
+ 	if (numWords == 3) {
+ 	    /* set x {-v}$mot : annotation locale écrite sur la valeur. Une
+-	     * étiquette {i:} est permise quand le nom est annoté : le
+-	     * constructeur la lit (set {S}v {i:}5, v16l). */
++	     * étiquette {/i} est permise quand le nom est annoté : le
++	     * constructeur la lit (set {S}v {/i}5, v16l, v18a). */
+ 	    Tcl_Obj *lt = TclAnnotLocalWordText(interp, TokenAfter(nameTok));
+ 
+ 	    if (lt != NULL && nameTok->numComponents > 0
+ 		    && nameTok[1].type == TCL_TOKEN_ANNOT
+-		    && Tcl_GetString(lt)[0] != '\0'
+-		    && Tcl_GetString(lt)[strlen(Tcl_GetString(lt)) - 1] == ':') {
++		    && Tcl_GetString(lt)[0] == '/'
++		    && Tcl_GetString(lt)[1] != '\0') {
+ 		Tcl_DecrRefCount(lt);
+ 		lt = NULL;
+ 	    }

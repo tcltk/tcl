@@ -1,5 +1,5 @@
 # Éléments typés d'une liste : foreach, lindex, lmap rendent des valeurs
-# typées ; somme : {i:}5 et {Val.i}5 ; type get rend Val.i
+# typées ; somme : {/i}5 et {Val/i}5 ; type get rend Val/i
 proc check {what got want} {
     if {$got eq $want} {puts "ok: $what"} else {puts "ECHEC: $what -> '$got' (attendu '$want')"}
 }
@@ -12,25 +12,25 @@ check "lindex list.int" [type get [lindex $N 1]] int
 check "lmap list.int" [lmap e $N {type get $e}] {{} {} {}}
 catch {unset e}
 type def Val {{int}i, {string}s}
-set {list.Val}L {i:}5 {s:}hello {s:}7 {Val.i}8
+set {list.Val}L {/i}5 {/s}hello {/s}7 {Val/i}8
 check "L" $L {5 hello 7 8}
 catch {unset e}
-check "variantes foreach" [lmap e $L {type get $e}] {Val.i Val.s Val.s Val.i}
-check "L(2) garde la balise" [type get $L(2)] Val.s
-check "lindex L 2" [type get [lindex $L 2]] Val.s
+check "variantes foreach" [lmap e $L {type get $e}] {Val/i Val/s Val/s Val/i}
+check "L(2) garde la balise" [type get $L(2)] Val/s
+check "lindex L 2" [type get [lindex $L 2]] Val/s
 # v16w : une union (|) se lit sans balise ; une somme (,) écrit sa variante
 type def ValU {{int}i | {list(2).int}p}
 set {list.ValU}P 5 {1 2}
 catch {unset e}
-check "union, sans balise" [lmap e $P {type get $e}] {ValU.i ValU.p}
-catch {set {list.Val}M {i:}abc} m
-check "refus {i:}abc" $m {expected integer but got "abc"}
-catch {set {list.Val}M {Val.zz}1} m
-check "refus Val.zz" $m {unknown type "zz"}
-set {Val.s}w 7
-check "set {Val.s}w 7" [type get $w] Val.s
-set {Val}v {Val.i}9
-check "{Val}{Val.i}" [type get $v] Val.i
+check "union, sans balise" [lmap e $P {type get $e}] {ValU/i ValU/p}
+catch {set {list.Val}M {/i}abc} m
+check "refus {/i}abc" $m {expected integer but got "abc"}
+catch {set {list.Val}M {Val/zz}1} m
+check "refus Val/zz" $m {Val has no variant "zz"}
+set {Val/s}w 7
+check "set {Val/s}w 7" [type get $w] Val/s
+set {Val}v {Val/i}9
+check "{Val}{Val/i}" [type get $v] Val/i
 # liste de strings : pas d'enveloppe, lindex imbriqué intact
 set {list}Q {list}{a b {c d}}
 check "type get élément string" [type get [lindex $Q 0]] {}

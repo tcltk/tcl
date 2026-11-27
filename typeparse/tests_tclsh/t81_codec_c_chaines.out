@@ -4,7 +4,7 @@ bloc 1         6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0105000600ff
 bloc 2         5 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0278797aff
 bloc 7         6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0763000000ff
 balise txt     4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  42420102
-variante relue : corps($genre).1 6
+variante relue : corps($genre)/1 6
 balise inconnue : 1 type binary: tag 9 of field corps of bloc matches no variant 
 littéral faux : 1 type binary: data truncated at offset 2 reading fie
 tronqué : 1 type binary: data truncated at offset 4 r

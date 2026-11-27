@@ -288,8 +288,8 @@ type def mz {"MZ"}             ;# un solo literal: una constante (firma de archi
 ```tcl
 type def S {{int}i, {string}s}
 set {S}v {i}5
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# la variante elegida por el nombre del tipo
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# la variante elegida por el nombre del tipo
 ```
 
 **Producto** — un `struct`: campos con nombre, ordenados, cada uno de su tipo.
@@ -532,7 +532,7 @@ Un producto de *n* campos se construye de cuatro maneras, sin adivinar nada:
 |---|---|---|
 | posicional | `set {pt}a Jean 12` | exactamente *n* valores, en el orden de los campos |
 | etiquetas de campo | `set {pt}a {age}12 {nom}Jean` | todos los valores etiquetados; orden libre; los campos omitidos toman su valor por defecto |
-| un solo campo | `set {pt}a {pt.nom}Jean` | los demás campos toman su valor por defecto |
+| un solo campo | `set {pt}a {pt/nom}Jean` | los demás campos toman su valor por defecto |
 | camino + valores posicionales | `set {pt}a(age,nom) 12 Jean` | un valor por hoja del camino (o por grupo, § 8.3) |
 
 Se añaden **ningún argumento** (`set {pt}a`, todos los campos con su valor por defecto) y **un producto del mismo tipo** (copia). Todo lo demás es un error:
@@ -588,12 +588,12 @@ Cada valor tiene la forma que devolvería su lectura; los tres números solo coi
 Una suma se construye con su variante como etiqueta, o con el nombre de la variante en el tipo:
 
 ```tcl
-set {S}v {i}5                  ;# S.i
-set {S.s}w abc                 ;# S.s
+set {S}v {i}5                  ;# S/i
+set {S/s}w abc                 ;# S/s
 set {list.S}L {i}1 {s}a        ;# cada elemento conserva su variante
 ```
 
-Sin etiqueta, la variante se deduce del valor, en el orden de las variantes: `set {S}u 5` da `S.i`. Cuando varias variantes tienen la misma forma (`{string}a, {string}b`), la primera siempre encaja: para elegir, etiquetar (`{b}y`).
+Sin etiqueta, la variante se deduce del valor, en el orden de las variantes: `set {S}u 5` da `S/i`. Cuando varias variantes tienen la misma forma (`{string}a, {string}b`), la primera siempre encaja: para elegir, etiquetar (`{b}y`).
 
 Una lista recibe sus elementos uno a uno: `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Un solo argumento es **un** elemento.
 

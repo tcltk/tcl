@@ -15,7 +15,7 @@ puts "--- lecture : adresse nulle -> défaut / read: null address -> default"
 puts [type binary decode H "\x01\x00"]
 puts "--- écriture : défaut -> adresse nulle / write: default -> null address"
 puts [hex [type binary encode H [type binary decode H "\x01\x00"]]]
-puts [hex [type binary encode H [set {H}a {m:}3]]]
+puts [hex [type binary encode H [set {H}a {/m}3]]]
 puts "--- écriture : autre valeur -> cible écrite / other value -> target written"
 puts [hex [type binary encode H [set {H}b(m,r) 2 {7 8}]]]
 puts "--- aller-retour / round trip"

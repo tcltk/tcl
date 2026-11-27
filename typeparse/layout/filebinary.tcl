@@ -443,9 +443,9 @@ proc ::fb::spaceMake {data segs args} {
 	if {![regexp {^[A-Za-z0-9_.:-]+$} $name]} {
 	    error "bad space name \"$name\": letters, digits and _ - . : only"
 	}
-	set extra " {name:}\$name"
+	set extra " {/name}\$name"
     }
-    eval "set {space}sp {data:}\$data {base:}\$base {segments:}\$segs$extra"
+    eval "set {space}sp {/data}\$data {/base}\$base {/segments}\$segs$extra"
     set nm $sp(name)
     if {[dict exists $spaces $nm]} {
 	error "type binary: space \"$nm\" already exists (use \"type binary space delete $nm\")"
@@ -705,7 +705,7 @@ proc ::fb::tagEq {a b} {
 # FR : valeur d'une somme : {variante}contenu
 # EN : sum value: {variant}payload
 proc ::fb::mkSum {sumName variant payload} {
-    eval "set {$sumName}__r {$variant:}\$payload"
+    eval "set {$sumName}__r {/$variant}\$payload"
     return $__r
 }
 
@@ -1011,7 +1011,7 @@ proc ::fb::enc {r value ctx what outName} {
 	tagged {
 	    set tag [tagValue $a $ctx $what written]
 	    set tg [type get $value]
-	    set prefix "$c."
+	    set prefix "$c/"
 	    if {[string first $prefix $tg] != 0} {
 		error "type binary: $what is a $tg, not a $c"
 	    }

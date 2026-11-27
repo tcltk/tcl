@@ -1,6 +1,6 @@
 lit 0
-1 7 opt01($present).1
-0 {} opt01($present).0
+1 7 opt01($present)/1
+0 {} opt01($present)/0
 0107
 00
 5 9

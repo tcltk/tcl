@@ -4,6 +4,6 @@ SIG {a b}
 1
 unknown field "zz" in paire
 1
-aut.nom names a field of aut, not of paire
+aut/nom names a field of aut, not of paire
 Zed 0
 Jean 3

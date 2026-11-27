@@ -1,32 +1,32 @@
 --- étiquettes et positionnel
-étiquettes: seg.lien {u abc}
+étiquettes: seg/lien {u abc}
 ordre libre: u
-positionnel: seg.lien {u abc}
-un seul argument (la liste): seg.lien
-défaut: seg.marque {gras {}}
-champ inconnu: ERREUR unknown field "href" in seg.lien
-champ manquant: ERREUR field "cible" of seg.lien has no value and no default
-mélange: ERREUR can't mix values named by a field label ({field:}value) and positional values in a seg.lien constructor: name every field, or none
+positionnel: seg/lien {u abc}
+un seul argument (la liste): seg/lien
+défaut: seg/marque {gras {}}
+champ inconnu: ERREUR unknown field "href" in seg/lien
+champ manquant: ERREUR field "cible" of seg/lien has no value and no default
+mélange: ERREUR can't mix values named by a field label ({/field}value) and positional values in a seg/lien constructor: name every field, or none
 --- chemin à travers la somme
-lien.(cible,contenu): seg.lien {u abc}
-lien.cible,lien.contenu: seg.lien
-calculé: seg.lien
-défaut par chemin: seg.marque {gras {}}
-variante entière: seg.texte
+lien.(cible,contenu): seg/lien {u abc}
+lien.cible,lien.contenu: seg/lien
+calculé: seg/lien
+défaut par chemin: seg/marque {gras {}}
+variante entière: seg/texte
 deux variantes: ERREUR a value of seg has one variant: "lien" and "marque" can't be built together
 variante inconnue: ERREUR seg has no variant "gros"
-champ inconnu: ERREUR unknown field "href" in seg.lien
-somme dans un produit: P2 N.i
+champ inconnu: ERREUR unknown field "href" in seg/lien
+somme dans un produit: P2 N/i
 chemin calculé d'un produit: Helvetica 9 bold
 --- type def NOM : la définition
 type def seg: {{string}cible; {list.seg}contenu}lien, {{string}style; {list.seg}contenu ?= ""}marque, {string}texte
-type def seg.lien: {string}cible; {list.seg}contenu
-type def seg.texte: string
+type def seg/lien: {string}cible; {list.seg}contenu
+type def seg/texte: string
 type def pt: {double}x ?= 0; {double}y
-type def pt.x: double
+type def pt/x: double
 type def style: {string}famille ?= Helvetica; {int}taille ?= 11; {string}poids ?= normal
 type def E: {int}code, {"ok", "ko"}etat
-type def E.etat: "ok", "ko"
+type def E/etat: "ok", "ko"
 type def D: dict(x, y?, z?=0).int
 type def list(3).int: list(3).int
 type def int: int

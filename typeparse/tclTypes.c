@@ -434,8 +434,6 @@ NewType(TypeData *d, TclTypeKind kind, const char *name)
 
 static void CopyInto(TclType *into, const TclType *res);
 
-/* v17z : num se définit (variantes int et double) */
-static int typesDefiningNum = 0;
 
 static TclType *
 Builtin(TypeData *d, TclTypeKind kind, const char *name)
@@ -2478,7 +2476,7 @@ SumFormError(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value)
 	Tcl_IncrRefCount(one);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("value \"%s\" names no variant "
 		"of the sum %s: a value of a sum is the name of its variant, "
-		"then its value, as {%s}, or {%s:}%s",
+		"then its value, as {%s}, or {/%s}%s",
 		Tcl_GetString(value), tp->name, Tcl_GetString(ex),
 		Tcl_GetString(n0), Tcl_GetString(one)));
 	Tcl_DecrRefCount(ex);
@@ -2905,7 +2903,7 @@ ValidateG(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *value,
 		    if (n0 != NULL) {
 			const char *v0 = Tcl_GetString(n0);
 
-			Tcl_AppendPrintfToObj(msg, " of %s%s: write {%s:}%s",
+			Tcl_AppendPrintfToObj(msg, " of %s%s: write {/%s}%s",
 				tp->name, TclSumStrict(tp) ? "" : " equally", v0,
 				Tcl_GetString(q));
 		    } else {
@@ -3320,7 +3318,7 @@ TclTypeComplete(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
     if (variantHint >= 0 && variantHint < tp->nfields
 	    && tp->kind == TCLT_SUM && !TclSumTagged(tp)) {
 	/*
-	 * v17z : une variante désignée (étiquette {v:}, type S.v) : la valeur
+	 * v17z : une variante désignée (étiquette {/v}, type S.v) : la valeur
 	 * est sa charge, complétée et normalisée dans le type de la variante ;
 	 * la variante reste en métadonnée (variantOut).
 	 */
@@ -3346,7 +3344,7 @@ TclTypeComplete(Tcl_Interp *interp, const TclType *tp, Tcl_Obj *content,
     }
     if (variantHint >= 0 && variantHint < tp->nfields && TclSumTagged(tp)) {
 	/*
-	 * v16w : une variante désignée (étiquette {v:}, type S.v) avec sa
+	 * v16w : une variante désignée (étiquette {/v}, type S.v) avec sa
 	 * charge : la charge est complétée dans son type, puis content (privé)
 	 * devient la valeur de la somme, "v charge".
 	 */
@@ -3619,6 +3617,7 @@ TclTypesFinishSum(Tcl_Interp *interp, TypeData *d, const char *selfName,
     int isNew;
     TclType *tp;
 
+    (void) selfName;			/* v18a : plus de conflit nom/type */
     if (DuplicateName(fields, n)) {
 	ERR(interp, "SYNTAX", "duplicate %s name in %s",
 		kind == TCLT_SUM ? "variant" : "field",
@@ -3626,24 +3625,8 @@ TclTypesFinishSum(Tcl_Interp *interp, TypeData *d, const char *selfName,
 	goto fail;
     }
     if (kind == TCLT_SUM) {
-	for (i = 0; i < n; i++) {
-	    if (fields[i].name != NULL) {
-		const char *nm = Tcl_GetString(fields[i].name);
-
-		/* Un nom de variante ne doit pas être aussi un nom de type
-		 * (v17z : sauf num, intégré : num.int, num.double). */
-
-		int isSelf = 0;
-
-		if (!typesDefiningNum && (TclTypesFindName(interp, d,
-			&d->names, nm, -1, selfName, &isSelf) != NULL
-			|| isSelf)) {
-		    ERR(interp, "SYNTAX", "variant name \"%s\" is also a type "
-			    "name", nm);
-		    goto fail;
-		}
-	    }
-	}
+	/* v18a : un nom de variante peut aussi être un nom de type : la
+	 * variante s'écrit {/v} ou S/v, jamais {v} ni S.v. */
 	if (!isUnion) {
 	    /* v16w : la valeur d'une somme écrit le nom de sa variante :
 	     * une variante typée a un nom */
@@ -3759,13 +3742,158 @@ TclTypesFinishSum(Tcl_Interp *interp, TypeData *d, const char *selfName,
     return NULL;
 }
 
+static TclType *TypeParseMain(Tcl_Interp *interp, const char *text,
+	Tcl_Size len);
+
+/*
+ * v18a : un membre s'écrit X/m. L'ancienne écriture S.v (variante) ou P.f
+ * (champ) échoue comme un type inconnu : le message donne la nouvelle.
+ */
 TclType *
 TclTypeParse(Tcl_Interp *interp, const char *text, Tcl_Size len)
+{
+    TclType *tp, *left;
+    const char *dot;
+    Tcl_Size k;
+    Tcl_InterpState st;
+
+    if (len < 0) {
+	len = strlen(text);
+    }
+    tp = TypeParseMain(interp, text, len);
+    if (tp != NULL || interp == NULL || len > 200
+	    || (dot = (const char *) memchr(text, '.', len)) == NULL) {
+	return tp;
+    }
+    for (dot = text + len - 1; dot > text && *dot != '.'; dot--) {
+    }
+    for (k = dot + 1 - text; k < len && (isalnum(UCHAR(text[k]))
+	    || text[k] == '_' || (text[k] & 0x80)); k++) {
+    }
+    if (dot == text || k < len || dot + 1 == text + len) {
+	return NULL;
+    }
+    st = Tcl_SaveInterpState(interp, TCL_ERROR);
+    left = TypeParseMain(interp, text, dot - text);
+    if (left != NULL && (left->kind == TCLT_SUM
+	    || left->kind == TCLT_PRODUCT)) {
+	char buf[128];
+	Tcl_Size ml = len - (dot + 1 - text);
+
+	if (ml < (Tcl_Size) sizeof(buf)) {
+	    memcpy(buf, dot + 1, ml);
+	    buf[ml] = '\0';
+	    if (TclTypeFieldIndex(left, buf) >= 0) {
+		Tcl_DiscardInterpState(st);
+		ERR(interp, "OLDMEMBER", "a %s of a type is now written with "
+			"\"/\": %.*s/%s", left->kind == TCLT_SUM ? "variant"
+			: "field", (int) (dot - text), text, buf);
+		return NULL;
+	    }
+	}
+    }
+    (void) Tcl_RestoreInterpState(interp, st);
+    return NULL;
+}
+
+static TclType *
+TypeParseMain(Tcl_Interp *interp, const char *text, Tcl_Size len)
 {
     TypeEnv env;
 
     memset(&env, 0, sizeof(env));
     env.d = GetData(interp);
+    if (len < 0) {
+	len = strlen(text);
+    }
+    if (TclLabelIsOld(text, len)) {
+	/* v18a : l'étiquette {nom:} s'écrit désormais {/nom} */
+	Tcl_Size k;
+
+	for (k = 0; k < len - 1 && (isalnum(UCHAR(text[k])) || text[k] == '_'
+		|| (text[k] & 0x80)); k++) {
+	}
+	if (k == len - 1) {
+	    ERR(interp, "OLDLABEL", "label {%.*s} is now written {/%.*s}",
+		    (int) len, text, (int) len - 1, text);
+	    return NULL;
+	}
+    }
+    {
+	/* v18a : X/m, le membre m de X : P/f est le type du champ f du
+	 * produit P ; S/v nomme la variante v de la somme S (lue par les
+	 * constructeurs et les annotations, pas un type ici). */
+	Tcl_Size k, slash = -1;
+	int depth = 0;
+
+	for (k = 0; k < len; k++) {
+	    char c = text[k];
+
+	    if (c == '(' || c == '<' || c == '{' || c == '[') {
+		depth++;
+	    } else if (c == ')' || c == '>' || c == '}' || c == ']') {
+		depth--;
+	    } else if (c == '"') {
+		for (k++; k < len && text[k] != '"'; k++) {
+		    if (text[k] == '\\') {
+			k++;
+		    }
+		}
+	    } else if (c == '/' && depth == 0) {
+		slash = k;
+	    }
+	}
+	if (slash > 0 && slash + 1 < len && text[0] != '/') {
+	    TclType *left = TclTypeParse(interp, text, slash);
+	    const char *m = text + slash + 1;
+	    Tcl_Size ml = len - slash - 1, fi;
+	    char buf[128];
+
+	    if (left == NULL) {
+		return NULL;
+	    }
+	    for (k = 0; k < ml && (isalnum(UCHAR(m[k])) || m[k] == '_'
+		    || (m[k] & 0x80)); k++) {
+	    }
+	    if (k < ml || ml >= (Tcl_Size) sizeof(buf)) {
+		ERR(interp, "BADMEMBER", "\"%.*s\" is not a member name, in "
+			"type \"%.*s\"", (int) ml, m, (int) len, text);
+		return NULL;
+	    }
+	    memcpy(buf, m, ml);
+	    buf[ml] = '\0';
+	    if (left->kind != TCLT_PRODUCT && left->kind != TCLT_SUM) {
+		ERR(interp, "BADMEMBER", "%s is neither a product nor a sum: "
+			"\"/%s\" names nothing in it", left->name, buf);
+		return NULL;
+	    }
+	    fi = TclTypeFieldIndex(left, buf);
+	    if (fi < 0 && left->kind == TCLT_SUM) {
+		Tcl_Size j;
+
+		for (j = 0; j < left->nfields; j++) {
+		    if (left->fields[j].type == NULL
+			    && left->fields[j].literal != NULL && strcmp(
+			    Tcl_GetString(left->fields[j].literal), buf) == 0) {
+			fi = j;
+			break;
+		    }
+		}
+	    }
+	    if (fi < 0) {
+		ERR(interp, "UNKNOWN", "%s has no %s \"%s\"", left->name,
+			left->kind == TCLT_SUM ? "variant" : "field", buf);
+		return NULL;
+	    }
+	    if (left->kind == TCLT_PRODUCT && left->fields[fi].type != NULL) {
+		return left->fields[fi].type;
+	    }
+	    ERR(interp, "VARIANT", "%.*s is a variant of %s: it is read by an "
+		    "annotation or a constructor, not used as a type here",
+		    (int) len, text, left->name);
+	    return NULL;
+	}
+    }
     if (len > 1 && text[0] == '@') {
 	/* v16y : une note d'instrument ({@trace}) n'est jamais un type, mais
 	 * c'est un nom (une note), pas un caractère interdit (local). */
@@ -4470,7 +4598,7 @@ TypeCastEx(Tcl_Interp *interp, Tcl_Obj *src, TclType *target, int implicit,
 	}
 	if (found >= 0 && again >= 0 && TclSumStrict(target)) {
 	    ERR(interp, "AMBIGUOUS", "a value of type %s fits variants %s and "
-		    "%s of %s: write {%s:}value", from->name,
+		    "%s of %s: write {/%s}value", from->name,
 		    Tcl_GetString(target->fields[found].name),
 		    Tcl_GetString(target->fields[again].name), target->name,
 		    Tcl_GetString(target->fields[found].name));
@@ -5047,7 +5175,7 @@ ParseTypeOrVariant(Tcl_Interp *interp, const char *tt, Tcl_Size tl)
 	return tp;
     }
     for (q = tt; q < tt + tl; q++) {
-	if (*q == '.') {
+	if (*q == '/') {
 	    dot = q;
 	}
     }
@@ -5110,7 +5238,7 @@ TclTypeHasVariantRule(Tcl_Interp *interp, TclType *sum, int from, int to)
     if (sum->fields[from].name == NULL || sum->fields[to].name == NULL) {
 	return 0;
     }
-    snprintf(key, sizeof(key), "%s.%s\1%s.%s", sum->name,
+    snprintf(key, sizeof(key), "%s/%s\1%s/%s", sum->name,
 	    Tcl_GetString(sum->fields[from].name), sum->name,
 	    Tcl_GetString(sum->fields[to].name));
     return Tcl_FindHashEntry(&d->converts, key) != NULL;
@@ -5140,7 +5268,7 @@ TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
 	*resPtr = Tcl_DuplicateObj(content);
 	return TCL_OK;
     }
-    snprintf(key, sizeof(key), "%s.%s\1%s.%s", sum->name, fn, sum->name, tn);
+    snprintf(key, sizeof(key), "%s/%s\1%s/%s", sum->name, fn, sum->name, tn);
     hPtr = Tcl_FindHashEntry(&d->converts, key);
     if (hPtr != NULL) {
 	res = ApplyConvert(interp, (Tcl_Obj *) Tcl_GetHashValue(hPtr),
@@ -5153,7 +5281,7 @@ TclTypeVariantConvert(Tcl_Interp *interp, TclType *sum, int from,
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "the current variant of %s is \"%s\", not \"%s\"; both "
 		    "have the same form, so reading one as the other needs a "
-		    "rule: type convert %s.%s %s.%s {{x} ...}", sum->name, fn,
+		    "rule: type convert %s/%s %s/%s {{x} ...}", sum->name, fn,
 		    tn, sum->name, fn, sum->name, tn));
 	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "VARIANT", (char *) NULL);
 	}
@@ -6367,7 +6495,7 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
     objs[1] = toObj;
     {
 	/*
-	 * Deux variantes d'une même somme : type convert S.a S.b {{x} ...}.
+	 * Deux variantes d'une même somme : type convert S/a S/b {{x} ...}.
 	 * La règle sert à la lecture d'une variante inactive ($v(b)) et au
 	 * cast explicite {S.b}$v ; elle n'intervient jamais dans la déduction.
 	 */
@@ -6377,7 +6505,7 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 
 	for (i = 0; i < 2; i++) {
 	    const char *nm = Tcl_GetString(objs[i]);
-	    const char *dot = strrchr(nm, '.');
+	    const char *dot = strrchr(nm, '/');
 
 	    if (dot != NULL && TclTypesFindName(interp, d, &d->names, nm, -1,
 		    NULL, NULL) == NULL) {
@@ -6401,7 +6529,7 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 	if (nv > 0) {
 	    if (nv != 2 || vs[0] != vs[1]) {
 		ERR(interp, "SYNTAX", "type convert between variants needs two "
-			"variants of the same sum, as in S.a S.b, not \"%s\" and "
+			"variants of the same sum, as in S/a S/b, not \"%s\" and "
 			"\"%s\"", Tcl_GetString(fromObj), Tcl_GetString(toObj));
 		return TCL_ERROR;
 	    }
@@ -6411,7 +6539,7 @@ TypeConvertCmd(Tcl_Interp *interp, TypeData *d, Tcl_Obj *fromObj,
 			Tcl_GetString(toObj));
 		return TCL_ERROR;
 	    }
-	    snprintf(key, sizeof(key), "%s.%s\1%s.%s", vs[0]->name,
+	    snprintf(key, sizeof(key), "%s/%s\1%s/%s", vs[0]->name,
 		    Tcl_GetString(vs[0]->fields[vi[0]].name), vs[1]->name,
 		    Tcl_GetString(vs[1]->fields[vi[1]].name));
 	    goto store;
@@ -9803,13 +9931,13 @@ DefText(const TclType *tp, int top, Tcl_DString *ds)
     Tcl_DStringAppend(ds, tp->name, -1);
 }
 
-/* type def NOM : la définition (NOM peut être S.v, une variante). */
+/* type def NOM : la définition (NOM peut être S/v, une variante). */
 static int
 TypeDefShow(Tcl_Interp *interp, Tcl_Obj *nameObj)
 {
     Tcl_Size len;
     const char *text = Tcl_GetStringFromObj(nameObj, &len);
-    const char *dot = strrchr(text, '.');
+    const char *dot = strrchr(text, '/');
     TclType *tp = NULL, *sum;
     Tcl_DString ds;
 
@@ -9820,7 +9948,7 @@ TypeDefShow(Tcl_Interp *interp, Tcl_Obj *nameObj)
 	Tcl_RestoreInterpState(interp, st);
 	if (sum != NULL && (sum->kind == TCLT_SUM
 		|| sum->kind == TCLT_PRODUCT)) {
-	    /* S.v : la variante ; P.f : le champ d'un produit */
+	    /* S/v : la variante ; P/f : le champ d'un produit */
 	    Tcl_Size fi = TclTypeFieldIndex(sum, dot + 1);
 
 	    if (fi < 0) {
@@ -16871,8 +16999,8 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    const char *tt = Tcl_GetStringFromObj(objv[2], &tl);
 
 	    if (TclTypeParse(interp, tt, tl) == NULL) {
-		/* S.v : une variante d'une somme (comme {S.v}$x). */
-		const char *dot = strrchr(tt, '.');
+		/* S.v : une variante d'une somme (comme {S/v}$x). */
+		const char *dot = strrchr(tt, '/');
 		TclType *sum = (dot != NULL && dot > tt)
 			? TclTypeParse(interp, tt, dot - tt) : NULL;
 
@@ -16996,8 +17124,8 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		return TCL_ERROR;
 	    }
 	    if (t->kind == TCLT_SUM) {
-		/* S.v : une valeur de la variante v de S */
-		const char *dot = strrchr(tt, '.');
+		/* S/v : une valeur de la variante v de S */
+		const char *dot = strrchr(tt, '/');
 		Tcl_Obj *nm = Tcl_NewStringObj(dot + 1, -1);
 
 		Tcl_IncrRefCount(nm);
@@ -17008,7 +17136,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    t = TclTypeParse(interp, tt, tl);
 	}
 	if (tv >= 0) {
-	    /* S.v dans U : U inclut S, ou U inclut la charge de v (une somme
+	    /* S/v dans U : U inclut S, ou U inclut la charge de v (une somme
 	     * se lit comme sa variante) quand U n'est pas une somme */
 	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TypeIncludes(u, t, 0)
 		    || (u->kind != TCLT_SUM && t->fields[tv].type != NULL
@@ -17126,7 +17254,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		if (v >= 0 && v < tp->nfields && v != k
 			&& TclTypeHasVariantRule(interp, tp, v, (int) k)) {
 		    Tcl_AppendObjToObj(Tcl_GetObjResult(interp), Tcl_ObjPrintf(
-			    " (to convert it, use type cast %s.%s)", tp->name,
+			    " (to convert it, use type cast %s/%s)", tp->name,
 			    Tcl_GetString(objv[3])));
 		}
 		return TCL_ERROR;
@@ -17259,7 +17387,54 @@ IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     }
     want = TclTypeParse(interp, typeText, typeLen);
     if (want == NULL) {
-	return TCL_ERROR;
+	/* v18a : x is S/v, la variable vaut une valeur de S, variante v */
+	const char *sl = strrchr(typeText, '/');
+	TclType *sum;
+	Tcl_Size vi;
+	int dv = -1;
+
+	if (!TclAnnotErrorCodeIs(interp, "VARIANT") || sl == NULL) {
+	    return TCL_ERROR;
+	}
+	sum = TclTypeParse(interp, typeText, sl - typeText);
+	if (sum == NULL) {
+	    return TCL_ERROR;
+	}
+	vi = TclTypeFieldIndex(sum, sl + 1);
+	if (vi < 0) {
+	    Tcl_Obj *ln = Tcl_NewStringObj(sl + 1, -1);
+
+	    Tcl_IncrRefCount(ln);
+	    vi = SumLiteralIndex(sum, ln);
+	    Tcl_DecrRefCount(ln);
+	}
+	Tcl_ResetResult(interp);
+	if (TclVarRefCanon(interp, objv[1], &canon) == TCL_OK) {
+	    Tcl_IncrRefCount(canon);
+	    if (TclVarRefGet(interp, Tcl_GetString(canon), &value)
+		    == TCL_OK) {
+		TclType *vt = NULL;
+		int vv = -1;
+
+		Tcl_IncrRefCount(value);
+		if (TclAnnotInfo(value, &content, &vt, &vv, NULL) == 1
+			&& vt != NULL) {
+		    if (vt == sum && TclSumTagged(sum)) {
+			vv = TclSumDecode(sum, content, NULL);
+		    }
+		    result = (vt == sum && vv == (int) vi);
+		} else {
+		    content = TCL_ANNOT_CONTENT(value);
+		    result = (TclTypeValidate(interp, sum, content, -1, &dv)
+			    == TCL_OK && dv == (int) vi);
+		}
+		Tcl_DecrRefCount(value);
+	    }
+	    Tcl_DecrRefCount(canon);
+	}
+	Tcl_ResetResult(interp);
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+	return TCL_OK;
     }
     if (TclVarRefCanon(interp, objv[1], &canon) != TCL_OK) {
 	Tcl_ResetResult(interp);
@@ -17933,15 +18108,13 @@ TclTypesInit(Tcl_Interp *interp)
     {
 	/*
 	 * v17z : num, le nombre, intégré : une union de ses représentations
-	 * (num.int, num.double), lue comme expr lit un nombre.
+	 * (num/int, num/double), lue comme expr lit un nombre.
 	 */
 	Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
 	Tcl_HashEntry *hPtr;
 
-	typesDefiningNum = 1;
 	(void) Tcl_EvalEx(interp, "::type def ::num {{int}int | {double}double}",
 		-1, TCL_EVAL_GLOBAL);
-	typesDefiningNum = 0;
 	Tcl_RestoreInterpState(interp, st);
 	hPtr = Tcl_FindHashEntry(&d->names, "::num");
 	if (hPtr == NULL) {
@@ -17988,7 +18161,7 @@ TclTypesInit(Tcl_Interp *interp)
  * étiquettes ({dy:}3) ; un dernier champ {list.T}args reçoit le reste ; un
  * champ {var.T}n lie n à la variable de l'appelant (upvar automatique), dont
  * la valeur courante est vérifiée. L'annotation du nom donne le type de
- * retour : le résultat est casté au retour normal ; une étiquette ({v:})
+ * retour : le résultat est casté au retour normal ; une étiquette ({/v})
  * choisit la variante d'une somme ; {T}$x sur un return n'est qu'une note
  * locale, qui expire avec la procédure.
  *
@@ -18260,7 +18433,7 @@ CanonContent(const TclType *tp, int variant, Tcl_Obj *v, int depth)
 		Tcl_Obj *one = Tcl_NewListObj(1, &e), *lab;
 
 		Tcl_IncrRefCount(one);
-		lab = Tcl_ObjPrintf("{%s:}%s",
+		lab = Tcl_ObjPrintf("{/%s}%s",
 			Tcl_GetString(tp->fields[variant].name),
 			Tcl_GetString(one));
 		Tcl_DecrRefCount(one);
@@ -18367,14 +18540,14 @@ TypeCanonicCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		&& variant >= 0 && variant < tp->nfields
 		&& tp->fields[variant].name != NULL
 		&& tp->fields[variant].type != NULL) {
-	    /* v17z : la variante, quand la chaîne ne la dit pas : {S.s}5 */
+	    /* v17z : la variante, quand la chaîne ne la dit pas : {S/s}5 */
 	    int dv = -1;
 	    Tcl_Obj *cc = CanonContent(tp, variant, content, 0);
 
 	    Tcl_IncrRefCount(cc);
 	    if (TclTypeValidate(NULL, tp, cc, -1, &dv) != TCL_OK
 		    || dv != variant) {
-		Tcl_DStringAppend(&ds, ".", 1);
+		Tcl_DStringAppend(&ds, "/", 1);
 		Tcl_DStringAppend(&ds, Tcl_GetString(
 			tp->fields[variant].name), TCL_AUTO_LENGTH);
 	    }
@@ -18476,13 +18649,14 @@ ParseLabels(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v, int depth,
 	Tcl_Obj *pl, **pv, *inner;
 	Tcl_Size np;
 
-	if (tp->binTag != NULL || t[0] != '{'
-		|| (c = strstr(t, ":}")) == NULL
+	if (tp->binTag != NULL || t[0] != '{' || t[1] != '/'
+		|| (c = strchr(t, '}')) == NULL
 		|| (strchr(t + 1, '{') != NULL && strchr(t + 1, '{') < c)) {
 	    return NULL;
 	}
 	{
-	    Tcl_Obj *nm = Tcl_NewStringObj(t + 1, c - t - 1);
+	    /* {/v}charge (v18a) */
+	    Tcl_Obj *nm = Tcl_NewStringObj(t + 2, c - t - 2);
 
 	    Tcl_IncrRefCount(nm);
 	    idx = TclTypeFieldIndex(tp, Tcl_GetString(nm));
@@ -18491,7 +18665,7 @@ ParseLabels(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v, int depth,
 	if (idx < 0) {
 	    return NULL;
 	}
-	pl = Tcl_NewStringObj(c + 2, TCL_AUTO_LENGTH);
+	pl = Tcl_NewStringObj(c + 1, TCL_AUTO_LENGTH);
 	Tcl_IncrRefCount(pl);
 	if (Tcl_ListObjGetElements(NULL, pl, &np, &pv) != TCL_OK
 		|| np != 1) {
@@ -18573,11 +18747,11 @@ TypeParseCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 	int perr = 0, pvar = -1;
 
 	{
-	    /* v17z : {S.v}charge, la variante d'une somme */
+	    /* v17z : {S/v}charge, la variante d'une somme */
 	    const char *dot = NULL, *q;
 
 	    for (q = text + 1; q < text + 1 + tl; q++) {
-		if (*q == '.') {
+		if (*q == '/') {
 		    dot = q;
 		}
 	    }
@@ -18802,7 +18976,7 @@ TclTypedSigRelease(void *sigv)
     Tcl_Free(sig);
 }
 
-/* Le type de retour : un type, ou une somme (les étiquettes {v:}). */
+/* Le type de retour : un type, ou une somme (les étiquettes {/v}). */
 static int
 RetTypeCheck(Tcl_Interp *interp, Tcl_Obj *text)
 {
@@ -18811,14 +18985,14 @@ RetTypeCheck(Tcl_Interp *interp, Tcl_Obj *text)
     TclType *tp = TclTypeParse(interp, t, l);
 
     if (tp == NULL) {
-	const char *dot = strrchr(t, '.');
+	const char *dot = strrchr(t, '/');
 	TclType *sum = (dot != NULL && dot > t)
 		? TclTypeParse(interp, t, dot - t) : NULL;
 
 	if (sum != NULL && sum->kind == TCLT_SUM
 		&& TclTypeFieldIndex(sum, dot + 1) >= 0) {
 	    Tcl_ResetResult(interp);
-	    return TCL_OK;		/* {S.v}f : toujours la variante v */
+	    return TCL_OK;		/* {S/v}f : toujours la variante v */
 	}
 	(void) TclTypeParse(interp, t, l);	/* le message */
 	return TCL_ERROR;
@@ -19762,7 +19936,7 @@ TypedArgError(Tcl_Interp *interp, TypedArg *a)
 }
 
 /* Le champ (un champ positionnel ou le reste) attend-il une somme (dont une
- * étiquette {v:} nomme la variante) ? -1 : aucun champ. */
+ * étiquette {/v} nomme la variante) ? -1 : aucun champ. */
 static int
 LabelForSum(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size field)
 {
@@ -20284,7 +20458,7 @@ BindOption(Tcl_Interp *interp, TclTypedSig *sig, Tcl_Size ai, Tcl_Obj **ov)
 			v = vf->literal;	/* -ascii : le littéral */
 		    } else {
 			/* -command cmd : la valeur, sa variante nommée */
-			Tcl_Obj *lab = Tcl_ObjPrintf("%s:",
+			Tcl_Obj *lab = Tcl_ObjPrintf("/%s",
 				Tcl_GetString(VariantName(vf)));
 
 			Tcl_IncrRefCount(lab);
@@ -20503,7 +20677,7 @@ TclTypedProcBind(Tcl_Interp *interp, void *sigv, Tcl_Size skip)
 		const char *nt = Tcl_GetStringFromObj(
 			sig->a[sig->pos[j]].name, &nl);
 
-		if (nl == ll - 1 && memcmp(nt, lt, nl) == 0) {
+		if (nl == ll - 1 && memcmp(nt, lt + 1, nl) == 0) {
 		    fi = j;
 		    break;
 		}
@@ -20700,7 +20874,7 @@ ResetReturn(Tcl_Interp *interp, int result)
 /*
  * À la sortie du corps (TEBC, avant l'expiration des annotations du corps) :
  * le résultat d'un retour normal est casté au type de retour. Les notes du
- * résultat expirent d'abord ({T}$x reste local) ; une étiquette {v:} en
+ * résultat expirent d'abord ({T}$x reste local) ; une étiquette {/v} en
  * attente choisit la variante d'une somme.
  */
 int
@@ -20761,6 +20935,17 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
     }
     Tcl_IncrRefCount(res);
     if (TclIsAnnotated(res)) {
+	if (TclAnnotCheckOldLabel(interp, res) != TCL_OK) {
+	    Tcl_Obj *msg = Tcl_GetObjResult(interp);
+
+	    Tcl_IncrRefCount(msg);
+	    ResetReturn(interp, result);
+	    Tcl_SetObjResult(interp, msg);
+	    Tcl_DecrRefCount(msg);
+	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "OLDLABEL", (char *) NULL);
+	    Tcl_DecrRefCount(res);
+	    return TCL_ERROR;
+	}
 	lab = TclAnnotLabelOf(res);
 	TclAnnotExpire(interp, res);
     }
@@ -20776,13 +20961,13 @@ TclTypedProcReturn(Tcl_Interp *interp, void *sigv, int result)
 	goto failed;
     }
     {
-	/* {v:} : v doit être une variante du type de retour, une somme */
+	/* {/v} : v doit être une variante du type de retour, une somme */
 	TclType *rt = TclAnnotTypeOf(interp, sig->retText);
 	Tcl_Size ll;
 	const char *lt = Tcl_GetStringFromObj(lab, &ll);
 	char *vn = (char *) Tcl_Alloc(ll);
 
-	memcpy(vn, lt, ll - 1);
+	memcpy(vn, lt + 1, ll - 1);	/* {/v} : le nom suit la barre */
 	vn[ll - 1] = '\0';
 	while (rt != NULL && rt->kind != TCLT_SUM && rt->under != NULL) {
 	    rt = rt->under;

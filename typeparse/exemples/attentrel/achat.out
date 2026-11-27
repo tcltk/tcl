@@ -12,7 +12,7 @@ budgetHSE get reste                                        -> 900.0
 info object isa object ::Commande1                         -> 0
 
 --- ce que les types et l'automate refusent
-Achat create ::table {montant:}cent {description:}table    -> ERREUR expected floating-point number but got "cent"
+Achat create ::table {/montant}cent {/description}table    -> ERREUR expected floating-point number but got "cent"
 Demander ::HSE ::chaise                                    -> ERREUR wrong # args: should be "Demander ?-date value? ?-but value? ?-moyen value? ?--? demandeur objet receveur"
 Demander ::chaise ::chaise ::Achats                        -> ERREUR Demander: actant "demandeur" must be Service, got "::chaise"
 Demander ::HSE ::HSE ::Achats                              -> ERREUR Demander: actant "objet" must be Achat, got "::HSE"

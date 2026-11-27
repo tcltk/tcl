@@ -1,15 +1,15 @@
-compilé                            1 K.a
-eval                               1 K.a
-uplevel 0                          1 K.a
-uplevel 1                          1 K.a
-switch -matchvar a5                5 K.a
-switch -matchvar zz                0 K.b
-foreach puis eval                  7 K.b
-eval imbriqué                      2 K.a
+compilé                            1 K/a
+eval                               1 K/a
+uplevel 0                          1 K/a
+uplevel 1                          1 K/a
+switch -matchvar a5                5 K/a
+switch -matchvar zz                0 K/b
+foreach puis eval                  7 K/b
+eval imbriqué                      2 K/a
 en clair, eval                     ERREUR: return value {K}: value "a 1" matches no variant of K
 en clair, switch                   ERREUR: return value {K}: value "a 3" matches no variant of K
 --- ce qui ne change pas
 procédure classique                1 {}
-retour qui n'est pas une somme     ERREUR: label {a:} on a return value: the return type int is not a sum
-catch, puis return -options        1 K.a
-variante inconnue                  ERREUR: label {z:} on a return value: K has no variant "z"
+retour qui n'est pas une somme     ERREUR: label {/a} on a return value: the return type int is not a sum
+catch, puis return -options        1 K/a
+variante inconnue                  ERREUR: label {/z} on a return value: K has no variant "z"

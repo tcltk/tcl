@@ -35,7 +35,7 @@ Le TIP porte les deux. Les règles ci-dessous disent comment elles se combinent.
 
 ### 3.1 La règle
 
-* `set {temp}t {celsius:}50.0` : la valeur est `50.0`, `type get $t` rend `temp.celsius`.
+* `set {temp}t {/celsius}50.0` : la valeur est `50.0`, `type get $t` rend `temp/celsius`.
 * `$t` se lit comme sa charge : `expr {$t + 1}` donne `51.0`. C'est la projection S6 : une
   somme se lit comme le type de sa variante active.
 * `$t(celsius)` lit la charge en vérifiant la variante ; `$t(fahrenheit)` est une erreur qui
@@ -50,7 +50,7 @@ Une somme mêle deux natures, qu'on ne confond pas :
 |---|---|---|
 | porte une charge | oui | non : il est sa propre valeur |
 | s'atteint par un chemin | `$m(n)`, `set m(n) 5` | non : `$m(auto)` est une erreur (`auto is a literal of M, not a variant: it has no payload`) |
-| s'étiquette | `{n:}5` | inutile |
+| s'étiquette | `{/n}5` | inutile |
 | se perd par la chaîne | si elle recouvre une autre (métadonnée) | jamais : c'est la chaîne même |
 
 | commande | rend |
@@ -64,14 +64,14 @@ Une somme mêle deux natures, qu'on ne confond pas :
 | `type variant $v NAME` | la même charge sous la variante `NAME`, comme nouvelle valeur (charge vérifiée) |
 
 * `type variant $v NAME` **réétiquette** (même charge, lue autrement : ce qu'on veut entre
-  `{int}i` et `{int}j`) ; **convertir** est `type cast S.NAME $v`, par `type convert`
+  `{int}i` et `{int}j`) ; **convertir** est `type cast S/NAME $v`, par `type convert`
   (`50.0` celsius → `122.0` fahrenheit). Le message de `type variant` rappelle le cast quand
   une règle de conversion existe. Pour une variable : `set v [type variant $v s]`, ou le
   chemin `set v(s) $v`.
 * `type get` d'un littéral rend le type seul (`M`, `E`), jamais `M.auto` : il n'y a rien à
   garder en métadonnée.
 * Un littéral qui recouvre une variante (`{{string}s, "auto"}`) gagne : c'est le plus strict
-  (une seule valeur). La chaîne `auto` comme `s` s'écrit `{s:}auto`.
+  (une seule valeur). La chaîne `auto` comme `s` s'écrit `{/s}auto`.
 * `opt(T)`, aujourd'hui réservé aux liens binaires, devient la somme `{T}some, "none"` pour
   tout type.
 
@@ -87,23 +87,23 @@ Une valeur nue qui entre dans une somme :
 * **une seule variante l'accepte** : c'est elle (somme disjointe, énumération) ;
 * **un littéral l'accepte** : c'est lui (une seule valeur, le plus strict possible) ;
 * **plusieurs variantes typées l'acceptent** : erreur, avec l'écriture qui lève l'ambiguïté :
-  `value "5" fits variants i and s of S: write {i:}5, or set {S}v(i) 5`.
+  `value "5" fits variants i and s of S: write {/i}5, or set {S}v(i) 5`.
 
 *Une règle « la plus stricte gagne » (pré-v16w) a été essayée le 27 novembre, puis écartée :
 c'est exactement le danger relevé par l'exemple du texte enrichi en v16n. Une somme dont une
 variante accepte presque tout (une liste de segments, une chaîne) accepterait n'importe quelle
 valeur nue en silence (`te::document … "pas un bloc"` devenait un paragraphe de trois mots).
 La déduction « la plus stricte » reste celle des unions `|`, dont les alternatives sont
-disjointes, et donc de `num` (`{num}5` → `num.int`, `{num}5.0` → `num.double`, par la forme
+disjointes, et donc de `num` (`{num}5` → `num/int`, `{num}5.0` → `num/double`, par la forme
 du nombre).*
 
 Conséquence : une étiquette suit la valeur comme métadonnée, et se perd comme elle ; relue
 depuis la chaîne, une valeur ambiguë est une erreur, jamais un autre choix. `type canonic`
-l'écrit (`{S.s}5`, et `{s:}5` pour un élément d'une structure), `type parse` la relit.
+l'écrit (`{S/s}5`, et `{/s}5` pour un élément d'une structure), `type parse` la relit.
 
 Plus rien n'est deviné en silence (fin de l'Open Issue « without a tag, the first is taken
 silently »). La variante n'est pas collante non plus (S9) : `set t 50.0` sur une variable
-`temp` est une erreur ; on écrit `set t(celsius) 50.0` ou `set t {celsius:}50.0`.
+`temp` est une erreur ; on écrit `set t(celsius) 50.0` ou `set t {/celsius}50.0`.
 
 ### 3.3 La forme chaîne : le mot préfixé
 
@@ -111,8 +111,8 @@ Les deux commandes existent déjà ; seule leur sortie change.
 
 | commande | v16w | maintenant |
 |---|---|---|
-| `type canonic $t` | `{temp}{celsius 50.0}` | `{temp.celsius}50.0` |
-| `type canonic $L` (`list.temp`) | `{list.temp}{{celsius 50.0} …}` | `{list.temp}{{celsius:}50.0 …}` |
+| `type canonic $t` | `{temp}{celsius 50.0}` | `{temp/celsius}50.0` |
+| `type canonic $L` (`list.temp`) | `{list.temp}{{celsius 50.0} …}` | `{list.temp}{{/celsius}50.0 …}` |
 | `type parse $s` | relit la forme | relit la forme |
 
 Dans une structure, l'étiquette n'apparaît que là où la variante ne se déduit pas de la forme.
@@ -123,7 +123,7 @@ Dans une structure, l'étiquette n'apparaît que là où la variante ne se dédu
 * **`eq`, `==`, clés de dict, `lsearch`, `lsort -unique`** : la valeur, comme toujours. Un
   `50.0` en celsius et un `50.0` en fahrenheit sont égaux en valeur (S8 revient, assumé).
 * **`type eq a b`** : les types seulement, ni la valeur ni les notes. Il compare ce que rend
-  `type get`, variante comprise : `temp.celsius` et `temp.fahrenheit` ne sont pas `type eq`.
+  `type get`, variante comprise : `temp/celsius` et `temp/fahrenheit` ne sont pas `type eq`.
   Le type exact : `{mm}5` et `{double}5` ne le sont pas, même si `mm` a `double` pour base.
 * **Les notes** : par la commande `note` (`[note get $a] eq [note get $b]`, § 6).
 * L'identité complète se compose : `$a eq $b && [type eq $a $b]`.
@@ -157,7 +157,7 @@ Deux choix, pour plus tard :
 ### 3.6 `opt(T)`
 
 `opt(T)` = `{T}some, "none"`. Avec une valeur nue, `opt(string)` devient ambigu pour la chaîne
-`none` : elle demande alors l'étiquette (`{some:}none`). Les autres `opt(T)` (nombres, produits)
+`none` : elle demande alors l'étiquette (`{/some}none`). Les autres `opt(T)` (nombres, produits)
 ne changent pas d'écriture.
 
 ## 4. `type include`
@@ -174,7 +174,7 @@ L'ordre se lit en anglais, « U includes T » : `type include int pair`.
 | raffinement : la base inclut, un intervalle inclut un plus petit | `int` ⊇ `int(s,16)` ⊇ `int(u,8)` |
 | nominal : la base inclut le nominal, jamais l'inverse ; deux nominaux sans lien, jamais | `double` ⊇ `mm` ; `mm` ⊉ `px` |
 | prédicat : la base inclut ; entre prédicats, seulement s'ils sont identiques | `int` ⊇ `pair` ; `pair` ⊉ `int` |
-| somme : elle inclut ses variantes ; `S` ⊇ `S'` si chaque variante de `S'` est dans `S`, même nom, charge incluse | `temp` ⊇ `temp.celsius` |
+| somme : elle inclut ses variantes ; `S` ⊇ `S'` si chaque variante de `S'` est dans `S`, même nom, charge incluse | `temp` ⊇ `temp/celsius` |
 | énumération : littéraux inclus | `{"a","b","c"}` ⊇ `{"a","b"}` |
 | conteneurs, en covariance (les valeurs sont immuables) | `list.int` ⊇ `list.pair` |
 | produits : mêmes champs, mêmes noms, même ordre, champ par champ | |
@@ -200,8 +200,8 @@ Il devient intégré, comme `int` et `double` :
 Un nom commun évite que deux bibliothèques définissent chacune le leur (`num`, `number`),
 qui ne s'incluraient pas (deux nominaux sans lien).
 
-**Décidé : `num` est une somme ; `type get` d'un `{num}5` rend `num.int`**, d'un `{num}2.5`
-`num.double`, et ainsi de chaque représentation.
+**Décidé : `num` est une somme ; `type get` d'un `{num}5` rend `num/int`**, d'un `{num}2.5`
+`num/double`, et ainsi de chaque représentation.
 
 ### 5.2 `int` vers `double` : exact, ou marqué inexact
 
@@ -216,8 +216,8 @@ l'exactitude des nombres de Scheme :
 
 ```tcl
 set {double}x {int}9007199254740993        ;# erreur : pas de double exact
-set x [type cast num.double.inexact $n]    ;# 9007199254740992.0, type num.double.inexact
-type include num.double num.double.inexact ;# 1 : un inexact reste un double
+set x [type cast num/double.inexact $n]    ;# 9007199254740992.0, type num/double.inexact
+type include num/double num/double.inexact ;# 1 : un inexact reste un double
 ```
 
 À préciser à l'implémentation : ce que devient `inexact` dans un calcul (perdu comme toute
@@ -232,7 +232,7 @@ réels calculables. Chacun serait une représentation de plus de `num` :
 
 * **`num` devient une somme recouvrante** : `0.1` peut être un `double` (approché) ou un
   `decimal` (exact), et `0 1 -1` ressemble à une liste d'entiers. La variante vit dans la
-  métadonnée (§ 3) : `{num.decimal}0.1`.
+  métadonnée (§ 3) : `{num/decimal}0.1`.
 * **Inclusions exactes** : `decimal` ⊇ `int`, et `decimal` ⊇ `double` (tout `double` est un
   décimal fini). Dans l'autre sens, un arrondi, donc un cast et une règle `type convert`.
 * **Le calcul** reste celui des modules (`::math::decimal::add`…). La contagion
@@ -318,16 +318,43 @@ chantiers à part. Pas de compatibilité avec la forme v16w : c'est un prototype
 (`{{S}k, {string}t}`, ou `opt(S)`) ne garde que la variante extérieure : la variante
 intérieure est déduite à nouveau à la lecture (`$e(k)`), donc une erreur si elle est ambiguë.
 Dans une liste ou un produit, chaque élément garde la sienne. Lever cette limite demande de
-lire le type sous une étiquette en attente (`{k:}$k`) au moment de la résolution.
+lire le type sous une étiquette en attente (`{/k}$k`) au moment de la résolution.
 
 ## 9. Questions et réponses (27 novembre)
 
 1. **`|`** : garder comme somme promise disjointe, ou fondre dans `,` ? → **plus tard**,
    chantier à part.
-2. **`num` et ses variantes** : `type get` d'un `{num}5` ? → **`num.int`** : `num` est une
+2. **`num` et ses variantes** : `type get` d'un `{num}5` ? → **`num/int`** : `num` est une
    somme. Reste à voir si une bibliothèque peut lui ajouter une représentation (`decimal`),
    c'est-à-dire si `num` est une somme ouverte (avec l'exemple tcllib).
 3. **Le cast `int` → `double` hors de 2^53** → **erreur** ; l'arrondi s'obtient par un cast vers
    `num.double.inexact` (§ 5.2).
 4. **Les notes** → **chantier à part** : des arbres, avec la syntaxe groupée des chemins (§ 6).
 5. **Compatibilité v16w** → **non**, c'est un prototype.
+
+## 10. La notation des membres (v18a, 27 novembre)
+
+Une somme est une collection de types alternatifs ; la variante sera donc un type, et les
+membres doivent pouvoir s'enchaîner (`list.temp/celsius`). Le séparateur a été discuté :
+`.` compose déjà les types et donnerait des collisions dans les produits compliqués ; `:`
+est pris par les espaces de noms ; `~`, `@`, `°`, `#` écartés ; **`/`** retenu (aucun nom de
+type ne le contient, et il passe dans `expr` après `is` avec un petit changement du lexeur).
+Par cohérence, l'étiquette prend la même barre : `set {temp}t {/celsius}50` et
+`set {temp/celsius}t 50` disent la même chose.
+
+Fait en v18a (première étape) :
+
+* étiquettes `{/nom}` (champs et variantes, arguments nommés, retours, `type canonic`) ;
+  `{nom:}` refusé avec la nouvelle écriture dans le message ;
+* `P/f` = le type du champ (`type def point/x`), `S/v` = la variante (`type get`, `type cast`,
+  `type include`, `type variant -of`, `type def`, `{S/v}x`, `proc {S/v}f`), `{P/f}x` = étiquette
+  qualifiée ; `S.v` refusé avec la nouvelle écriture ;
+* `expr {x is S/v}` (lexeur : noms, `.`, `/membre` et groupes entre parenthèses alternés,
+  ce qui règle aussi `x is list(2).int`) ;
+* un nom de variante peut être un nom de type (`{{int}int, {string}string}`) : la restriction
+  n'a plus de raison d'être, l'exception faite pour `num` disparaît.
+
+À faire (deuxième étape) : la variante, type interné (somme, indice, type de la charge) vers
+lequel pointe l'annotation ; chaînes `mesure/some/celsius`, `list.temp/celsius` ; une étiquette
+sur une valeur déjà typée garde ce type (`{/some}$t`), ce qui lève la limite des sommes
+imbriquées (§ 8) ; `type include` par la chaîne des sous-types, `type eq` sur la chaîne entière.

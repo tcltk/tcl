@@ -7,7 +7,7 @@ argument typé                      16
 list.double                        1.0 20.0
 dict.int                           a 16
 produit                            Jean 12
-somme                              1.0 S108.d
+somme                              1.0 S108/d
 nominal                            20.0
 lappend sous contrat               1.0 20.0
 double : division réelle           2.5
@@ -19,4 +19,4 @@ list.double, lindex                {double vitesse} {double {}}
 dict.int, chemin                   {int poids} {int {}}
 {dict}, dict get                   {} poids
 scalaire typé et noté              int mm
-étiquette : pas une note           S2.i S2.s
+étiquette : pas une note           S2/i S2/s

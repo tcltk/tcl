@@ -23,8 +23,8 @@ proc {{*}list.point}lp {} {list {1 2} {3 4}}
 proc {{**}list.point}lpd {} {list {1 2} {3 4}}
 t "list.point"         {list [lp] [lpd] [llength [lindex [lp] 0]]}
 proc {{*}inter}i {w} {expr {$w ? [list en: 1 2] : "aucune"}}
-proc {{*}inter}i2 {w} { if {$w} {return {en:}[list 1 2]}; return aucune }
-proc {{**}inter}i3 {w} { if {$w} {return {en:}[list 1 2]}; return aucune }
+proc {{*}inter}i2 {w} { if {$w} {return {/en}[list 1 2]}; return aucune }
+proc {{**}inter}i3 {w} { if {$w} {return {/en}[list 1 2]}; return aucune }
 t "somme {*}"          {list [i2 1] [i2 0]}
 t "somme {**}"         {list [i3 1] [i3 0]}
 t "mauvais retour"     {proc {{*}point}bad {} {list a b}; bad}

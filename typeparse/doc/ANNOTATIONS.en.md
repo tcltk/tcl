@@ -58,7 +58,7 @@ The analogy stops at computation. In a complex number, the imaginary part takes 
 An annotation makes explicit the developer's "imaginary part", what they know about their data and Tcl did not:
 
 - a **type** has every write to a variable checked (`set {int}n abc` fails);
-- a **field name** chooses where a value goes (`set {pt}a {age:}12 {nom:}Jean`);
+- a **field name** chooses where a value goes (`set {pt}a {/age}12 {/nom}Jean`);
 - a **binary representation** says how to read and write bytes (`{int(u,16,be)}version`);
 - a **note** marks a value so that a procedure can recognize it (`note has $v mm`).
 
@@ -109,7 +109,7 @@ set {list.int}L 1 2 3
 type get $L          ;# list<int>
 ```
 
-**Where an annotation acts (v16m).** An annotation acts only on the **command that receives the word**. Nothing is resolved during substitution: Tcl substitutes every word before calling the command, and only the command knows whether a word is a value or a variable name (`set {int}$name 5` declares the variable named by `$name`). If that command is a constructor, it resolves the annotation; otherwise the annotation does nothing. When the command ends, what is still pending **expires**: a note, which no constructor resolves any more, even if the value was returned (`concat`, `return`), stored in a list or in a variable, or if the type is defined later. A label `{name:}` or a local annotation disappears.
+**Where an annotation acts (v16m).** An annotation acts only on the **command that receives the word**. Nothing is resolved during substitution: Tcl substitutes every word before calling the command, and only the command knows whether a word is a value or a variable name (`set {int}$name 5` declares the variable named by `$name`). If that command is a constructor, it resolves the annotation; otherwise the annotation does nothing. When the command ends, what is still pending **expires**: a note, which no constructor resolves any more, even if the value was returned (`concat`, `return`), stored in a list or in a variable, or if the type is defined later. A label `{/name}` or a local annotation disappears.
 
 ```tcl
 set s 3.0
@@ -147,7 +147,7 @@ type get $z          ;# px      ; note get $z: mm
 
 This stack exists only for the annotations of **one word**, received by one constructor. A note set before its `type def` does not take on meaning later (v16m): the command that received it made it expire.
 
-**Labels (v16l).** A product field or a sum variant is named by a **label**, `{name:}value`: `set {pt}a {age:}12`, `set {S}v {i:}5`. A label is a local annotation: it can never be a type, so a global type of the same name changes nothing, and `{name}` without a colon is always a type or a note. It is read by the constructor that receives the word; through another command (`set {pt}a [concat {age:}12]`), it has expired (v16m) and the argument is positional. A label that no constructor reads is not stored. The old form `{age}12`, when `age` names a field and no type, is an error that gives the new spelling.
+**Labels (v16l).** A product field or a sum variant is named by a **label**, `{/name}value`: `set {pt}a {/age}12`, `set {S}v {/i}5`. A label is a local annotation: it can never be a type, so a global type of the same name changes nothing, and `{name}` without a colon is always a type or a note. It is read by the constructor that receives the word; through another command (`set {pt}a [concat {/age}12]`), it has expired (v16m) and the argument is positional. A label that no constructor reads is not stored. The old form `{age}12`, when `age` names a field and no type, is an error that gives the new spelling.
 
 #### 2.4 Local annotations
 
@@ -347,7 +347,7 @@ speed: seen 2 times, first at e.tcl:4, via set
 
 ```
 type def NAME DEFINITION       ;# defines a nominal type (or a parameterized family)
-type def NAME                  ;# returns the definition (of S, of a variant S.v, of a field P.f)
+type def NAME                  ;# returns the definition (of S, of a variant S/v, of a field P/f)
 type alias NAME DEFINITION     ;# gives a structural name to a definition
 type get VALUE                 ;# the resolved type of a value (empty if none)
 type cast TYPE VALUE           ;# a constructor's resolver, without a variable
@@ -503,17 +503,17 @@ type def mz {"MZ"}             ;# a single literal: a constant (file signature)
 
 ```tcl
 type def S {{int}i, {string}s}
-set {S}v {i:}5                 ;# v is "i 5"
+set {S}v {/i}5                 ;# v is "i 5"
 set {S}v i 5                   ;# the same thing, written plainly
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# w is "s abc": the variant chosen by the type's name
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# w is "s abc": the variant chosen by the type's name
 ```
 
 **Union** — a value of one of the forms, without a tag: the value is the payload alone, and the alternative is computed. The alternatives must be disjoint (v16w, § 8.4).
 
 ```tcl
 type def U {{int}n | {list(2).int}pair}
-set {U}u 3 4                   ;# u is "3 4", of type U.pair
+set {U}u 3 4                   ;# u is "3 4", of type U/pair
 ```
 
 **Product** — a `struct`: named, ordered fields, each of its own type.
@@ -521,7 +521,7 @@ set {U}u 3 4                   ;# u is "3 4", of type U.pair
 ```tcl
 type def pt {{string}nom ?= "?"; {int}age ?= 0}
 set {pt}a Jean 12              ;# positional
-set {pt}b {age:}12 {nom:}Jean  ;# field labels (§ 8)
+set {pt}b {/age}12 {/nom}Jean  ;# field labels (§ 8)
 $a(nom)                        ;# Jean
 ```
 
@@ -757,12 +757,12 @@ proc {pt}shift {{pt}p; {double}dx ?= 0; {double}dy ?= 0} {
     return $q
 }
 shift $a 1 1                   ;# positional
-shift $a {dy:}5                ;# positional, then labels
-shift {dy:}5 {p:}$a            ;# labels only, any order
+shift $a {/dy}5                ;# positional, then labels
+shift {/dy}5 {/p}$a            ;# labels only, any order
 ```
 
 - **Fields.** Each field becomes a local variable carrying its contract (`set dx abc` in the body is refused). A default `?= v` makes the field optional; `?= [cmd]` is evaluated at each call, in the procedure: it can read the earlier fields (`{int}b ?= [expr {$a * 2}]`).
-- **Call.** Positional arguments, then `{name:}` labels; a positional argument after a label is refused, and so is a field given twice. A label that does not name a field stays on the value if the target field is a sum (`ps {s:}abc` chooses the variant `s`), otherwise it is an error (`unknown argument label {zz:}: must be p:, dx: or dy:`). Messages: `wrong # args: should be "shift p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx": expected floating-point number but got "abc"`.
+- **Call.** Positional arguments, then `{/name}` labels; a positional argument after a label is refused, and so is a field given twice. A label that does not name a field stays on the value if the target field is a sum (`ps {/s}abc` chooses the variant `s`), otherwise it is an error (`unknown argument label {/zz}: must be p:, dx: or dy:`). Messages: `wrong # args: should be "shift p ?dx? ?dy?"`, `missing argument "p"`, `argument "dx": expected floating-point number but got "abc"`.
 - **Types written in the signature.** A field's type may be an anonymous product: the signature then reads by itself, and a bare list is checked and becomes the field's value. A field whose type is a product **all of whose fields have a default** is optional: when absent, it takes those defaults. An incomplete list is still refused (the constructor rule: to give only some fields, name them).
 
 ```tcl
@@ -797,15 +797,15 @@ incrv k 10                     ;# k is the caller's variable
 ```
 
 - **Return.** `proc {T}name`: the result of a normal return (end of the body, `return`, `return -code ok`) is cast to `T`, like `type {T}word`; a failure is an error `return value {T}: …`. An error, `break`, `return -level 2`, `tailcall` pass without a cast. A `return {U}$x` in the body adds nothing: `{U}` is only a local note, which expires with the procedure (no accumulation of types on the return).
-- **Return labels.** When the return type is a sum, `return {v:}$x` chooses the variant `v`: `$x` is its payload. A label that is not a variant, or on a return type that is not a sum, is an error. `proc {S.v}f` always returns the variant `v`. `return {v 4}` (the value written plainly, v16w) works too. The label is also read in a body that is not compiled (`eval`, `uplevel`, `switch -matchvar`, v16x): the return is made in the procedure's type there before the label expires.
+- **Return labels.** When the return type is a sum, `return {/v}$x` chooses the variant `v`: `$x` is its payload. A label that is not a variant, or on a return type that is not a sum, is an error. `proc {S/v}f` always returns the variant `v`. `return {v 4}` (the value written plainly, v16w) works too. The label is also read in a body that is not compiled (`eval`, `uplevel`, `switch -matchvar`, v16x): the return is made in the procedure's type there before the label expires.
 
 ```tcl
 type def R {{pt}point, {int}n}
 proc {R}g {w} {
-    if {$w eq "p"} { set {pt}z 1 2; return {point:}$z }
-    return {n:}4
+    if {$w eq "p"} { set {pt}z 1 2; return {/point}$z }
+    return {/n}4
 }
-type get [g p]                 ;# R.point
+type get [g p]                 ;# R/point
 ```
 
 - **Introspection.** `type proc name` returns `args {…} return T` (the canonical signature, empty for a classic procedure); `info args` returns the names of the fields, `info default` their defaults (`[cmd]` for a computed default).
@@ -991,7 +991,7 @@ Reading then rewriting the same path always works: `set R(c) [set R(c)]`.
 
 #### 7.4 A type's path: `T(path)` (v17i)
 
-A path on a type names the **type** of a part, as `$v(path)` names its value: a list is an array (an index, `end`, `*`: the element type), a product and a dict are structs (a field, a key: its type), and `T(a.b)` goes down. In a path, `S.v` is the type of variant `v` of a sum; `S(v)` alone keeps its meaning (a value of `S` whose variant is `v`).
+A path on a type names the **type** of a part, as `$v(path)` names its value: a list is an array (an index, `end`, `*`: the element type), a product and a dict are structs (a field, a key: its type), and `T(a.b)` goes down. In a path, `S/v` is the type of variant `v` of a sum; `S(v)` alone keeps its meaning (a value of `S` whose variant is `v`).
 
 ```tcl
 type def Emplacement {{Emplacement_ref}référence; {Emplacement_propriétés}propriétés}
@@ -1013,8 +1013,8 @@ A product of *n* fields is built in four ways, without guessing anything:
 | form | example | rule |
 |---|---|---|
 | positional | `set {pt}a Jean 12` | exactly *n* values, in field order |
-| field labels | `set {pt}a {age:}12 {nom:}Jean` | every value labelled; any order; omitted fields at their default |
-| a single field | `set {pt}a {pt.nom}Jean` | the other fields at their default |
+| field labels | `set {pt}a {/age}12 {/nom}Jean` | every value labelled; any order; omitted fields at their default |
+| a single field | `set {pt}a {pt/nom}Jean` | the other fields at their default |
 | path + positional values | `set {pt}a(age,nom) 12 Jean` | one value per leaf of the path (or per group, § 8.3) |
 
 Added to these: **no argument** (`set {pt}a`, every field at its default) and **a product of the same type** (a copy). Anything else is an error:
@@ -1028,28 +1028,28 @@ The bare name/value form (`set {pt}a nom Jean age 12`) **no longer exists**: it 
 
 #### 8.2 Field labels
 
-Each argument names its field with a label, `{field:}value` (v16l). A label cannot be confused with a global type of the same name.
+Each argument names its field with a label, `{/field}value` (v16l). A label cannot be confused with a global type of the same name.
 
 ```tcl
 type def pair {{string}nom; {int}age ?= 0}
 type def age int                       ;# changes nothing
-set {pair}p {nom:}jean {age:}12         ;# jean 12
-set {pair}p {nom:}zoe                   ;# zoe 0
-set {pair}p {nom}jean                   ;# {nom} is not a type: ... write {nom:}
-set v {age:}21                          ;# local annotation {age:} cannot be stored by "set"
+set {pair}p {/nom}jean {/age}12         ;# jean 12
+set {pair}p {/nom}zoe                   ;# zoe 0
+set {pair}p {nom}jean                   ;# {nom} is not a type: ... write {/nom}
+set v {/age}21                          ;# local annotation {/age} cannot be stored by "set"
 ```
 
 **All or nothing:**
 
 ```tcl
-set {pair}p {nom:}jean 12        ;# can't mix values named by a field label ({field:}value)
+set {pair}p {/nom}jean 12        ;# can't mix values named by a field label ({/field}value)
                                  ;#   and positional values in a pair constructor: name every field, or none
-set {pair}p {nom:}a {size:}3     ;# unknown field "size:" in pair
-set {pair}p {nom:}a {nom:}b      ;# duplicate field "nom" in pair
+set {pair}p {/nom}a {/size}3     ;# unknown field "size:" in pair
+set {pair}p {/nom}a {/nom}b      ;# duplicate field "nom" in pair
 set {pair}p {aut.nom}x           ;# aut.nom names a field of aut, not of pair
 ```
 
-A braced value can be labelled too: `set {seg}s {a:}{1 2} {b:}{3 4}`.
+A braced value can be labelled too: `set {seg}s {/a}{1 2} {/b}{3 4}`.
 
 #### 8.3 Path and positional values
 
@@ -1065,7 +1065,7 @@ set {rect}Q((A,B).*(x,y))    {5 6 7 8}    ;# with unfolding: one value, flat
 
 Each value has the shape its read would return; the three counts coincide only if the reads coincide.
 
-**Path + labels does not exist**: `set {rect}R(A) {y:}2 {x:}1` is an error (`1 targets but 2 values`). It is not planned until a use asks for it.
+**Path + labels does not exist**: `set {rect}R(A) {/y}2 {/x}1` is an error (`1 targets but 2 values`). It is not planned until a use asks for it.
 
 #### 8.4 Sums, unions and lists
 
@@ -1094,15 +1094,15 @@ An enumeration (`{"on", "off"}`, or `{"on" | "off"}`) has the same value in both
 **Building a sum.** All these forms give `s 5`:
 
 ```tcl
-set {S}v {s:}5                 ;# the label: a shortcut for the variant
+set {S}v {/s}5                 ;# the label: a shortcut for the variant
 set {S}v s 5                   ;# plainly: the variant, then its payload
-set {S.s}v 5                   ;# by the variant's type
+set {S/s}v 5                   ;# by the variant's type
 set {S}v(s) 5                  ;# by the path
 set {S}v [read $f]             ;# by the string "s 5"
 set {S}v 5                     ;# refused: value "5" names no variant of the sum S: a value of
-                               ;# a sum is the name of its variant, then its value, as {i 5}, or {i:}5
-set {list.S}L {i:}1 {s:}a      ;# each element: "i 1", "s a"
-lappend L {s:}x                ;# lappend and lset receive the element's label
+                               ;# a sum is the name of its variant, then its value, as {i 5}, or {/i}5
+set {list.S}L {/i}1 {/s}a      ;# each element: "i 1", "s a"
+lappend L {/s}x                ;# lappend and lset receive the element's label
 ```
 
 A value already typed with a variant's type goes into the sum (`set {int}n 5; set {W}w $n` gives `i 5` if `W` has only one `int` variant; otherwise the label is needed).
@@ -1111,14 +1111,14 @@ A value already typed with a variant's type goes into the sum (`set {int}n 5; se
 
 ```tcl
 type def segment {{string}text, {{string}target; {list.segment}content}link}
-set {segment.link}s {target:}$url {content:}$segs   ;# labels, any order, defaults
-set {segment.link}s $url $segs                      ;# positional
+set {segment/link}s {/target}$url {/content}$segs   ;# labels, any order, defaults
+set {segment/link}s $url $segs                      ;# positional
 set {segment}s(link.(target,content)) $url $segs    ;# a path through the sum
 set {segment}s($v.($fields)) {*}$values             ;# the same, computed
-type def segment.link                               ;# {string}target; {list.segment}content
+type def segment/link                               ;# {string}target; {list.segment}content
 ```
 
-The value is `link {URL SEGMENTS}`. The first step of a path chooses the variant (a single one for all the paths), the rest builds the value of its type; a path also goes through a sum that is a field of a product (`set {P}r(n.i,m) 4 5`). Messages name the anonymous product of a variant `S.v`.
+The value is `link {URL SEGMENTS}`. The first step of a path chooses the variant (a single one for all the paths), the rest builds the value of its type; a path also goes through a sum that is a field of a product (`set {P}r(n.i,m) 4 5`). Messages name the anonymous product of a variant `S/v`.
 
 **Reading.** `$v(s)` returns the payload, typed; `$f(w)` reads a field of the payload directly when the name is not a variant (`shape.rect`: `$f(w)` like `$f(rect.w)`). `type variant $v` returns the variant's name (its text for a literal). A sum value is a two-element list: `lassign $v name payload` also works without types.
 
@@ -1135,14 +1135,14 @@ switch [type variant $v] { i {…} s {…} }
 
 ```tcl
 type def temp {{double}celsius, {double}fahrenheit}
-type convert temp.celsius temp.fahrenheit {{x} {expr {$x*9/5.0 + 32}}}
-set {temp}t {celsius:}100      ;# t is "celsius 100"
+type convert temp/celsius temp/fahrenheit {{x} {expr {$x*9/5.0 + 32}}}
+set {temp}t {/celsius}100      ;# t is "celsius 100"
 set t(fahrenheit)              ;# 212.0: reading an inactive variant, through the rule
-set u {temp.fahrenheit}$t      ;# explicit cast: u is "fahrenheit 212.0"
-type cast temp.fahrenheit $t   ;# the same
+set u {temp/fahrenheit}$t      ;# explicit cast: u is "fahrenheit 212.0"
+type cast temp/fahrenheit $t   ;# the same
 ```
 
-Reading an inactive variant and the cast `{S.v}` (or `type cast S.v`) take, in order: the rule; a refusal if the two variants have the same shape (an identity cast would say a celsius is a fahrenheit: `… both have the same form, so reading one as the other needs a rule: type convert temp.celsius temp.fahrenheit {{x} ...}`); otherwise the ordinary cast between the types of the two variants (`{int}i, {string}s`: `{i}5` read by `$v(s)` gives `5`). A rule never applies to a write (`set t(fahrenheit) 50` changes the variant without converting). No chaining (a rule a → b and a rule b → c do not make a → c), no assumed reverse.
+Reading an inactive variant and the cast `{S/v}` (or `type cast S/v`) take, in order: the rule; a refusal if the two variants have the same shape (an identity cast would say a celsius is a fahrenheit: `… both have the same form, so reading one as the other needs a rule: type convert temp/celsius temp/fahrenheit {{x} ...}`); otherwise the ordinary cast between the types of the two variants (`{int}i, {string}s`: `{i}5` read by `$v(s)` gives `5`). A rule never applies to a write (`set t(fahrenheit) 50` changes the variant without converting). No chaining (a rule a → b and a rule b → c do not make a → c), no assumed reverse.
 
 A list receives its elements one by one: `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. A single argument is **one** element.
 
@@ -1504,8 +1504,8 @@ puts [type {c!}export point]
 ;#     double y;
 ;# } point;
 ;# _Static_assert(sizeof(point) == 16, "point: size");
-;# _Static_assert(offsetof(point, x) == 0, "point.x: offset");
-;# _Static_assert(offsetof(point, y) == 8, "point.y: offset");
+;# _Static_assert(offsetof(point, x) == 0, "point/x: offset");
+;# _Static_assert(offsetof(point, y) == 8, "point/y: offset");
 ```
 
 `tcl::unsupported::abi` gives what these computations use: `byteOrder`, `pointer`, and for `i8 … i64 f32 f64 ptr` the size and alignment inside a structure (which `tcl_platform` does not say).
@@ -1618,7 +1618,7 @@ bash typeparse/maj.sh [typeparse.zip]   # extracts, copies the type sources, app
 | product | `struct`: named, ordered fields |
 | sum | one variant among several, named |
 | variant | one of the branches of a sum |
-| label | local annotation naming the field or the variant of an argument: `{age:}12`, `{i:}5` (v16l) |
+| label | local annotation naming the field or the variant of an argument: `{/age}12`, `{/i}5` (v16l) |
 | path | index of a typed value: `R(A.(x,y))` |
 | pathindex | object carrying an index and its substituted parts |
 | link | `var.T` (to a variable) or `*(…).T` (to a binary address) |

@@ -41,9 +41,9 @@ construção) ou `$variável`. Num produto, o antigo `=` continua aceite.
 * **Ordem.** Um produto tem campos ordenados; também se constrói de forma
   **posicional** (`set {pt}b Jean 12`, como a inicialização de um struct C).
   Um dict não tem forma posicional.
-* **Um só campo.** Um produto aceita o prefixo `{T.campo}`:
-  `set {pt}c {pt.nom}Jean` fixa `nom`, os outros campos recebem o seu valor
-  por omissão (`Jean 0`). É a mesma escrita que `{Val.i}5` para uma soma.
+* **Um só campo.** Um produto aceita o prefixo `{T/campo}`:
+  `set {pt}c {pt/nom}Jean` fixa `nom`, os outros campos recebem o seu valor
+  por omissão (`Jean 0`). É a mesma escrita que `{Val/i}5` para uma soma.
 * **Tipos dos campos.** Cada campo de um produto tem o seu próprio tipo
   (`{string}nom; {int}age`); um `dict(...)` tem um só para todos os valores
   (`.string`).
@@ -156,7 +156,7 @@ NESSE INSTANTE: o resultado deixa de mudar depois.
   reutilizado: dois instantâneos do mesmo tipo têm o mesmo tipo.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b:}A
+    set {mix}s1 {/b}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# árvore cujos valores são ligações
@@ -174,7 +174,7 @@ mas não é a mesma coisa.
 | | `union` do C | soma |
 |---|---|---|
 | o que contém | os **mesmos bytes**, lidos de várias formas | **uma só** variante, que traz o seu nome |
-| quem sabe qual é válida | ninguém: o programador tem de saber | o próprio valor (`type get` dá `S.x`) |
+| quem sabe qual é válida | ninguém: o programador tem de saber | o próprio valor (`type get` dá `S/x`) |
 | ler a variante errada | permitido, leem-se bytes quaisquer | impossível: acede-se à variante que se tem |
 | tamanho num ficheiro | o da maior vista | o da variante escolhida |
 | escolha da variante | nenhuma, não existe | por um campo já lido (`S($tag)`) ou pelo seu nome (`S(x)`) |
@@ -345,7 +345,7 @@ type binary decode {R(tp)} $octets
 ```
 
 `U(tp)` é um tipo com uma só variante: o seu tamanho é conhecido
-(`type binary {sizeof?}`), o valor lido é `U(tp).tp` e não há nada a
+(`type binary {sizeof?}`), o valor lido é `U(tp)/tp` e não há nada a
 adivinhar, mesmo que várias variantes tenham a mesma forma (o que antes
 tornava o valor ambíguo). `U($campo)` mantém o seu sentido: variante
 escolhida por um campo já lido. Se `$v` for um parâmetro ligado do tipo,

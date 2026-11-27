@@ -288,8 +288,8 @@ type def mz {"MZ"}             ;# ein einziges Literal: eine Konstante (Dateisig
 ```tcl
 type def S {{int}i, {string}s}
 set {S}v {i}5
-type get $v                    ;# S.i
-set {S.s}w abc                 ;# die Variante, gewählt über den Namen des Typs
+type get $v                    ;# S/i
+set {S/s}w abc                 ;# die Variante, gewählt über den Namen des Typs
 ```
 
 **Produkt** — ein `struct`: benannte, geordnete Felder, jedes mit eigenem Typ.
@@ -532,7 +532,7 @@ Ein Produkt mit *n* Feldern wird auf vier Arten aufgebaut, ohne dass etwas errat
 |---|---|---|
 | positionell | `set {pt}a Jean 12` | genau *n* Werte, in der Reihenfolge der Felder |
 | Feldetiketten | `set {pt}a {age}12 {nom}Jean` | alle Werte etikettiert; beliebige Reihenfolge; weggelassene Felder mit ihrer Vorgabe |
-| ein einzelnes Feld | `set {pt}a {pt.nom}Jean` | die anderen Felder mit ihrer Vorgabe |
+| ein einzelnes Feld | `set {pt}a {pt/nom}Jean` | die anderen Felder mit ihrer Vorgabe |
 | Pfad + positionelle Werte | `set {pt}a(age,nom) 12 Jean` | ein Wert pro Blatt des Pfads (oder pro Gruppe, § 8.3) |
 
 Hinzu kommen **kein Argument** (`set {pt}a`, alle Felder mit ihrer Vorgabe) und **ein Produkt desselben Typs** (Kopie). Alles andere ist ein Fehler:
@@ -588,12 +588,12 @@ Jeder Wert hat die Form, die sein Lesen liefern würde; die drei Anzahlen fallen
 Eine Summe wird mit ihrer Variante als Etikett aufgebaut, oder über den Variantennamen im Typ:
 
 ```tcl
-set {S}v {i}5                  ;# S.i
-set {S.s}w abc                 ;# S.s
+set {S}v {i}5                  ;# S/i
+set {S/s}w abc                 ;# S/s
 set {list.S}L {i}1 {s}a        ;# jedes Element behält seine Variante
 ```
 
-Ohne Etikett wird die Variante aus dem Wert abgeleitet, in der Reihenfolge der Varianten: `set {S}u 5` ergibt `S.i`. Haben mehrere Varianten dieselbe Form (`{string}a, {string}b`), passt immer die erste: Zum Wählen etikettieren (`{b}y`).
+Ohne Etikett wird die Variante aus dem Wert abgeleitet, in der Reihenfolge der Varianten: `set {S}u 5` ergibt `S/i`. Haben mehrere Varianten dieselbe Form (`{string}a, {string}b`), passt immer die erste: Zum Wählen etikettieren (`{b}y`).
 
 Eine Liste erhält ihre Elemente einzeln: `set {list.int}L 1 2 3`, `set {list(2).int}c 3 4`. Ein einzelnes Argument ist **ein** Element.
 

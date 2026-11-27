@@ -3,23 +3,23 @@ set A 1; set B 2; set C 3
 
 # --- sommes : la variante est conservee, meme si l'ordre des variantes change
 type def mix {{int}a, {var.int}b, {string}s}
-set {mix}s1 {b:}A
+set {mix}s1 {/b}A
 set d1 [type deref $s1]
 puts "somme : $s1 -> $d1  ([type get $d1])  b=$d1(b)"
-set {mix}x1 {a:}5
+set {mix}x1 {/a}5
 puts "variante a : [type deref $x1]  ([type get [type deref $x1]])"
-set {mix}x2 {s:}hello
+set {mix}x2 {/s}hello
 puts "variante s : [type deref $x2]  ([type get [type deref $x2]])"
-set {list.mix}L {b:}A {a:}7 {b:}B
+set {list.mix}L {/b}A {/a}7 {/b}B
 set dl [type deref $L]
 puts "liste de sommes : $dl  [lmap e $dl {type get $e}]"
 
 # --- somme recursive : feuilles = liens, noeuds = listes
 type def bt {{var.int}leaf, {list.bt}node}
-set {bt}l1 {leaf:}A
-set {bt}l2 {leaf:}B
+set {bt}l1 {/leaf}A
+set {bt}l2 {/leaf}B
 set {list.bt}kids $l1 $l2
-set {bt}x {node:}$kids
+set {bt}x {/node}$kids
 set dx [type deref $x]
 puts "bt : $x -> $dx  ([type get $dx])  premiere feuille : [type get $dx(node.0)] = $dx(node.0.leaf)"
 

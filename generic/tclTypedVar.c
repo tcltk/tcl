@@ -996,7 +996,7 @@ ForeignFieldTag(Tcl_Interp *interp, TclType *tp, const char *text,
     Tcl_InterpState st;
 
     for (p = text; p < text + len; p++) {
-	if (*p == '.') {
+	if (*p == '/') {
 	    dot = p;
 	}
     }
@@ -1037,7 +1037,7 @@ ProductFieldTag(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg,
     text = Tcl_GetStringFromObj(raw, &len);
     dot = NULL;
     for (p = text; p < text + len; p++) {
-	if (*p == '.') {
+	if (*p == '/') {
 	    dot = p;			/* dernier point : le nom du champ */
 	}
     }
@@ -1340,7 +1340,7 @@ BuildProductEx(Tcl_Interp *interp, TclType *tp, Tcl_Size n,
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"wrong # args: %s needs %" TCL_SIZE_MODIFIER "d values; to "
 		"name fields (the others take their default), write "
-		"{field:}value or set {%s}var(field,...) value...",
+		"{/field}value or set {%s}var(field,...) value...",
 		tp->name, nf, tp->name));
 	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", (char *) NULL);
 	goto done;
@@ -1514,7 +1514,7 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	    if (found >= 0 && again >= 0 && TclSumStrict(tp)) {
 		/* v16w : deux variantes de ce type : laquelle ? */
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a value of type %s "
-			"fits variants %s and %s of %s: write {%s:}value",
+			"fits variants %s and %s of %s: write {/%s}value",
 			at->name, Tcl_GetString(tp->fields[found].name),
 			Tcl_GetString(tp->fields[again].name), tp->name,
 			Tcl_GetString(tp->fields[found].name)));
@@ -1612,7 +1612,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Obj **tagVals = NULL, **tagNames = NULL;
     int fieldTags = 0;
     Var *varPtr, *arrayPtr = NULL;
-    TclType *sumTp = NULL;		/* v16o : set {S.v}x {f:}a {g:}b */
+    TclType *sumTp = NULL;		/* v16o : set {S/v}x {/f}a {/g}b */
     int sumVar = -1;
 
     if (TclAnnotResolve(interp, objv[1], NULL, &status, &tp, &avar, &nameObj)
@@ -1906,7 +1906,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		Tcl_Size tl;
 		const char *tt = Tcl_GetStringFromObj(top, &tl);
 
-		tagNames[i] = Tcl_NewStringObj(tt, tl - 1);
+		tagNames[i] = Tcl_NewStringObj(tt + 1, tl - 1);
 	    } else {
 		tagNames[i] = NULL;
 	    }
@@ -1969,9 +1969,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    Tcl_ListObjIndex(NULL, pd, npd - 1, &top);
 		}
 		if (top != NULL && (TclAnnotIsUnknown(interp, top)
-			|| (Tcl_GetString(top)[0] != '\0'
-			&& Tcl_GetString(top)[strlen(Tcl_GetString(top)) - 1]
-			== ':'))) {
+			|| Tcl_GetString(top)[0] == '/')) {
 		    Tcl_Size tl;
 		    const char *tt = Tcl_GetStringFromObj(top, &tl);
 
@@ -1982,11 +1980,12 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    Tcl_Size ul;
 		    const char *ut = Tcl_GetStringFromObj(top, &ul);
 
-		    if (ul > 1 && ut[ul - 1] == ':') {
-			ul--;		/* {href:} : le nom, sans « : » */
+		    if (TclLabelIs(ut, ul)) {
+			ut++;		/* {/href} : le nom, sans la barre */
+			ul--;
 		    }
 		    Tcl_SetObjResult(interp, sumTp != NULL ? Tcl_ObjPrintf(
-			    "unknown field \"%.*s\" in %s.%s", (int) ul, ut,
+			    "unknown field \"%.*s\" in %s/%s", (int) ul, ut,
 			    sumTp->name, Tcl_GetString(
 				sumTp->fields[sumVar].name))
 			    : Tcl_ObjPrintf("unknown field \"%.*s\" in %s",
@@ -1999,7 +1998,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		Tcl_DecrRefCount(pd);
 	    }
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "can't mix values named by a field label ({field:}value) "
+		    "can't mix values named by a field label ({/field}value) "
 		    "and positional values in a %s constructor: name every "
 		    "field, or none", tp->name));
 	    Tcl_SetErrorCode(interp, "TCL", "TYPE", "FIELD", (char *) NULL);
@@ -2036,7 +2035,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 	    /* v16l : le contexte d'un argument positionnel est le type de son
 	     * champ, ou des éléments d'une liste, pour qu'une étiquette de
-	     * variante {v:} y soit lue. */
+	     * variante {/v} y soit lue. */
 	    if (nargs > 1 && tp->kind == TCLT_PRODUCT && nargs == tp->nfields) {
 		ctx = tp->fields[i].type;
 	    } else if (nargs > 1 && tp->kind == TCLT_LIST) {
@@ -2071,7 +2070,7 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		     * gardée, que la valeur soit typée ou non. */
 		    Tcl_ListObjReplace(NULL, pend, np - 1, 1, 0, NULL);
 		    np--;
-		} else if (top != NULL && tl > 1 && tt[tl - 1] == ':'
+		} else if (top != NULL && TclLabelIs(tt, tl)
 			&& tp->kind != TCLT_LIST && tp->kind != TCLT_DICT) {
 		    /* (une liste ou un dict : l'étiquette est celle de
 		     * l'élément, lue par le constructeur de l'élément) */
@@ -2212,8 +2211,8 @@ TclSetAnnotatedCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
   done:
     if (rc != TCL_OK && sumTp != NULL && !tp->nominal) {
-	/* le produit anonyme d'une variante : nommé S.v dans le message */
-	Tcl_Obj *nm = Tcl_ObjPrintf("%s.%s", sumTp->name,
+	/* le produit anonyme d'une variante : nommé S/v dans le message */
+	Tcl_Obj *nm = Tcl_ObjPrintf("%s/%s", sumTp->name,
 		Tcl_GetString(sumTp->fields[sumVar].name));
 
 	Tcl_IncrRefCount(nm);

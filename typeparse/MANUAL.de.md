@@ -42,9 +42,9 @@ Vorgabe kann ein Literal, `[script]` (bei jedem Aufbau berechnet) oder
 * **Reihenfolge.** Ein Produkt hat geordnete Felder; es lässt sich auch
   **positionell** aufbauen (`set {pt}b Jean 12`, wie die Initialisierung
   eines C-struct). Ein Dict hat keine positionelle Form.
-* **Ein einzelnes Feld.** Ein Produkt akzeptiert das Präfix `{T.feld}`:
-  `set {pt}c {pt.nom}Jean` setzt `nom`, die anderen Felder erhalten ihre
-  Vorgabe (`Jean 0`). Das ist dieselbe Schreibweise wie `{Val.i}5` für eine
+* **Ein einzelnes Feld.** Ein Produkt akzeptiert das Präfix `{T/feld}`:
+  `set {pt}c {pt/nom}Jean` setzt `nom`, die anderen Felder erhalten ihre
+  Vorgabe (`Jean 0`). Das ist dieselbe Schreibweise wie `{Val/i}5` für eine
   Summe.
 * **Feldtypen.** Jedes Feld eines Produkts hat seinen eigenen Typ
   (`{string}nom; {int}age`); ein `dict(...)` hat einen einzigen für alle
@@ -165,7 +165,7 @@ mehr.
   haben denselben Typ.
 
     type def mix {{int}a, {var.int}b, {string}s}
-    set {mix}s1 {b:}A
+    set {mix}s1 {/b}A
     type get [type deref $s1]           ;# deref(mix).b
 
     set {tree(var)}T A {{B {}} {C {}}}  ;# ein Baum, dessen Werte Verweise sind
@@ -183,7 +183,7 @@ ist aber nicht dasselbe.
 | | C-`union` | Summe |
 |---|---|---|
 | was sie enthält | **dieselben Bytes**, auf mehrere Arten gelesen | **eine einzige** Variante, die ihren Namen trägt |
-| wer weiß, welche gültig ist | niemand: der Programmierer muss es wissen | der Wert selbst (`type get` liefert `S.x`) |
+| wer weiß, welche gültig ist | niemand: der Programmierer muss es wissen | der Wert selbst (`type get` liefert `S/x`) |
 | die falsche Variante lesen | erlaubt, man liest beliebige Bytes | unmöglich: man greift auf die vorhandene Variante zu |
 | Größe in einer Datei | die der größten Sicht | die der gewählten Variante |
 | Wahl der Variante | keine, es gibt keine | durch ein bereits gelesenes Feld (`S($tag)`) oder ihren Namen (`S(x)`) |
@@ -359,7 +359,7 @@ type binary decode {R(tp)} $octets
 ```
 
 `U(tp)` ist ein Typ mit einer einzigen Variante: Seine Größe ist bekannt
-(`type binary {sizeof?}`), der gelesene Wert ist `U(tp).tp`, und es gibt
+(`type binary {sizeof?}`), der gelesene Wert ist `U(tp)/tp`, und es gibt
 nichts zu erraten, selbst wenn mehrere Varianten die gleiche Form haben (was
 den Wert früher mehrdeutig machte). `U($feld)` behält seine Bedeutung:
 Variante, gewählt durch ein bereits gelesenes Feld. Ist `$v` ein gebundener
