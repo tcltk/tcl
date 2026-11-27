@@ -1,0 +1,77 @@
+--- a/generic/tclCompExpr.c	2026-11-27 14:53:59.259498354 +0100
++++ b/generic/tclCompExpr.c	2026-11-27 14:53:59.261641944 +0100
+@@ -546,6 +546,29 @@
+     return 0;
+ }
+ 
++/*
++ * v18d : the left operand of the "is" node IDX is a tuple assignment,
++ * through parentheses : "((a,b) = Z) is T".
++ */
++static int
++IsLeftTupleAssign(const OpNode *nodes, int idx)
++{
++    int c = nodes[idx].left, depth;
++
++    for (depth = 0; c >= 0 && depth < 64; depth++) {
++	unsigned char lx = nodes[c].lexeme;
++
++	if (lx == ASSIGN) {
++	    return nodes[c].left >= 0 && nodes[nodes[c].left].lexeme == LIST;
++	}
++	if (lx != OPEN_PAREN && lx != NULL_FUNC) {
++	    return 0;
++	}
++	c = nodes[c].right;
++    }
++    return 0;
++}
++
+ static int		IsTypeAhead(const char *start, Tcl_Size numBytes);
+ static Tcl_Size		ElementTargetLen(const char *start, Tcl_Size numBytes);
+ static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
+@@ -3162,8 +3185,15 @@
+ 		 * ::tcl::mathop::is name type.
+ 		 */
+ 
+-		TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::mathop::is", 17,
+-			LITERAL_CMD_NAME), envPtr);
++		if (IsLeftTupleAssign(nodes, nodePtr - nodes)) {
++		    /* v18d : ((a,b) = Z) is T : la valeur affectée, testée */
++		    TclEmitPush(TclRegisterLiteral(envPtr,
++			    "::tcl::unsupported::isvalue", 27, LITERAL_CMD_NAME),
++			    envPtr);
++		} else {
++		    TclEmitPush(TclRegisterLiteral(envPtr, "::tcl::mathop::is",
++			    17, LITERAL_CMD_NAME), envPtr);
++		}
+ 		TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+ 		TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+ 		TclEmitInvoke(envPtr, INST_INVOKE_STK1, 3);
+@@ -3211,6 +3241,26 @@
+ 		declared:
+ 		    ;
+ 		} else if (nodePtr->left >= 0
++			&& nodes[nodePtr->left].lexeme == LIST
++			&& nodePtr->right >= 0
++			&& nodes[nodePtr->right].lexeme == IS_TYPE) {
++		    /*
++		     * v18d : "(a,b) = Z is T" : the tuple would receive the
++		     * boolean of "is" ; ambiguous, an error.
++		     */
++		    static const char msg[] = "ambiguous: (a,b) = Z is T assigns "
++			    "the result of \"is\" to the tuple; write "
++			    "((a,b) = $Z) is T to test the value, or "
++			    "Z is T = (a,b) to declare Z";
++
++		    TclEmitOpcode(INST_POP, envPtr);
++		    TclEmitOpcode(INST_POP, envPtr);
++		    TclEmitPush(TclRegisterLiteral(envPtr, "::error", 7,
++			    LITERAL_CMD_NAME), envPtr);
++		    TclEmitPush(TclRegisterLiteral(envPtr, msg, sizeof(msg) - 1,
++			    0), envPtr);
++		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 2);
++		} else if (nodePtr->left >= 0
+ 			&& nodes[nodePtr->left].lexeme == LIST) {
+ 		    /*
+ 		     * Destructuring assignment "(a,(b,c),d) = value": the stack holds

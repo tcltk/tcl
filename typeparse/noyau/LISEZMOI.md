@@ -139,6 +139,10 @@ la commande `::tcl::mathop::is` (dans `tclTypes.c`, fournie avec les sources).
   procédure, le nom n'est pas pris comme locale compilée directe : `storeStk`
   la trouve par son nom) ; pour la déclaration, `over 2`, `reverse 4`,
   `reverse 3` avant `declare`, puis `pop`.
+* v18d (`is-tuple.patch`, après `is-affectation.patch`) : `((a,b) = $Z) is T` teste la valeur affectée
+  (`IsLeftTupleAssign` : `is` appelle `::tcl::unsupported::isvalue valeur type`
+  au lieu de `::tcl::mathop::is`) ; `(a,b) = Z is T`, sans parenthèses (le tuple
+  recevrait le booléen de `is`), lève une erreur qui donne les deux écritures.
 
 ## Affectation typée dans expr
 

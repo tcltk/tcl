@@ -60,3 +60,4 @@ boucles-vectorisables.patch
 boucles-vectorisables-compilees.patch
 membres-barre.patch
 is-affectation.patch
+is-tuple.patch

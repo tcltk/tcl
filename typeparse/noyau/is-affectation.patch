@@ -1,5 +1,5 @@
---- a/generic/tclCompExpr.c	2026-11-27 14:06:21.629034043 +0100
-+++ b/generic/tclCompExpr.c	2026-11-27 14:06:21.630760204 +0100
+--- a/generic/tclCompExpr.c	2026-11-27 14:53:59.242922322 +0100
++++ b/generic/tclCompExpr.c	2026-11-27 14:53:59.254191968 +0100
 @@ -36,6 +36,7 @@
      unsigned char constant;	/* Flag marking constant subexpressions. */
  } OpNode;
