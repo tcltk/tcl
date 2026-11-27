@@ -1546,11 +1546,12 @@ TclUpdateStackReqs(
 #define CompileTokens(envPtr, tokenPtr, interp) \
     TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
 	    (envPtr));
+
 /*
- * Convenience macros for use when pushing literals. The ANSI C "prototype" for
- * these macros are:
+ * Convenience macros for use when pushing literals, returning the ID of the
+ * literal. The ANSI C "prototype" for the macros are:
  *
- * static void		PushLiteral(CompileEnv *envPtr,
+ * static int		PushLiteral(CompileEnv *envPtr,
  *			    const char *string, Tcl_Size length);
  * static void		PushStringLiteral(CompileEnv *envPtr,
  *			    const char *string);
@@ -1644,7 +1645,7 @@ TclUpdateStackReqs(
  * i.e. move, the array. This is also the reason to save the nuloc now, it may
  * change during the course of the function.
  *
- * Macro to encapsulate the variable definition and setup.
+ * Macros to encapsulate the variable definition and setup.
  */
 
 #define DefineLineInformation \
@@ -1695,7 +1696,39 @@ TclUpdateStackReqs(
  */
 #define TCL_LREPLACE4_END_IS_LAST  1 /* "end" refers to last element */
 #define TCL_LREPLACE4_SINGLE_INDEX 2 /* Second index absent (pure insert) */
+// Measure the length of a string literal.
+#define LENGTH_OF(str) \
+    ((Tcl_Size) sizeof(str "") - 1)
 
+// Issue an instruction without an argument.
+#define OP(name)	TclEmitOpcode(INST_##name, envPtr)
+// Issue an instruction with a single-byte argument.
+#define OP1(name,val)	TclEmitInstInt1(INST_##name,(val),envPtr)
+// Issue an instruction with a four-byte argument.
+#define OP4(name,val)	TclEmitInstInt4(INST_##name,(val),envPtr)
+// Issue an instruction with a single-byte argument and a four-byte argument.
+#define INVOKE4(name,arg1) \
+    TclEmitInvoke(envPtr,INST_##name,(int)(arg1))
+
+// Push a string literal.
+#define PUSH(string) \
+    PushLiteral((envPtr), (string), LENGTH_OF(string))
+// Push a string from a TCL_TOKEN_SIMPLE_WORD token where that is a command.
+#define PUSH_COMMAND_TOKEN(tokenPtr) \
+    TclEmitPush(TclRegisterLiteral(envPtr,				\
+	    (tokenPtr)[1].start, (tokenPtr)[1].size, LITERAL_CMD_NAME),	\
+	    envPtr)
+// Jump (of given type) forwards to the label defined by FWDLABEL.
+#define FWDJUMP(name, var) \
+    (var)=CurrentOffset(envPtr);TclEmitInstInt4(INST_##name,0,envPtr)
+// Set the label to the current address. MUST be paired with FWDJUMP.
+#define FWDLABEL(var) \
+    TclStoreInt4AtPtr(CurrentOffset(envPtr)-(var),envPtr->codeStart+(var)+1)
+
+// Apply a correction to the stack depth.
+#define STKDELTA(delta) \
+    TclAdjustStackDepth((delta), envPtr)
+
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
  */

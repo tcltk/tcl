@@ -527,6 +527,18 @@ test stringObj-16.12 {Tcl_GetRange: first = last = SIZE_MAX-1} testobj {
     set i [expr {$SIZE_MAX - 1}]
     teststringobj range 1 $i $i
 } {}
+
+# Crash will only show immediately with memdbg enabled
+test stringObj-bug-28de50dc {Crash on invalid code points} -body {
+    set u 0xef1401ef
+    teststringobj newunicode 0 $u
+    teststringobj newunicode 0 $u
+} -result \uFFFD
+
+test stringObj-bug-28de50dc-2 {Crash on invalid code points} -body {
+    teststringobj newunicode 0 0x0100DC00
+} -result \uFFFD
+
 
 if {[testConstraint testobj]} {
     testobj freeallvars

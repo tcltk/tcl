@@ -652,7 +652,7 @@ static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 static Tcl_NRPostProc	FinalizeOONext;
 static Tcl_NRPostProc	FinalizeOONextFilter;
-static Tcl_NRPostProc   TEBCresume;
+static Tcl_NRPostProc	TEBCresume;
 
 /*
  * The structure below defines a bytecode Tcl object type to hold the
@@ -794,7 +794,7 @@ TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
     size_t size)		/* The initial stack size, in number of words
-				 * [sizeof(Tcl_Obj*)] */
+				 * [sizeof(Tcl_Obj *)] */
 {
     ExecEnv *eePtr = (ExecEnv *)Tcl_Alloc(sizeof(ExecEnv));
     ExecStack *esPtr = (ExecStack *)Tcl_Alloc(offsetof(ExecStack, stackWords)
@@ -931,9 +931,15 @@ TclFinalizeExecution(void)
     (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
 
 /*
- * WordSkip computes how many words have to be skipped until the next aligned
- * word. Note that we are only interested in the low order bits of ptr, so
- * that any possible information loss in PTR2INT is of no consequence.
+ *----------------------------------------------------------------------
+ *
+ * WordSkip --
+ *
+ *	Computes how many words have to be skipped until the next aligned
+ *	word. Note that we are only interested in the low order bits of ptr, so
+ *	that any possible information loss in PTR2INT is of no consequence.
+ *
+ *----------------------------------------------------------------------
  */
 static inline int
 WordSkip(
@@ -950,7 +956,7 @@ WordSkip(
 
 #define MEMSTART(markerPtr) \
     ((markerPtr) + WordSkip(markerPtr))
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1282,7 +1288,7 @@ Tcl_ExprObj(
 				 * expression. */
     Tcl_Obj *objPtr,		/* Points to Tcl object containing expression
 				 * to evaluate. */
-    Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
+    Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj * that is the expression
 				 * result is stored if no errors occur. */
 {
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -1346,8 +1352,7 @@ Tcl_NRExprObj(
 
     Tcl_ResetResult(interp);
     ByteCode *codePtr = CompileExprObj(interp, objPtr);
-    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
-	    NULL, NULL);
+    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr, NULL, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -1850,9 +1855,9 @@ ArgumentBCEnter(
  *
  *----------------------------------------------------------------------
  */
-#define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	(TD->stack-1)
-#define	initTosPtr	(initCatchTop+codePtr->maxExceptDepth)
+#define bcFramePtr	(&TD->cmdFrame)
+#define initCatchTop	(TD->stack - 1)
+#define initTosPtr	(initCatchTop+codePtr->maxExceptDepth)
 #define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
 int
@@ -2497,7 +2502,6 @@ TEBCresume(
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
-
 	    if ((curEvalFlags & TCL_EVAL_DISCARD_RESULT) && (result == TCL_OK)) {
 		/* simulate pop & fast done (like it does continue in loop) */
 		TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
@@ -4737,7 +4741,7 @@ TEBCresume(
 	    if (TclListObjIsNative(value2Ptr)) {
 		ListObjLength(value2Ptr, value2Len);
 	    } else if ((lenProc = TclObjTypeHasProc(value2Ptr, lengthProc))
-		       != NULL) {
+		    != NULL) {
 		value2Len = lenProc(value2Ptr);
 	    } else {
 		/*
@@ -7764,10 +7768,10 @@ TEBCresume(
     /*
      * INST_START_CMD failure case removed where it doesn't bother that much
      *
-     * Remark that if the interpreter is marked for deletion its
-     * compileEpoch is modified, so that the epoch check also verifies
-     * that the interp is not deleted. If no outside call has been made
-     * since the last check, it is safe to omit the check.
+     * Remark that if the interpreter is marked for deletion its compileEpoch
+     * is modified, so that the epoch check also verifies that the interp is
+     * not deleted. If no outside call has been made since the last check, it
+     * is safe to omit the check.
 
      * case INST_START_CMD:
      */
@@ -7866,9 +7870,13 @@ FinalizeOONextFilter(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
  * WidePwrSmallExpon --
  *
- * Helper to calculate small powers of integers whose result is wide.
+ *	Helper to calculate small powers of integers whose result is wide.
+ *
+ *----------------------------------------------------------------------
  */
 static inline Tcl_WideInt
 WidePwrSmallExpon(
@@ -7952,6 +7960,7 @@ WidePwrSmallExpon(
     }
     return wResult;
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -7962,7 +7971,7 @@ WidePwrSmallExpon(
  *	them.
  *
  * Results:
- *	A Tcl_Obj* result, or a NULL (in which case valuePtr is updated to
+ *	A Tcl_Obj * result, or a NULL (in which case valuePtr is updated to
  *	hold the result value), or one of the special flag values
  *	GENERAL_ARITHMETIC_ERROR, EXPONENT_OF_ZERO or DIVIDED_BY_ZERO. The
  *	latter two signify a zero value raised to a negative power or a value
@@ -7986,26 +7995,26 @@ ExecuteExtendedBinaryMathOp(
     Tcl_Obj *value2Ptr)		/* The second operand on the stack. */
 {
 #define WIDE_RESULT(w) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	return Tcl_NewWideIntObj(w);		\
-    } else {					\
-	TclSetIntObj(valuePtr, (w));		\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	return Tcl_NewWideIntObj(w);					\
+    } else {								\
+	TclSetIntObj(valuePtr, (w));					\
+	return NULL;							\
     }
 #define BIG_RESULT(b) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	return Tcl_NewBignumObj(b);		\
-    } else {					\
-	Tcl_SetBignumObj(valuePtr, (b));		\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	return Tcl_NewBignumObj(b);					\
+    } else {								\
+	Tcl_SetBignumObj(valuePtr, (b));				\
+	return NULL;							\
     }
 #define DOUBLE_RESULT(d) \
-    if (Tcl_IsShared(valuePtr)) {		\
-	TclNewDoubleObj(objResultPtr, (d));	\
-	return objResultPtr;			\
-    } else {					\
-	Tcl_SetDoubleObj(valuePtr, (d));	\
-	return NULL;				\
+    if (Tcl_IsShared(valuePtr)) {					\
+	TclNewDoubleObj(objResultPtr, (d));				\
+	return objResultPtr;						\
+    } else {								\
+	Tcl_SetDoubleObj(valuePtr, (d));				\
+	return NULL;							\
     }
 
     int type1, type2;
@@ -8376,7 +8385,6 @@ ExecuteExtendedBinaryMathOp(
 	    }
 	}
 	if (negativeExponent) {
-
 	    /*
 	     * Integers with magnitude greater than 1 raise to a negative
 	     * power yield the answer zero (see TIP 123).
@@ -8389,23 +8397,23 @@ ExecuteExtendedBinaryMathOp(
 	}
 
 	switch (w1) {
-	    case 0:
-		/*
-		 * Zero to a positive power is zero.
-		 */
+	case 0:
+	    /*
+	     * Zero to a positive power is zero.
+	     */
 
-		return constants[0];
-	    case 1:
-		/*
-		 * 1 to any power is 1.
-		 */
+	    return constants[0];
+	case 1:
+	    /*
+	     * 1 to any power is 1.
+	     */
 
+	    return constants[1];
+	case -1:
+	    if (!oddExponent) {
 		return constants[1];
-	    case -1:
-		if (!oddExponent) {
-		    return constants[1];
-		}
-		WIDE_RESULT(-1);
+	    }
+	    WIDE_RESULT(-1);
 	}
 
 	/*
@@ -8931,7 +8939,9 @@ TclCompareTwoNumbers(
 	    bp2 = (const mp_int *)ptr2;
 	bigCompare:
 	    compare = mp_cmp(bp1, bp2);
-	    if (bp1 == &blx || bp2 == &blx) { mp_clear(&blx); }
+	    if (bp1 == &blx || bp2 == &blx) {
+		mp_clear(&blx);
+	    }
 	    return compare;
 	}
 	break;
@@ -9192,7 +9202,7 @@ Tcl_Obj *
 TclGetSourceFromFrame(
     CmdFrame *cfPtr,
     Tcl_Size objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const *objv)
 {
     if (cfPtr == NULL) {
 	return Tcl_NewListObj(objc, objv);

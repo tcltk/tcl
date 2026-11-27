@@ -2698,9 +2698,9 @@ Tcl_LpopObjCmd(
 	Tcl_ObjTypeSetElement *proc = TclObjTypeHasProc(listPtr, setElementProc);
 	if (proc) {
 	    newListPtr = proc(interp, listPtr, objc-2, objv+2, NULL);
-            if (newListPtr) {
-                Tcl_IncrRefCount(newListPtr);
-            }
+	    if (newListPtr) {
+		Tcl_IncrRefCount(newListPtr);
+	    }
 	} else {
 	    newListPtr = TclLsetFlat(interp, listPtr, objc-2, objv+2, NULL);
 	}
