@@ -247,6 +247,34 @@ test unixFCmd-4.1 {TclpDeleteFile not done} {emptyTest unix notRoot} {
 test unixFCmd-5.1 {TclpCreateDirectory not done} {emptyTest unix notRoot} {
 } {}
 
+testConstraint testthread [llength [info commands testthread]]
+test unixFCmd-5.2 {TclpCreateDirectory: umask not changed by threads, bug cd609219f5} -setup {
+    cleanup
+    set script [makeFile {
+	catch [list package require -exact tcl::test [info patchlevel]]
+	file mkdir td1
+	set ids {}
+	for {set i 0} {$i < 4} {incr i} {
+	    lappend ids [testthread create [list apply {{i} {
+		for {set j 0} {$j < 500} {incr j} {
+		    file mkdir td1/t$i-$j
+		}
+	    }} $i]]
+	}
+	while {[llength [testthread names]] > 1} {
+	    after 10
+	}
+	close [open td1/f w]
+	puts [format %o [expr {[file attributes td1/f -permissions] & 0o777}]]
+    } umask.tcl]
+} -constraints {unix notRoot notWsl testthread} -body {
+    exec /bin/sh -c "umask 022; exec [list [interpreter]] $script"
+} -cleanup {
+    removeFile umask.tcl
+    file delete -force td1
+    unset -nocomplain script
+} -result 644
+
 test unixFCmd-6.1 {TclpCopyDirectory not done} {emptyTest unix notRoot} {
 } {}
 
@@ -439,6 +467,22 @@ test unixFCmd-20.2 {SetReadOnlyAttribute} -setup {
 } -constraints {unix notRoot readonlyAttr} -returnCodes error -body {
     file attributes foo.test -readonly 1
 } -result {could not read "foo.test": no such file or directory}
+
+testConstraint defaultAcl [expr {[testConstraint unix] && ![catch {
+    file mkdir aclTest.dir
+    exec setfacl -d -m u::rwx,g::rwx,o::rwx aclTest.dir
+}]}]
+file delete -force aclTest.dir
+test unixFCmd-21.1 {file mkdir honours default ACL (Bug 623585)} -setup {
+    file delete -force aclTest.dir
+    file mkdir aclTest.dir
+    exec setfacl -d -m u::rwx,g::rwx,o::rwx aclTest.dir
+} -constraints {unix defaultAcl} -body {
+    file mkdir aclTest.dir/sub
+    file attributes aclTest.dir/sub -permissions
+} -cleanup {
+    file delete -force aclTest.dir
+} -result 0o40777
 
 # cleanup
 cleanup
