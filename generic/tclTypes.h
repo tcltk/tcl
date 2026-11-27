@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17x"
+#define TCL_TYPES_VERSION "v17y"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -490,7 +490,7 @@ Tcl_Obj *TclCompactClone(Tcl_Obj *v);
 Tcl_Obj *TclCompactCloneEx(Tcl_Obj *v, int copy);
 void *TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	const char *path, Tcl_Size K, Tcl_Size count, unsigned char **dst,
-	size_t *dstep);
+	size_t *dstep, const char **whyPtr, int *copiedPtr);
 void TclTypePathCellsEnd(void *h, int commit);
 int TclTypePathWriteCellColumns(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	const char *path, Tcl_Size K, Tcl_Obj *const cols[]);

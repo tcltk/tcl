@@ -9874,7 +9874,18 @@ typedef struct MProg {
     int nnames, capNames;
     const char *p;		/* lecture */
     int bad;			/* hors du sous-ensemble */
+    const char *badAt;		/* là où la lecture s'est arrêtée */
 } MProg;
+
+/* hors du sous-ensemble compilé : la première position est gardée (pour
+ * type map -report) */
+#define MBAD(g) \
+    do {								\
+	if (!(g)->bad) {						\
+	    (g)->badAt = (g)->p;					\
+	}								\
+	(g)->bad = 1;							\
+    } while (0)
 
 static int
 MNew(MProg *g, int kind)
@@ -9942,7 +9953,7 @@ MPrimary(MProg *g)
 	r = MExpr(g);
 	MSkip(g);
 	if (*g->p != ')') {
-	    g->bad = 1;
+	    MBAD(g);
 	    return -1;
 	}
 	g->p++;
@@ -9955,7 +9966,8 @@ MPrimary(MProg *g)
 	    g->p++;
 	}
 	if (g->p == s || *g->p == '(' || *g->p == ':') {
-	    g->bad = 1;			/* ${x}, $a(i), $::x : expr */
+	    g->p = s - 1;		/* (le $) */
+	    MBAD(g);			/* ${x}, $a(i), $::x : expr */
 	    return -1;
 	}
 	r = MNew(g, MN_VAR);
@@ -9993,7 +10005,7 @@ MPrimary(MProg *g)
 		g->n[r].k.d = *(double *) ptr;
 	    }
 	} else {
-	    g->bad = 1;
+	    MBAD(g);
 	}
 	Tcl_DecrRefCount(t);
 	return r;
@@ -10007,7 +10019,8 @@ MPrimary(MProg *g)
 	}
 	MSkip(g);
 	if (*g->p != '(') {
-	    g->bad = 1;			/* eq, ne, in, true... : expr */
+	    g->p = s;
+	    MBAD(g);			/* eq, ne, in, true... : expr */
 	    return -1;
 	}
 	for (k = 0; mapFuncs[k].name; k++) {
@@ -10018,7 +10031,8 @@ MPrimary(MProg *g)
 	    }
 	}
 	if (mapFuncs[k].name == NULL) {
-	    g->bad = 1;
+	    g->p = s;			/* (le nom de la fonction) */
+	    MBAD(g);
 	    return -1;
 	}
 	r = MNew(g, MN_FUNC);
@@ -10030,7 +10044,7 @@ MPrimary(MProg *g)
 		int a = MExpr(g);
 
 		if (g->bad || g->n[r].nargs == 8) {
-		    g->bad = 1;
+		    MBAD(g);
 		    return -1;
 		}
 		g->n[r].args[g->n[r].nargs++] = a;
@@ -10045,13 +10059,13 @@ MPrimary(MProg *g)
 	MSkip(g);
 	if (*g->p != ')' || g->n[r].nargs < mapFuncs[k].minArgs
 		|| g->n[r].nargs > mapFuncs[k].maxArgs) {
-	    g->bad = 1;
+	    MBAD(g);
 	    return -1;
 	}
 	g->p++;
 	return r;
     }
-    g->bad = 1;
+    MBAD(g);
     return -1;
 }
 
@@ -10142,10 +10156,10 @@ MRel(MProg *g)
     for (;;) {
 	MSkip(g);
 	if (g->p[0] == '<' && g->p[1] == '<') {
-	    g->bad = 1;
+	    MBAD(g);
 	    return -1;
 	} else if (g->p[0] == '>' && g->p[1] == '>') {
-	    g->bad = 1;
+	    MBAD(g);
 	    return -1;
 	} else if (g->p[0] == '<' && g->p[1] == '=') {
 	    kind = MN_LE; g->p += 2;
@@ -10178,11 +10192,11 @@ MEqual(MProg *g)
 	    kind = MN_NE;
 	} else {
 	    if (g->p[0] == '&' && g->p[1] != '&') {
-		g->bad = 1;		/* & | ^ : expr */
+		MBAD(g);		/* & | ^ : expr */
 	    }
 	    if ((g->p[0] == '|' && g->p[1] != '|') || g->p[0] == '^'
 		    || g->p[0] == '~' || g->p[0] == '=') {
-		g->bad = 1;
+		MBAD(g);
 	    }
 	    return a;
 	}
@@ -10245,7 +10259,7 @@ MExpr(MProg *g)
     g->n[r].b = MExpr(g);
     MSkip(g);
     if (*g->p != ':') {
-	g->bad = 1;
+	MBAD(g);
 	return -1;
     }
     g->p++;
@@ -12136,6 +12150,469 @@ MapColumnAs(Tcl_Interp *interp, TclType *et, Tcl_Obj *col, const char *what)
     return res;
 }
 
+/*
+ * v17y : le relevé de type map (où est la falaise). Chaque appel au niveau
+ * de l'utilisateur (type map, une boucle vectorisée) peut tenir un relevé :
+ * les voies rapides y notent ce qu'elles ont fait, ou pourquoi elles se
+ * sont retirées. type map -report varName ... le rend pour un appel ;
+ * ::tcl::unsupported::mapreport on|off|clear|get l'agrège par lieu
+ * d'appel. Sans relevé demandé : un pointeur NULL, rien d'autre.
+ */
+typedef struct MapRep {
+    int depth;			/* l'appel de l'utilisateur qui le tient */
+    int comp;			/* la composante en cours (-1 : le corps) */
+    int ncomp;
+    Tcl_Size elements;
+    Tcl_Obj *inputs;		/* nom genre ... */
+    Tcl_Obj *body;		/* une description par composante */
+    const char *pass;
+    Tcl_Obj *why;		/* pourquoi la voie rapide n'a pas servi */
+    Tcl_WideInt blocks, elementwise, expr;
+    Tcl_Obj *write;
+} MapRep;
+
+typedef struct MapRepTsd {
+    MapRep *rep;
+    int depth;
+} MapRepTsd;
+static Tcl_ThreadDataKey mapRepKey;
+
+/* le relevé de l'appel en cours, s'il en tient un (pas celui d'un appel
+ * imbriqué, par expr par exemple) */
+static MapRep *
+CurRep(void)
+{
+    MapRepTsd *t = (MapRepTsd *) Tcl_GetThreadData(&mapRepKey,
+	    sizeof(MapRepTsd));
+
+    return (t->rep != NULL && t->rep->depth == t->depth) ? t->rep : NULL;
+}
+
+static void
+RepSetObj(Tcl_Obj **slot, Tcl_Obj *o)
+{
+    if (o != NULL) {
+	Tcl_IncrRefCount(o);
+    }
+    if (*slot != NULL) {
+	Tcl_DecrRefCount(*slot);
+    }
+    *slot = o;
+}
+
+/* pourquoi (la première raison seulement : la plus proche de la cause) */
+static void
+RepWhy(MapRep *r, Tcl_Obj *why)
+{
+    if (r != NULL && r->why == NULL) {
+	RepSetObj(&r->why, why);
+    } else {
+	Tcl_IncrRefCount(why);
+	Tcl_DecrRefCount(why);
+    }
+}
+
+/* la description de la composante en cours (ou du corps entier) */
+static void
+RepBody(MapRep *r, Tcl_Obj *desc)
+{
+    Tcl_Size n, c = (r->comp < 0) ? 0 : r->comp;
+
+    if (r->body == NULL) {
+	RepSetObj(&r->body, Tcl_NewListObj(0, NULL));
+    }
+    if (Tcl_IsShared(r->body)) {
+	RepSetObj(&r->body, Tcl_DuplicateObj(r->body));
+    }
+    Tcl_ListObjLength(NULL, r->body, &n);
+    while (n <= c) {
+	Tcl_ListObjAppendElement(NULL, r->body, Tcl_NewObj());
+	n++;
+    }
+    Tcl_ListObjReplace(NULL, r->body, c, 1, 1, &desc);
+}
+
+/* « not compiled near "…" » : là où la lecture s'est arrêtée */
+static Tcl_Obj *
+RepNotCompiled(const MProg *g, const char *text)
+{
+    const char *at = g->badAt;
+
+    if (at == NULL) {
+	return Tcl_NewStringObj("expr: typed operations are off", -1);
+    }
+    if (at < text || at > text + strlen(text)) {
+	at = text;
+    }
+    while (*at == ' ' || *at == '\t' || *at == '\n') {
+	at++;
+    }
+    if (*at == '\0') {
+	return Tcl_NewStringObj("expr: not compiled (unbalanced)", -1);
+    }
+    return Tcl_ObjPrintf("expr: not compiled near \"%.24s%s\"", at,
+	    strlen(at) > 24 ? "..." : "");
+}
+
+static void
+MapRepFree(MapRep *r)
+{
+    RepSetObj(&r->inputs, NULL);
+    RepSetObj(&r->body, NULL);
+    RepSetObj(&r->why, NULL);
+    RepSetObj(&r->write, NULL);
+}
+
+/* le relevé en dictionnaire */
+static Tcl_Obj *
+MapRepDict(const MapRep *r)
+{
+    Tcl_Obj *d = Tcl_NewDictObj();
+
+#define RD_PUT(k, v) Tcl_DictObjPut(NULL, d, Tcl_NewStringObj(k, -1), (v))
+    RD_PUT("elements", Tcl_NewWideIntObj(r->elements));
+    RD_PUT("inputs", r->inputs ? r->inputs : Tcl_NewObj());
+    RD_PUT("body", r->body ? r->body : Tcl_NewObj());
+    RD_PUT("pass", Tcl_NewStringObj(r->pass ? r->pass : "none", -1));
+    RD_PUT("blocks", Tcl_NewWideIntObj(r->blocks));
+    RD_PUT("elementwise", Tcl_NewWideIntObj(r->elementwise));
+    RD_PUT("expr", Tcl_NewWideIntObj(r->expr));
+    if (r->write != NULL) {
+	RD_PUT("write", r->write);
+    }
+    RD_PUT("why", r->why ? r->why : Tcl_NewObj());
+#undef RD_PUT
+    return d;
+}
+
+/* le genre d'une colonne d'entrée */
+static Tcl_Obj *
+RepInputKind(const unsigned char *cdata, int ckind, int csize, size_t cstride,
+	Tcl_Size estride, int isView)
+{
+    if (cdata != NULL) {
+	return Tcl_ObjPrintf("cells %s(%d) stride %d", ckind == 2 ? "double"
+		: ckind == 1 ? "int u" : "int s", csize * 8, (int) cstride);
+    }
+    if (isView) {
+	return Tcl_ObjPrintf("objects view stride %d", (int) estride);
+    }
+    return Tcl_NewStringObj("objects", -1);
+}
+
+/*
+ * Le relevé global, par interpréteur : un dictionnaire par lieu d'appel
+ * (procédure et ligne, ou fichier et ligne, ou le texte de la commande).
+ */
+typedef struct MapLog {
+    int on;
+    Tcl_Obj *d;			/* lieu -> statistiques */
+} MapLog;
+
+/* des relevés globaux en marche (dans un interpréteur au moins) : sans
+ * eux, l'entrée ne cherche même pas la donnée de l'interpréteur */
+static int mapLogAny = 0;
+
+static void
+MapLogDelete(void *cd, TCL_UNUSED(Tcl_Interp *))
+{
+    MapLog *l = (MapLog *) cd;
+
+    if (l->on) {
+	mapLogAny--;
+    }
+    if (l->d != NULL) {
+	Tcl_DecrRefCount(l->d);
+    }
+    Tcl_Free(l);
+}
+
+static MapLog *
+GetMapLog(Tcl_Interp *interp)
+{
+    MapLog *l = (MapLog *) Tcl_GetAssocData(interp, "tclMapReport", NULL);
+
+    if (l == NULL) {
+	l = (MapLog *) Tcl_Alloc(sizeof(MapLog));
+	l->on = 0;
+	l->d = Tcl_NewDictObj();
+	Tcl_IncrRefCount(l->d);
+	Tcl_SetAssocData(interp, "tclMapReport", MapLogDelete, l);
+    }
+    return l;
+}
+
+/* la valeur d'une clé (NULL si absente) */
+static Tcl_Obj *
+MapDictGet(Tcl_Obj *d, const char *key)
+{
+    Tcl_Obj *k = Tcl_NewStringObj(key, -1), *v = NULL;
+
+    Tcl_IncrRefCount(k);
+    if (Tcl_DictObjGet(NULL, d, k, &v) != TCL_OK) {
+	v = NULL;
+    }
+    Tcl_DecrRefCount(k);
+    return v;
+}
+
+/* le lieu de l'appel en cours (le cadre de la commande appelante) */
+static Tcl_Obj *
+MapLogWhere(Tcl_Interp *interp)
+{
+    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_Obj *where = NULL, *fr;
+
+    if (Tcl_EvalEx(interp, "::info frame [expr {[::info frame] - 1}]", -1,
+	    TCL_EVAL_GLOBAL) == TCL_OK) {
+	Tcl_Obj *proc = NULL, *file = NULL, *line = NULL, *cmd = NULL;
+
+	fr = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(fr);
+	proc = MapDictGet(fr, "proc");
+	file = MapDictGet(fr, "file");
+	line = MapDictGet(fr, "line");
+	cmd = MapDictGet(fr, "cmd");
+	if (file != NULL && line != NULL) {
+	    where = Tcl_ObjPrintf("%s:%s", Tcl_GetString(file),
+		    Tcl_GetString(line));
+	    if (proc != NULL) {
+		Tcl_AppendPrintfToObj(where, " (%s)", Tcl_GetString(proc));
+	    }
+	} else if (proc != NULL && line != NULL) {
+	    where = Tcl_ObjPrintf("%s line %s", Tcl_GetString(proc),
+		    Tcl_GetString(line));
+	} else if (cmd != NULL) {
+	    const char *c = Tcl_GetString(cmd);
+
+	    where = Tcl_ObjPrintf("%.60s%s", c, strlen(c) > 60 ? "..." : "");
+	}
+	Tcl_DecrRefCount(fr);
+    }
+    Tcl_RestoreInterpState(interp, st);
+    return where ? where : Tcl_NewStringObj("?", -1);
+}
+
+static void
+MapLogIncr(Tcl_Obj *d, const char *key, Tcl_WideInt by)
+{
+    Tcl_Obj *k = Tcl_NewStringObj(key, -1), *v;
+    Tcl_WideInt w = 0;
+
+    Tcl_IncrRefCount(k);
+    if (Tcl_DictObjGet(NULL, d, k, &v) == TCL_OK && v != NULL) {
+	Tcl_GetWideIntFromObj(NULL, v, &w);
+    }
+    Tcl_DictObjPut(NULL, d, k, Tcl_NewWideIntObj(w + by));
+    Tcl_DecrRefCount(k);
+}
+
+/* un appel de plus au lieu de l'appel : what (type map, foreach, lmap) */
+static void
+MapLogAdd(Tcl_Interp *interp, MapLog *l, const char *what, const MapRep *r,
+	const char *declined)
+{
+    Tcl_Obj *where = MapLogWhere(interp), *e, *k, *v;
+
+    Tcl_IncrRefCount(where);
+    if (Tcl_IsShared(l->d)) {
+	Tcl_DecrRefCount(l->d);
+	l->d = Tcl_DuplicateObj(l->d);
+	Tcl_IncrRefCount(l->d);
+    }
+    if (Tcl_DictObjGet(NULL, l->d, where, &e) != TCL_OK || e == NULL) {
+	e = Tcl_NewDictObj();
+	Tcl_DictObjPut(NULL, e, Tcl_NewStringObj("command", -1),
+		Tcl_NewStringObj(what, -1));
+    } else {
+	e = Tcl_DuplicateObj(e);
+    }
+    MapLogIncr(e, "calls", 1);
+    if (declined != NULL) {
+	k = Tcl_ObjPrintf("declined: %s", declined);
+	Tcl_IncrRefCount(k);
+	MapLogIncr(e, Tcl_GetString(k), 1);
+	Tcl_DecrRefCount(k);
+    } else if (r != NULL) {
+	Tcl_Obj *pk = Tcl_ObjPrintf("pass %s", r->pass ? r->pass : "none");
+
+	Tcl_IncrRefCount(pk);
+	MapLogIncr(e, Tcl_GetString(pk), 1);
+	Tcl_DecrRefCount(pk);
+	MapLogIncr(e, "elements", r->elements);
+	MapLogIncr(e, "blocks", r->blocks);
+	MapLogIncr(e, "elementwise", r->elementwise);
+	MapLogIncr(e, "expr", r->expr);
+	if (r->write != NULL) {
+	    Tcl_Obj *wk = Tcl_ObjPrintf("write %s", Tcl_GetString(r->write));
+
+	    Tcl_IncrRefCount(wk);
+	    MapLogIncr(e, Tcl_GetString(wk), 1);
+	    Tcl_DecrRefCount(wk);
+	}
+	k = Tcl_NewStringObj("body", -1);
+	if (r->body != NULL && (Tcl_DictObjGet(NULL, e, k, &v) != TCL_OK
+		|| v == NULL)) {
+	    Tcl_DictObjPut(NULL, e, k, r->body);
+	} else {
+	    TclDiscard(k);
+	}
+	if (r->why != NULL) {
+	    /* la première raison vue à ce lieu */
+	    k = Tcl_NewStringObj("why", -1);
+	    if (Tcl_DictObjGet(NULL, e, k, &v) != TCL_OK || v == NULL) {
+		Tcl_DictObjPut(NULL, e, k, r->why);
+	    } else {
+		TclDiscard(k);
+	    }
+	}
+    }
+    Tcl_DictObjPut(NULL, l->d, where, e);
+    Tcl_DecrRefCount(where);
+}
+
+/* l'entrée d'un appel de l'utilisateur ; want : un relevé demandé */
+static MapLog *
+MapRepEnter(Tcl_Interp *interp, MapRep *r, MapRep **savePtr, int want)
+{
+    MapRepTsd *t = (MapRepTsd *) Tcl_GetThreadData(&mapRepKey,
+	    sizeof(MapRepTsd));
+    MapLog *l = mapLogAny ? (MapLog *) Tcl_GetAssocData(interp,
+	    "tclMapReport", NULL) : NULL;
+
+    t->depth++;
+    *savePtr = t->rep;
+    if (want || (l != NULL && l->on)) {
+	memset(r, 0, sizeof(MapRep));
+	r->depth = t->depth;
+	r->comp = -1;
+	t->rep = r;
+    }
+    return (l != NULL && l->on) ? l : NULL;
+}
+
+static void
+MapRepLeave(MapRep *save)
+{
+    MapRepTsd *t = (MapRepTsd *) Tcl_GetThreadData(&mapRepKey,
+	    sizeof(MapRepTsd));
+
+    t->depth--;
+    t->rep = save;
+}
+
+static int TypeMapCmd(Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[]);
+
+/*
+ * type map ?-report varName? ... : l'appel de l'utilisateur. Le relevé est
+ * rangé dans varName même si la commande échoue (il dit alors où).
+ */
+static int
+TypeMapUser(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    MapRep rep, *save;
+    MapLog *l;
+    Tcl_Obj *repVar = NULL, **av = (Tcl_Obj **) objv;
+    Tcl_Size ac = objc;
+    int rc;
+
+    if (objc > 2 && strcmp(Tcl_GetString(objv[2]), "-report") == 0) {
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "-report varName ?-in target|"
+		    "-sum|-min|-max|-fold {name init}? varList list ?varList "
+		    "list ...? {(expression)}");
+	    return TCL_ERROR;
+	}
+	repVar = objv[3];
+	av = (Tcl_Obj **) Tcl_Alloc(sizeof(Tcl_Obj *) * (size_t) objc);
+	av[0] = objv[0];
+	av[1] = objv[1];
+	memcpy(av + 2, objv + 4, sizeof(Tcl_Obj *) * (size_t) (objc - 4));
+	ac = objc - 2;
+    }
+    l = MapRepEnter(interp, &rep, &save, repVar != NULL);
+    if (repVar == NULL && l == NULL) {
+	rc = TypeMapCmd(interp, ac, av);
+	MapRepLeave(save);
+	return rc;
+    }
+    rc = TypeMapCmd(interp, ac, av);
+    MapRepLeave(save);
+    if (rc != TCL_OK && rep.why == NULL) {
+	RepSetObj(&rep.why, Tcl_ObjPrintf("error: %s",
+		Tcl_GetString(Tcl_GetObjResult(interp))));
+    }
+    if (l != NULL) {
+	MapLogAdd(interp, l, "type map", &rep, NULL);
+    }
+    if (repVar != NULL) {
+	Tcl_Obj *d = MapRepDict(&rep);
+
+	Tcl_IncrRefCount(d);
+	if (rc == TCL_OK) {
+	    Tcl_Obj *res = Tcl_GetObjResult(interp);
+
+	    Tcl_IncrRefCount(res);
+	    if (Tcl_ObjSetVar2(interp, repVar, NULL, d, TCL_LEAVE_ERR_MSG)
+		    == NULL) {
+		rc = TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, res);
+	    }
+	    Tcl_DecrRefCount(res);
+	} else {
+	    Tcl_InterpState st = Tcl_SaveInterpState(interp, rc);
+
+	    Tcl_ObjSetVar2(interp, repVar, NULL, d, 0);
+	    rc = Tcl_RestoreInterpState(interp, st);
+	}
+	Tcl_DecrRefCount(d);
+	Tcl_Free(av);
+    }
+    MapRepFree(&rep);
+    return rc;
+}
+
+/* ::tcl::unsupported::mapreport on|off|clear|get */
+static int
+MapReportObjCmd(TCL_UNUSED(void *), Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    static const char *const opts[] = {"on", "off", "clear", "get", NULL};
+    int idx;
+    MapLog *l;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "on|off|clear|get");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &idx)
+	    != TCL_OK) {
+	return TCL_ERROR;
+    }
+    l = GetMapLog(interp);
+    switch (idx) {
+    case 0:
+	mapLogAny += !l->on;
+	l->on = 1;
+	break;
+    case 1:
+	mapLogAny -= l->on;
+	l->on = 0;
+	break;
+    case 2:
+	Tcl_DecrRefCount(l->d);
+	l->d = Tcl_NewDictObj();
+	Tcl_IncrRefCount(l->d);
+	break;
+    default:
+	Tcl_SetObjResult(interp, l->d);
+	break;
+    }
+    return TCL_OK;
+}
+
 static int MapTupleFast(Tcl_Interp *interp, Tcl_Size ac,
 	Tcl_Obj *const av[], Tcl_Obj *const parts[], Tcl_Size K,
 	Tcl_Obj **outCols, Tcl_Obj *sinkName, const char *sinkPath);
@@ -12348,8 +12825,16 @@ TypeMapTyped(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    }
 	} else if (np == K) {
 	    /* une composante à la fois, chacune compilée (et par blocs) */
+	    MapRep *rp = CurRep();
+
+	    if (rp != NULL) {
+		rp->pass = "per-component";
+	    }
 	    for (j = 0; j < K; j++) {
 		av[ac] = pv[j];
+		if (rp != NULL) {
+		    rp->comp = (int) j;
+		}
 		if (TypeMapPlain(interp, ac + 1, av) != TCL_OK) {
 		    break;
 		}
@@ -12371,7 +12856,16 @@ TypeMapTyped(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    /* le corps entier, élément par élément, puis les colonnes */
 	    Tcl_Obj *r, **rv;
 	    Tcl_Size nr, i;
+	    MapRep *rp = CurRep();
 
+	    if (rp != NULL) {
+		rp->comp = -1;
+		rp->pass = "tuple by expr";
+		RepSetObj(&rp->body, NULL);
+		rp->blocks = rp->elementwise = rp->expr = 0;
+		RepWhy(rp, Tcl_NewStringObj("tuple: the components do not "
+			"split or compile, by expr", -1));
+	    }
 	    av[ac] = content;
 	    if (TypeMapPlain(interp, ac + 1, av) != TCL_OK) {
 		goto done;
@@ -12647,6 +13141,26 @@ TypeMapIn(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     }
     cols = Tcl_NewListObj(0, NULL);
     Tcl_IncrRefCount(cols);
+    {
+	MapRep *rp = CurRep();
+
+	if (rp != NULL) {
+	    const char *w = (pathObj == NULL) ? "the whole variable (no path)"
+		    : (TclTypeOpsMode() != TCL_TYPE_OPS_ON)
+		    ? "typed operations are not on"
+		    : !MapInPlainCells(interp, tt, K)
+		    ? "the target elements are not plain numbers" : NULL;
+
+	    for (j = 0; w == NULL && j < K; j++) {
+		if (tt[j]->refine || tt[j]->kind != TCLT_DOUBLE) {
+		    w = "the target elements are not double";
+		}
+	    }
+	    if (w != NULL) {
+		RepWhy(rp, Tcl_ObjPrintf("direct write: %s", w));
+	    }
+	}
+    }
     if (pathObj != NULL && TclTypeOpsMode() == TCL_TYPE_OPS_ON
 	    && MapInPlainCells(interp, tt, K)) {
 	/* v17x : des doubles en cases ; calculés et écrits bloc par bloc,
@@ -12666,6 +13180,10 @@ TypeMapIn(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 
 		direct &= (dj != NULL && dj->kind == TCLT_DOUBLE
 			&& !dj->refine && MapInPlainCells(interp, &dj, 1));
+	    }
+	    if (!direct) {
+		RepWhy(CurRep(), Tcl_NewStringObj("direct write: the body "
+			"annotation is not all double", -1));
 	    }
 	}
 	if (direct && txt != NULL) {
@@ -12740,6 +13258,12 @@ TypeMapIn(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		Tcl_DecrRefCount(fo[j]);
 	    }
 	} else for (j = 0; j < K; j++) {
+	    MapRep *rp = CurRep();
+
+	    if (rp != NULL) {
+		rp->pass = "per-component";
+		rp->comp = (int) j;
+	    }
 	    av[ac] = pv[j];
 	    if (TypeMapCmd(interp, ac + 1, av) != TCL_OK) {
 		goto done;
@@ -12787,12 +13311,29 @@ TypeMapIn(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		&& TclTypeOpsMode() == TCL_TYPE_OPS_ON
 		&& TclTypePathWriteCellColumns(interp, nameObj,
 			Tcl_GetString(pathObj), nc, cv)) {
+	    MapRep *rp = CurRep();
+
 	    rc = TCL_OK;		/* écrit dans les cases */
+	    if (rp != NULL) {
+		Tcl_Obj *now = Tcl_ObjGetVar2(interp, nameObj, NULL, 0);
+
+		RepSetObj(&rp->write, Tcl_NewStringObj((now != NULL
+			&& TclIsCompact(MListContent(now)))
+			? "columns into cells" : "columns into objects", -1));
+	    }
 	} else if (pathObj == NULL && nc == 1) {
 	    rc = (Tcl_ObjSetVar2(interp, nameObj, NULL, cv[0],
 		    TCL_LEAVE_ERR_MSG) != NULL) ? TCL_OK : TCL_ERROR;
+	    if (CurRep() != NULL) {
+		RepSetObj(&CurRep()->write, Tcl_NewStringObj("set (the "
+			"whole variable)", -1));
+	    }
 	} else {
 	    rc = Tcl_EvalObjv(interp, (int) (nc + 2), sv, 0);
+	    if (CurRep() != NULL) {
+		RepSetObj(&CurRep()->write, Tcl_NewStringObj("set (by the "
+			"path, each value checked)", -1));
+	    }
 	}
 	Tcl_DecrRefCount(setCmd);
 	Tcl_Free(sv);
@@ -12894,6 +13435,14 @@ TypeMapPlain(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 		    && TclCompactScalarInfo(c, &cn, &data, &stride, &ckind,
 			    &csize) && cn > 0) {
 		Tcl_Free(av);
+		if (CurRep() != NULL) {
+		    MapRep *rp = CurRep();
+
+		    rp->pass = "reduce (cells read in place)";
+		    rp->elements = cn;
+		    rp->blocks += cn;
+		    RepBody(rp, Tcl_NewStringObj("identity", -1));
+		}
 		return (opt[1] == 's') ? TypeMapSum(interp, objv[4])
 			: TypeMapMinMax(interp, objv[4], opt[2] == 'a');
 	    }
@@ -13351,6 +13900,10 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
     MNum fNum;
     Tcl_Obj *fObj = NULL;
     MDProg dA, dE;
+    MapRep *rep = CurRep();		/* v17y : le relevé demandé */
+    Tcl_WideInt rBlk = 0, rElt = 0, rExpr = 0;
+    Tcl_Obj *rWhy = NULL;
+    Tcl_Size rN = 0;
 
     memset(&dA, 0, sizeof(dA));
     memset(&dE, 0, sizeof(dE));
@@ -13456,10 +14009,11 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	root = MExpr(&g);
 	MSkip(&g);
 	if (*g.p != '\0') {
-	    g.bad = 1;
+	    MBAD(&g);
 	}
     } else {
 	g.bad = 1;
+	g.badAt = NULL;			/* (les opérations typées éteintes) */
     }
     fast = !g.bad;
     memset(&dp, 0, sizeof(dp));
@@ -13534,6 +14088,12 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 
 		if (o == NULL || !MNumOf(o, &vals[i])) {
 		    fast = 0;		/* absente ou pas un nombre : expr */
+		    if (rep != NULL && rWhy == NULL) {
+			rWhy = Tcl_ObjPrintf("expr: variable \"%s\" %s",
+				Tcl_GetString(g.names[i]), (o == NULL)
+				? "does not exist" : "is not a number");
+			Tcl_IncrRefCount(rWhy);
+		    }
 		}
 	    }
 	}
@@ -13729,6 +14289,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 			fNum.w = r;
 			fStale = 1;
 			iStart = n - 1;
+			rBlk += n - 1;	/* (la somme directe) */
 		    }
 		}
 	    }
@@ -13775,6 +14336,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 		/* tous rangés ; les marqués seront refaits un par un */
 		for (e = 0; e < nb; e++) {
 		    gbad[e] = bbad[e] && ibad[e];
+		    rBlk += (!split && !gbad[e]);
 		    if (!bbad[e]) {
 			anyD = 1;
 			if (!split) {
@@ -13866,6 +14428,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 		    fStale = 1;
 		}
 		if (i2 > i) {
+		    rBlk += i2 - i;
 		    i = i2 - 1;		/* faits ; le suivant reprend ici */
 		    continue;
 		}
@@ -13995,6 +14558,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    if (allDv) {
 		out.isD = 1;
 		if (MDRun(&dp, vals, &out.d)) {
+		    rElt += !(blk && !split && i == n - 1 && !gbad[i - bStart]);
 		    num[i] = out;
 		    allW = 0;
 		    if (fold != NULL) {
@@ -14007,6 +14571,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	    }
 	}
 	if (ok && MEval(&g, root, vals, &out)) {
+	    rElt += !(blk && !split && i == n - 1 && !gbad[i - bStart]);
 	    num[i] = out;		/* un nombre, gardé tel quel */
 	    allD &= out.isD;
 	    allW &= !out.isD;
@@ -14048,6 +14613,40 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 		    n = i;
 		    goto loopdone;
 		}
+	    }
+	    rExpr++;
+	    if (rep != NULL && rWhy == NULL && fast) {
+		/* la première raison qui envoie un élément à expr */
+		Tcl_Size v2 = 0, k2, j2;
+		const char *nm = NULL;
+		Tcl_Obj *val = NULL;
+
+		for (k2 = 0; k2 < npairs && nm == NULL; k2++) {
+		    for (j2 = 0; j2 < pairs[k2].nvars; j2++, v2++) {
+			MNum t2;
+
+			if (slotOf[v2] >= 0 && cnum[v2].isD < 0
+				&& (lastVals[v2] == NULL
+				|| !MNumOf(lastVals[v2], &t2))) {
+			    nm = Tcl_GetString(pairs[k2].vars[j2]);
+			    val = lastVals[v2];
+			    break;
+			}
+		    }
+		}
+		if (nm != NULL) {
+		    rWhy = Tcl_ObjPrintf("element %" TCL_SIZE_MODIFIER "d: "
+			    "%s = \"%.30s\" is not a number, by expr", i, nm,
+			    val ? Tcl_GetString(val) : "");
+		} else if (fSlot >= 0 && !fIsNum) {
+		    rWhy = Tcl_ObjPrintf("element %" TCL_SIZE_MODIFIER "d: "
+			    "the accumulator is not a number, by expr", i);
+		} else {
+		    rWhy = Tcl_ObjPrintf("element %" TCL_SIZE_MODIFIER "d: "
+			    "not computable as a number (non-finite, "
+			    "overflow...), by expr", i);
+		}
+		Tcl_IncrRefCount(rWhy);
 	    }
 	    if (Tcl_ExprObj(interp, body, &r) != TCL_OK) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -14101,6 +14700,7 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	}
     }
   loopdone:
+    rN = n;
     /* comme lmap : les variables gardent le dernier élément */
     if (rc == TCL_OK && n > 0) {
 	Tcl_Size v = 0;
@@ -14223,6 +14823,60 @@ TypeMapCore(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[],
 	Tcl_SetObjResult(interp, resList);
     }
   results:
+    if (rep != NULL) {
+	/* v17y : ce que cette passe a fait */
+	Tcl_Obj *desc;
+
+	rep->elements = rN;
+	if (rep->comp <= 0) {
+	    Tcl_Obj *in = Tcl_NewListObj(0, NULL);
+	    Tcl_Obj *vb;
+	    Tcl_Obj *const *ve;
+	    Tcl_Size vn, vs;
+
+	    for (k = 0; k < npairs; k++) {
+		for (j = 0; j < pairs[k].nvars; j++) {
+		    Tcl_ListObjAppendElement(NULL, in, pairs[k].vars[j]);
+		    Tcl_ListObjAppendElement(NULL, in, (pairs[k].nvars > 1)
+			    ? Tcl_NewStringObj("objects (lists)", -1)
+			    : RepInputKind(pairs[k].cdata, pairs[k].ckind,
+			    pairs[k].csize, pairs[k].cstride,
+			    pairs[k].estride, pairs[k].estride != 1
+			    || TclObjViewInfo(MListContent(objv[3 + 2 * k]),
+			    &vb, &ve, &vn, &vs)));
+		}
+	    }
+	    RepSetObj(&rep->inputs, in);
+	}
+	if (!fast) {
+	    desc = g.bad ? RepNotCompiled(&g, bt) : (rWhy != NULL
+		    && strncmp(Tcl_GetString(rWhy), "expr:", 5) == 0)
+		    ? rWhy : Tcl_NewStringObj("expr", -1);
+	} else {
+	    desc = Tcl_ObjPrintf("compiled%s%s", dp.ok ? " double" : "",
+		    mi.ok ? " int" : (dp.ok ? "" : " (scalar)"));
+	}
+	RepBody(rep, desc);
+	if (rep->pass == NULL) {
+	    rep->pass = (fold != NULL) ? "fold" : cellsOut ? "reduce"
+		    : "column";
+	}
+	if (fast && !blk && n > 1 && getenv("TCL_TYPE_NOBLOCK") == NULL) {
+	    RepWhy(rep, Tcl_NewStringObj((fold != NULL)
+		    ? "blocks: the fold does not split (s op E, E without s)"
+		    : "blocks: the fixed values are neither all double nor "
+		    "all int", -1));
+	}
+	if (rWhy != NULL && fast) {
+	    RepWhy(rep, rWhy);
+	}
+	rep->blocks += rBlk;
+	rep->elementwise += rElt;
+	rep->expr += rExpr;
+    }
+    if (rWhy != NULL) {
+	Tcl_DecrRefCount(rWhy);
+    }
     if (res != NULL) {
 	for (i = 0; i < n; i++) {
 	    if (res[i] != NULL) {
@@ -14332,6 +14986,19 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
     Tcl_Size npairs = 0, k, j, s, n = -1, i, built = 0;
     unsigned char bbad[MD_BLK], ibad[MD_BLK], cbad[MD_BLK];
     TclType *lt;
+    MapRep *rep = CurRep();
+    Tcl_Obj *why = NULL;		/* v17y : pourquoi pas en une passe */
+    const char *swhy = NULL;
+    int copied = 0;
+
+#define MTF_FAIL(o) \
+    do {								\
+	if (rep != NULL && why == NULL) {				\
+	    why = (o);							\
+	    Tcl_IncrRefCount(why);					\
+	}								\
+	goto done;							\
+    } while (0)
 
     if (K < 1 || K > 64 || ac < 4 || (ac % 2) != 0
 	    || TclTypeOpsMode() == TCL_TYPE_OPS_OFF
@@ -14360,7 +15027,8 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 	Tcl_ListObjGetElements(NULL, av[k], &nv, &vv);
 	if (nv > 1 && (Tcl_ListObjGetElements(NULL, MListContent(av[k + 1]),
 		&nc, &cv) != TCL_OK || nc != nv)) {
-	    goto done;
+	    MTF_FAIL(Tcl_ObjPrintf("{%s} needs as many columns",
+		    Tcl_GetString(av[k])));
 	}
 	for (j = 0; j < nv; j++) {
 	    struct MapPair *pr = &pairs[npairs];
@@ -14382,10 +15050,12 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 		pr->list = lo;
 		Tcl_ListObjGetElements(NULL, lo, &pr->len, &pr->elems);
 	    } else {
-		goto done;
+		MTF_FAIL(Tcl_ObjPrintf("input %s is not a list yet",
+			Tcl_GetString(vv[j])));
 	    }
 	    if (pr->cdata != NULL && pr->ckind != 2) {
-		goto done;		/* des entiers : marqués partout */
+		MTF_FAIL(Tcl_ObjPrintf("input %s is in integer cells",
+			Tcl_GetString(vv[j])));
 	    }
 	    Tcl_IncrRefCount(pr->list);
 	    pr->varList = vv[j];
@@ -14393,13 +15063,14 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 	    pr->vars = &pr->varList;
 	    npairs++;
 	    if (n >= 0 && pr->len != n) {
-		goto done;		/* (le message : le chemin habituel) */
+		MTF_FAIL(Tcl_NewStringObj("the lists have different lengths",
+			-1));
 	    }
 	    n = pr->len;
 	}
     }
     if (n < 2) {
-	goto done;
+	MTF_FAIL(Tcl_NewStringObj("fewer than 2 elements", -1));
     }
     /* les K programmes */
     g = (MProg *) Tcl_Alloc(K * sizeof(MProg));
@@ -14421,11 +15092,25 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 	root = MExpr(&g[j]);
 	MSkip(&g[j]);
 	if (g[j].bad || *g[j].p != '\0' || MDType(&g[j], root) != 1) {
-	    goto done;
+	    if (*g[j].p != '\0' && !g[j].bad) {
+		MBAD(&g[j]);
+	    }
+	    if (rep != NULL && why == NULL && g[j].bad) {
+		Tcl_Obj *nc = RepNotCompiled(&g[j], Tcl_GetString(parts[j]));
+
+		Tcl_IncrRefCount(nc);
+		why = Tcl_ObjPrintf("component %" TCL_SIZE_MODIFIER "d: %s", j,
+			Tcl_GetString(nc));
+		Tcl_IncrRefCount(why);
+		Tcl_DecrRefCount(nc);
+	    }
+	    MTF_FAIL(Tcl_ObjPrintf("component %" TCL_SIZE_MODIFIER "d is not "
+		    "a double expression", j));
 	}
 	MDCompile(&g[j], root, &dp[j]);
 	if (dp[j].maxDepth > 32) {
-	    goto done;
+	    MTF_FAIL(Tcl_ObjPrintf("component %" TCL_SIZE_MODIFIER "d is too "
+		    "deep", j));
 	}
 	if (dp[j].maxDepth > maxDepth) {
 	    maxDepth = dp[j].maxDepth;
@@ -14455,7 +15140,8 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 
 		if (o == NULL || !MNumOf(o, &vals[j][s])
 			|| vals[j][s].isD != 1) {
-		    goto done;
+		    MTF_FAIL(Tcl_ObjPrintf("variable %s is not a double",
+			    Tcl_GetString(g[j].names[s])));
 		}
 	    }
 	}
@@ -14479,12 +15165,12 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 	/* -in : les variables d'abord (le dernier élément, connu), puis les
 	 * cases neuves de la cible, écrites bloc par bloc */
 	if (MapSetLastVars(interp, pairs, npairs, n) != TCL_OK) {
-	    goto done;
+	    MTF_FAIL(Tcl_NewStringObj("a loop variable cannot be set", -1));
 	}
 	sink = TclTypePathCellsBegin(interp, sinkName, sinkPath, K, n, sdst,
-		sstep);
+		sstep, &swhy, &copied);
 	if (sink == NULL) {
-	    goto done;
+	    MTF_FAIL(Tcl_ObjPrintf("target: %s", swhy ? swhy : "?"));
 	}
 	tmp = (double *) Tcl_Alloc(MD_BLK * sizeof(double));
 	goto pass;
@@ -14516,14 +15202,19 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 
 	TypeMapGather(pairs, npairs, slotOf, gcols, NULL, i, nb, bbad, ibad);
 	if (memchr(bbad, 1, nb) != NULL) {
-	    goto done;
+	    MTF_FAIL(Tcl_ObjPrintf("element %" TCL_SIZE_MODIFIER "d is not a "
+		    "double in every input", i + (Tcl_Size) ((unsigned char *)
+		    memchr(bbad, 1, nb) - bbad)));
 	}
 	for (j = 0; j < K; j++) {
 	    memset(cbad, 0, nb);
 	    MDRunBlock(&dp[j], ccols[j], vals[j], nb, scratch, cbad,
 		    sink ? tmp : (double *) outData[j] + i);
 	    if (memchr(cbad, 1, nb) != NULL) {
-		goto done;
+		MTF_FAIL(Tcl_ObjPrintf("component %" TCL_SIZE_MODIFIER "d, "
+			"element %" TCL_SIZE_MODIFIER "d: not a finite double",
+			j, i + (Tcl_Size) ((unsigned char *)
+			memchr(cbad, 1, nb) - cbad)));
 	    }
 	    if (sink != NULL) {
 		/* à son pas dans la cible */
@@ -14552,14 +15243,56 @@ MapTupleFast(Tcl_Interp *interp, Tcl_Size ac, Tcl_Obj *const av[],
 	TclTypePathCellsEnd(sink, 1);	/* installée */
 	sink = NULL;
 	ok = 1;
+	if (rep != NULL) {
+	    RepSetObj(&rep->write, Tcl_NewStringObj(copied
+		    ? "direct (copied first)" : "direct", -1));
+	}
 	goto done;
     }
     /* comme lmap : les variables gardent le dernier élément */
     if (MapSetLastVars(interp, pairs, npairs, n) != TCL_OK) {
-	goto done;		/* (une trace : le chemin habituel refait) */
+	MTF_FAIL(Tcl_NewStringObj("a loop variable cannot be set", -1));
     }
     ok = 1;
   done:
+#undef MTF_FAIL
+    if (rep != NULL) {
+	if (ok) {
+	    Tcl_Obj *in = Tcl_NewListObj(0, NULL);
+	    int c0 = rep->comp;
+
+	    for (k = 0; k < npairs; k++) {
+		Tcl_ListObjAppendElement(NULL, in, pairs[k].varList);
+		Tcl_ListObjAppendElement(NULL, in, RepInputKind(pairs[k].cdata,
+			pairs[k].ckind, pairs[k].csize, pairs[k].cstride,
+			pairs[k].estride, pairs[k].elems != NULL
+			&& pairs[k].estride != 1));
+	    }
+	    if (c0 <= 0) {
+		RepSetObj(&rep->inputs, in);
+	    } else {
+		Tcl_IncrRefCount(in);
+		Tcl_DecrRefCount(in);
+	    }
+	    rep->elements = n;
+	    for (j = 0; j < K; j++) {
+		rep->comp = (K > 1) ? (int) j : c0;
+		RepBody(rep, Tcl_NewStringObj("compiled double", -1));
+	    }
+	    rep->comp = c0;
+	    rep->blocks += (Tcl_WideInt) n * K;
+	    if (rep->pass == NULL || K > 1 || sinkName != NULL) {
+		rep->pass = (K > 1) ? "single" : (rep->pass ? rep->pass
+			: "column");
+	    }
+	} else if (why != NULL && (K > 1 || sinkName != NULL)) {
+	    RepWhy(rep, Tcl_ObjPrintf("%s: %s", (sinkName != NULL)
+		    ? "direct write" : "single pass", Tcl_GetString(why)));
+	}
+    }
+    if (why != NULL) {
+	Tcl_DecrRefCount(why);
+    }
     if (sink != NULL) {
 	TclTypePathCellsEnd(sink, 0);	/* abandonnée : rien n'a changé */
     }
@@ -15032,7 +15765,7 @@ VecIsInt(Tcl_Obj *o)
 }
 
 static int VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
-	Tcl_Obj *const objv[]);
+	Tcl_Obj *const objv[], const char **whyPtr);
 
 /*
  * Les listes de variables, copiées : le mot peut être l'objet-nom d'une
@@ -15049,12 +15782,30 @@ VecTypeMap(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
     Tcl_Size k;
     int rc;
 
+    MapRep rep, *save;
+    MapLog *l;
+    const char *why = NULL;
+
     for (k = 0; k < objc; k++) {
 	ov[k] = (k % 2 == 1 && k < objc - 1) ? Tcl_DuplicateObj(objv[k])
 		: objv[k];
 	Tcl_IncrRefCount(ov[k]);
     }
-    rc = VecTypeMapRun(interp, isLmap, objc, ov);
+    l = MapRepEnter(interp, &rep, &save, 0);
+    rc = VecTypeMapRun(interp, isLmap, objc, ov, &why);
+    MapRepLeave(save);
+    if (l != NULL) {
+	/* v17y : le relevé global (une boucle candidate seulement) */
+	if (rc == TCL_OK || rc == TCL_ERROR) {
+	    MapLogAdd(interp, l, isLmap ? "lmap" : "foreach", &rep, NULL);
+	} else if (why != NULL) {
+	    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+
+	    MapLogAdd(interp, l, isLmap ? "lmap" : "foreach", NULL, why);
+	    Tcl_RestoreInterpState(interp, st);
+	}
+	MapRepFree(&rep);
+    }
     for (k = 0; k < objc; k++) {
 	Tcl_DecrRefCount(ov[k]);
     }
@@ -15066,7 +15817,7 @@ VecTypeMap(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
 
 static int
 VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
-	Tcl_Obj *const objv[])
+	Tcl_Obj *const objv[], const char **whyPtr)
 {
     Tcl_Obj *ex = NULL, *fv = NULL, **av = NULL, *init = NULL;
     Tcl_Size k, n = -1, len, ac = 0;
@@ -15084,10 +15835,14 @@ VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
     if (fv != NULL) {
 	Tcl_IncrRefCount(fv);
     }
-    if (!MapExprPure(Tcl_GetString(ex), &fresh)
-	    || (assign == 1 && !fresh)) {
+    if (!MapExprPure(Tcl_GetString(ex), &fresh)) {
+	*whyPtr = "the expression is not in the compiled subset";
+	goto decline;
+    }
+    if (assign == 1 && !fresh) {
 	/* (s = E) garde un opérande tel quel ($u, ?:...), sans le
 	 * normaliser comme expr : la boucle ordinaire */
+	*whyPtr = "(s = E) where E may be an operand as is";
 	goto decline;
     }
     /* une variable par liste, des listes de même longueur, assez longues */
@@ -15101,21 +15856,25 @@ VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
 		    Tcl_GetString(fv)) == 0)
 		|| Tcl_ListObjLength(NULL, objv[k + 1], &len) != TCL_OK
 		|| (n >= 0 && len != n)) {
+	    *whyPtr = "one simple variable per list, lists of one length";
 	    goto decline;
 	}
 	n = len;
     }
     if (n < VEC_MIN) {
+	*whyPtr = "short lists";
 	goto decline;
     }
     if (fv != NULL) {
 	/* le cumul : s doit exister (sa valeur de départ), sans témoin */
 	if (!VecPlainVar(interp, fv)
 		|| (init = Tcl_ObjGetVar2(interp, fv, NULL, 0)) == NULL) {
+	    *whyPtr = "the accumulator does not exist (or is traced)";
 	    goto decline;
 	}
 	Tcl_IncrRefCount(init);
 	if (assign == 2 && !VecIsInt(init)) {
+	    *whyPtr = "incr: the accumulator is not an integer";
 	    goto decline;		/* incr : s entier au départ */
 	}
     }
@@ -15153,6 +15912,7 @@ VecTypeMapRun(Tcl_Interp *interp, int isLmap, Tcl_Size objc,
 	}
 	Tcl_ResetResult(interp);
 	rc = TCL_CONTINUE;
+	*whyPtr = "an element errs: the ordinary loop, from the start";
     } else if (isLmap) {
 	/* la liste des résultats, sans annotation (comme lmap) */
 	Tcl_Obj *r = Tcl_GetObjResult(interp), *c = NULL;
@@ -15708,7 +16468,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TclTypeDebugCmd(interp, objc, objv);	/* v16y */
     }
     if (strcmp(sub, "map") == 0) {
-	return TypeMapCmd(interp, objc, objv);	/* 23/11 */
+	return TypeMapUser(interp, objc, objv);	/* 23/11, v17y */
     }
     if (strcmp(sub, "repeat") == 0) {
 	return TypeRepeatCmd(interp, objc, objv);	/* v17t */
@@ -16540,6 +17300,8 @@ TclTypesInit(Tcl_Interp *interp)
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::typesversion",
 	    TypesVersionObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::mapreport",
+	    MapReportObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::vecloop",
 	    VecLoopObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::abi", AbiObjCmd,

@@ -1,0 +1,24 @@
+colonne : elements 300 inputs {x objects} pass column body {{compiled double}} blocks 300 why {}
+tuple : pass single body {{compiled double} {compiled double}} blocks 600 elementwise 0 expr 0 why {}
+-in direct : inputs {x {cells double(64) stride 16} y {cells double(64) stride 16}} pass single write direct why {}
+fonction : pass per-component body {{compiled double} {expr: not compiled near "foo($y))"}} blocks 300 elementwise 0 expr 300 why {single pass: component 1: expr: not compiled near "foo($y))"}
+fixe texte : pass column body {{expr: variable "k" is not a number}} blocks 0 elementwise 0 expr 1 why {error: cannot use non-numeric string "abc" as right operand of "*"}
+un texte : pass column body {{compiled double int}} blocks 255 elementwise 0 expr 1 why {element 3: x = "abc" is not a number, by expr}
+un entier : pass per-component body {{compiled double int} {compiled double}} blocks 600 elementwise 0 expr 0 why {single pass: element 3 is not a double in every input}
+-sum : pass reduce body {{compiled double int}} blocks 300 elementwise 0 expr 0 why {}
+recouvrement : pass single write {columns into cells} why {direct write: target: overlapping columns}
+-in objets : pass column write {columns into objects} why {direct write: target: not a typed list in cells of double(64), without traces}
+sans chemin : pass column write {set (the whole variable)} why {direct write: the whole variable (no path)}
+résultat gardé : 2.0 4.0
+erreur gardée : {cannot use non-numeric string "abc" as left operand of "*"} {element 1: x = "abc" is not a number, by expr}
+option seule : ERR wrong # args: should be "type map -report varName ?-in target|-sum|-min|-max|-fold {name init}? varList list ?varList list ...? {(expression)}"
+@ ::f line 1 : blocks 596 body {{compiled double int}} calls 2 command foreach elements 600 elementwise 4 expr 0 {pass fold} 2
+@ ::h line 1 : blocks 300 body {{compiled double int}} calls 1 command lmap elements 300 elementwise 0 expr 0 {pass column} 1
+@ ::m line 1 : blocks 0 body {{expr: not compiled near "$::k)"}} calls 1 command {type map} elements 0 elementwise 0 expr 1 {pass column} 1 why {error: cannot use non-numeric string "abc" as right operand of "+"}
+@ ::n line 1 : blocks 299 body {{compiled double int}} calls 1 command foreach elements 300 elementwise 1 expr 0 {pass fold} 1
+@ ::a line 1 : calls 1 command lmap {declined: the expression is not in the compiled subset} 1
+@ ::b line 1 : calls 1 command foreach {declined: incr: the accumulator is not an integer} 1
+@ ::d line 1 : calls 1 command foreach {declined: the accumulator does not exist (or is traced)} 1
+vidé : 
+arrêté : 
+option : ERR bad option "bof": must be on, off, clear, or get

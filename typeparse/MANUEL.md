@@ -663,6 +663,63 @@ produit scalaire `set d [expr {$d + $u*$v}]` sur deux listes ordinaires
 84 → 10 ms ; une boucle courte (moins de 16 éléments) ne coûte rien de
 mesurable de plus.
 
+**Où est la falaise : `-report` et `mapreport`.** Les voies rapides se
+retirent sans rien dire quand elles ne peuvent pas rendre le même résultat ;
+le calcul reste juste, mais beaucoup plus lent. Deux moyens de voir ce qui
+s'est passé (v17y).
+
+`type map -report varName …` (en première option) fait le calcul comme
+d'habitude et range dans `varName` un dictionnaire, même si la commande
+échoue :
+
+    type map -report r -in pl((0,1)::2) {x y} {($c*$x - $s*$y, $s*$x + $c*$y)}
+    # elements 100000
+    # inputs   x {cells double(64) stride 16} y {cells double(64) stride 16}
+    # body     {compiled double} {compiled double}
+    # pass     single
+    # blocks 200000  elementwise 0  expr 0
+    # write    direct
+    # why      {}
+
+* `inputs` : chaque variable et la forme de sa colonne (`cells …` avec le
+  pas en octets, `objects`, `objects view stride N`).
+* `body` : pour chaque composante, `compiled double`, `compiled int`,
+  `compiled double int`, ou `expr: …` avec la raison (`not compiled near
+  "foo($y)"`, `variable "k" is not a number`).
+* `pass` : `single` (le tuple en une passe), `per-component`, `tuple by
+  expr` (le corps entier, élément par élément), `column`, `fold`, `reduce`.
+* `blocks`, `elementwise`, `expr` : les évaluations faites par blocs, une à
+  une en C, et par `expr` (une par élément et par composante).
+* `write` (avec `-in`) : `direct` (bloc par bloc dans des cases neuves),
+  `direct (copied first)`, `columns into cells`, `columns into objects`,
+  `set (by the path, each value checked)`.
+* `why` : la première raison pour laquelle une voie plus rapide n'a pas
+  servi (`single pass: element 3 is not a double in every input`, `direct
+  write: target: overlapping columns`, `element 3: x = "abc" is not a
+  number, by expr`), vide si rien ne s'est retiré.
+
+`::tcl::unsupported::mapreport on|off|clear|get` tient le même relevé pour
+tout un programme, par lieu d'appel (procédure et ligne, ou fichier et
+ligne) : `type map`, et les `foreach`/`lmap` candidats du registre, avec
+la raison d'un refus (`declined: short lists`, `declined: the expression
+is not in the compiled subset`, `declined: an element errs: the ordinary
+loop, from the start`…). `get` rend un dictionnaire lieu → statistiques
+(`calls`, `pass …`, `elements`, `blocks`, `elementwise`, `expr`,
+`write …`, le premier `body` et le premier `why` vus à ce lieu) :
+
+    ::tcl::unsupported::mapreport on
+    run-my-program
+    dict for {where st} [::tcl::unsupported::mapreport get] {puts "$where: $st"}
+    # ::normalize line 3: command {type map} calls 200 {pass column} 200 ...
+    #     body {{expr: variable "k" is not a number}}
+
+Une boucle qui n'a pas la forme d'une boucle vectorisable n'est pas
+relevée (elle ne l'a jamais été). Une boucle compilée en ligne (corps
+littéral dans une procédure) dont l'expression sort du sous-ensemble est
+compilée en boucle ordinaire dès la compilation : elle n'est pas relevée
+non plus ; `type map -report` sur la même expression dit pourquoi. Sans
+relevé demandé, le coût est un test par appel.
+
 Avec `-sum`, `-min` et `-max`, des résultats entiers restent en cases
 (entiers de 64 bits) le temps du calcul : `type map -sum {v} $octets {($v)}`
 40 → 4,7 ms pour un million. `type map` lui-même rend toujours une

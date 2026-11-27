@@ -5188,7 +5188,7 @@ typedef struct CellSink {
 void *
 TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	const char *path, Tcl_Size K, Tcl_Size count0, unsigned char **dst,
-	size_t *dstep)
+	size_t *dstep, const char **whyPtr, int *copiedPtr)
 {
     Var *varPtr, *arrayPtr;
     Tcl_Obj *a, *v, *nv, *na;
@@ -5206,8 +5206,11 @@ TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
     }
     varPtr = TclObjLookupVarEx(interp, nameObj, NULL, 0, "set", 0, 0,
 	    &arrayPtr);
+    *whyPtr = NULL;
+    *copiedPtr = 0;
     if (varPtr == NULL || arrayPtr != NULL) {
 	Tcl_ResetResult(interp);
+	*whyPtr = "not a simple variable";
 	return NULL;
     }
     while (TclIsVarLink(varPtr)) {
@@ -5220,14 +5223,17 @@ TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	    || tp->kind != TCLT_LIST
 	    || !TclCompactScalarInfo(v, &dn, &dd0, &ds, &dk, &dz)
 	    || dk != 2 || dz != 8 || ds % 8 != 0) {
+	*whyPtr = "not a typed list in cells of double(64), without traces";
 	return NULL;
     }
     if (!RangeTextParse(path, (Tcl_Size) strlen(path), &rx)) {
+	*whyPtr = "the path is not slices or windows";
 	return NULL;
     }
     n = dn;
     if (rx.ncols != K) {
 	RangeTextFree(&rx);
+	*whyPtr = "the path does not have as many columns";
 	return NULL;
     }
     memset(seen, 0, sizeof(seen));
@@ -5236,6 +5242,7 @@ TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	if (RangeSpec(NULL, &rx.st, n, &first[j], &count[j], &stride[j])
 		!= TCL_OK || count[j] != count0) {
 	    RangeTextFree(&rx);
+	    *whyPtr = "the path columns differ in length";
 	    return NULL;
 	}
 	if (stride[j] != K || first[j] < 0 || first[j] >= K
@@ -5257,10 +5264,12 @@ TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 
 	for (j = 0; j < K; j++) {
 	    if (stride[j] != stride[0] || stride[j] < 1) {
+		*whyPtr = "columns with different steps";
 		return NULL;
 	    }
 	    for (q = 0; q < j; q++) {
 		if (first[q] == first[j]) {
+		    *whyPtr = "overlapping columns";
 		    return NULL;
 		}
 	    }
@@ -5268,13 +5277,17 @@ TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	    hi = (first[j] > hi) ? first[j] : hi;
 	}
 	if (hi - lo >= stride[0]) {
+	    *whyPtr = "overlapping columns";
 	    return NULL;
 	}
     }
     if (!full && !(Tcl_IsShared(a) || Tcl_IsShared(v)
 	    || !TclCompactScalarWritable(v))) {
+	*whyPtr = "partial path on an unshared list (written in place by "
+		"columns)";
 	return NULL;		/* sur place : le chemin des colonnes */
     }
+    *copiedPtr = !full;
     nv = TclCompactCloneEx(v, !full);
     if (nv == NULL) {
 	return NULL;
