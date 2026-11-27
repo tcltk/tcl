@@ -98,6 +98,7 @@ to the userbase.
  - [Tcl_FSChdir crash on macos/macports after seteuid](https://core.tcl-lang.org/tcl/tktview/e2698b)
  - [lseq: out of range double count](https://core.tcl-lang.org/tcl/tktview/97dbd7)
  - [Crash on invalid Unicode code points](https://core.tcl-lang.org/tcl/tktview/28de50)
+ - [Transchan loses input data when written to](https://core.tcl-lang.org/tcl/tktview/6141c1)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
