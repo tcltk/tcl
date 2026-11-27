@@ -216,6 +216,117 @@ if {[testConstraint win]} {
     file delete $fname
 }
 
+# Symbolic links: creating them needs administrator rights or Developer Mode.
+proc winSymLinksWork {} {
+    set dir [makeDirectory winsymlinkprobe]
+    set target [makeFile {} target $dir]
+    set link [file join $dir link]
+    set ok [expr {![catch {exec {*}[auto_execok mklink] \
+	    [file nativename $link] [file nativename $target]}]
+	    && [file type $link] eq "link"}]
+    catch {file delete $link}
+    catch {removeDirectory winsymlinkprobe}
+    return $ok
+}
+testConstraint winSymLinks [expr {[testConstraint win] && [winSymLinksWork]}]
+rename winSymLinksWork {}
+
+proc mklink {args} {
+    exec {*}[auto_execok mklink] {*}$args
+}
+proc setupLinks {} {
+    set dir [makeDirectory winlinks]
+    file mkdir [file join $dir sub]
+    makeFile {} a.txt $dir
+    makeFile {} f [file join $dir sub]
+    set n [file nativename $dir]
+    mklink $n\\filelink $n\\a.txt
+    mklink /D $n\\dirlink $n\\sub
+    # relative targets, as mklink stores them
+    exec {*}[auto_execok cmd] /c "cd /d $n && mklink relfile a.txt && mklink /D reldir sub"
+    return $dir
+}
+proc cleanupLinks {} {
+    set n [file nativename [file join [temporaryDirectory] winlinks]]
+    foreach l {filelink relfile} {catch {file delete $n\\$l}}
+    foreach l {dirlink reldir} {catch {exec {*}[auto_execok rmdir] $n\\$l}}
+    catch {removeDirectory winlinks}
+}
+
+test winFile-5.1 {file readlink: symbolic links, bug [c8d4f01a54]} -constraints {
+    win winSymLinks
+} -setup {
+    set dir [setupLinks]
+} -body {
+    list [string equal -nocase [file readlink [file join $dir filelink]] \
+	    [file nativename [file join $dir a.txt]]] \
+	[string equal -nocase [file readlink [file join $dir dirlink]] \
+	    [file nativename [file join $dir sub]]] \
+	[file readlink [file join $dir relfile]] \
+	[file readlink [file join $dir reldir]]
+} -cleanup {
+    cleanupLinks
+} -result {1 1 a.txt sub}
+test winFile-5.2 {file readlink: junction} -constraints {win} -setup {
+    set dir [makeDirectory winlinks]
+    file mkdir [file join $dir sub]
+} -body {
+    file link -symbolic [file join $dir junction] [file join $dir sub]
+    string equal -nocase [file readlink [file join $dir junction]] \
+	[file nativename [file join $dir sub]]
+} -cleanup {
+    catch {exec {*}[auto_execok rmdir] [file nativename [file join $dir junction]]}
+    removeDirectory winlinks
+} -result 1
+test winFile-5.3 {file normalize through symbolic links, bug [c8d4f01a54]} -constraints {
+    win winSymLinks
+} -setup {
+    set dir [setupLinks]
+} -body {
+    set expected [file normalize [file join $dir sub f]]
+    list [string equal -nocase [file normalize [file join $dir dirlink f]] $expected] \
+	[string equal -nocase [file normalize [file join $dir reldir f]] $expected]
+} -cleanup {
+    cleanupLinks
+} -result {1 1}
+test winFile-5.4 {file readlink: not a link} -constraints {win} -setup {
+    set f [makeFile {} winnotalink]
+} -body {
+    list [catch {file readlink $f} msg] [string match {*not a directory} $msg]
+} -cleanup {
+    removeFile winnotalink
+} -result {1 1}
+
+# The same local directory seen through the administrative share.
+proc adminSharePath {path} {
+    set n [file nativename [file normalize $path]]
+    if {![regexp {^([A-Za-z]):(.*)$} $n -> drive rest]} {
+	return ""
+    }
+    return "\\\\localhost\\$drive\$$rest"
+}
+testConstraint winAdminShare [expr {[testConstraint win]
+	&& [file isdirectory [adminSharePath [temporaryDirectory]]]}]
+
+test winFile-5.5 {file readlink: symbolic link to UNC path, bug [c8d4f01a54]} -constraints {
+    win winSymLinks winAdminShare
+} -setup {
+    set dir [setupLinks]
+    set unc [adminSharePath [file join $dir sub]]
+    mklink /D [file nativename [file join $dir unclink]] $unc
+} -body {
+    list [string equal -nocase [file readlink [file join $dir unclink]] $unc] \
+	[string equal -nocase [file normalize [file join $dir unclink f]] \
+	    [file normalize [file join $unc f]]]
+} -cleanup {
+    catch {exec {*}[auto_execok rmdir] [file nativename [file join $dir unclink]]}
+    cleanupLinks
+} -result {1 1}
+rename mklink {}
+rename setupLinks {}
+rename cleanupLinks {}
+rename adminSharePath {}
+
 # cleanup
 cleanupTests
 return

@@ -106,6 +106,7 @@ to the userbase.
  - ["binary format" with huge counts or offsets](https://core.tcl-lang.org/tcl/tktview/278858)
  - [directory creation temporarily changes the umask](https://core.tcl-lang.org/tcl/tktview/cd6092)
  - [directory creation does not use default acl](https://core.tcl-lang.org/tcl/tktview/623585)
+ - [Windows: "file readlink" failed on symbolic links](https://core.tcl-lang.org/tcl/tktview/c8d4f0)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3

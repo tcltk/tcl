@@ -75,8 +75,11 @@
 #  define IsReparseTagValid(x) \
     (!((x)&~IO_REPARSE_TAG_VALID_VALUES)&&((x)>IO_REPARSE_TAG_RESERVED_RANGE))
 #endif
-#ifndef IO_REPARSE_TAG_SYMBOLIC_LINK
-#  define IO_REPARSE_TAG_SYMBOLIC_LINK	IO_REPARSE_TAG_RESERVED_ZERO
+#ifndef IO_REPARSE_TAG_SYMLINK
+#  define IO_REPARSE_TAG_SYMLINK	0xA000000C
+#endif
+#ifndef SYMLINK_FLAG_RELATIVE
+#  define SYMLINK_FLAG_RELATIVE		1
 #endif
 #ifndef FILE_SPECIAL_ACCESS
 #  define FILE_SPECIAL_ACCESS		(FILE_ANY_ACCESS)
@@ -166,7 +169,8 @@ static int		NativeMatchType(int isDrive, DWORD attr,
 static int		WinIsDrive(const char *name, size_t nameLen);
 static size_t		WinIsReserved(const char *path);
 static Tcl_Obj *	WinReadLink(const WCHAR *LinkSource);
-static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory);
+static Tcl_Obj *	WinReadLinkDirectory(const WCHAR *LinkDirectory,
+			    int absolute);
 static int		WinLink(const WCHAR *LinkSource,
 			    const WCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const WCHAR *LinkDirectory,
@@ -318,13 +322,14 @@ WinReadLink(
 	/* The source doesn't exist. */
 	Tcl_WinConvertError(GetLastError());
 	return NULL;
-    } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-	/* It is a file - this is not yet supported. */
+    } else if ((attr & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_REPARSE_POINT))
+	    == 0) {
+	/* An ordinary file, not a link. */
 	Tcl_SetErrno(ENOTDIR);
 	return NULL;
     }
 
-    return WinReadLinkDirectory(linkSourcePath);
+    return WinReadLinkDirectory(linkSourcePath, 0);
 }
 
 /*
@@ -542,7 +547,9 @@ TclWinSymLinkDelete(
 
 static Tcl_Obj *
 WinReadLinkDirectory(
-    const WCHAR *linkDirPath)
+    const WCHAR *linkDirPath,
+    int absolute)		/* Make a relative symbolic link target
+				 * absolute. */
 {
     int attr, offset;
     Tcl_Size len;
@@ -550,6 +557,8 @@ WinReadLinkDirectory(
     Tcl_Obj *retVal;
     Tcl_DString ds;
     const char *copy;
+    WCHAR *target;
+    int targetLen, relative = 0;
 
     attr = GetFileAttributesW(linkDirPath);
     if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -569,94 +578,147 @@ WinReadLinkDirectory(
 	return NULL;
     }
 
-    switch (reparseBuffer->ReparseTag) {
-    case 0x80000000|IO_REPARSE_TAG_SYMBOLIC_LINK:
-    case IO_REPARSE_TAG_SYMBOLIC_LINK:
-    case IO_REPARSE_TAG_MOUNT_POINT:
-	/*
-	 * Certain native path representations on Windows have a special
-	 * prefix to indicate that they are to be treated specially. For
-	 * example extremely long paths, or symlinks, or volumes mounted
-	 * inside directories.
-	 *
-	 * There is an assumption in this code that 'wide' interfaces are
-	 * being used (see tclWin32Dll.c), which is true for the only systems
-	 * which support reparse tags at present. If that changes in the
-	 * future, this code will have to be generalised.
-	 */
+    /*
+     * Symbolic links and junctions (mount points) use different buffer
+     * layouts. [Bug c8d4f01a54]
+     */
 
-	offset = 0;
-	if (mp->PathBuffer[0] == '\\') {
+    switch (reparseBuffer->ReparseTag) {
+    case IO_REPARSE_TAG_SYMLINK:
+	target = reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer
+		+ reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameOffset
+		/ sizeof(WCHAR);
+	targetLen = reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength
+		/ sizeof(WCHAR);
+	relative = (reparseBuffer->SymbolicLinkReparseBuffer.Flags
+		& SYMLINK_FLAG_RELATIVE) != 0;
+	break;
+    case IO_REPARSE_TAG_MOUNT_POINT:
+	target = mp->PathBuffer + mp->SubstituteNameOffset / sizeof(WCHAR);
+	targetLen = mp->SubstituteNameLength / sizeof(WCHAR);
+	break;
+    default:
+	goto invalidError;
+    }
+
+    if (relative) {
+	if (absolute) {
 	    /*
-	     * Check whether this is a mounted volume.
+	     * The target is relative to the directory containing the link.
 	     */
 
-	    if (wcsncmp(mp->PathBuffer, L"\\??\\Volume{", 11) == 0) {
-		char drive;
+	    WCHAR *full, *sep;
+	    DWORD fullLen;
 
-		/*
-		 * There is some confusion between \??\ and \\?\ which we have
-		 * to fix here. It doesn't seem very well documented.
-		 */
-
-		mp->PathBuffer[1] = '\\';
-
-		/*
-		 * Check if a corresponding drive letter exists, and use that
-		 * if it is found
-		 */
-
-		drive = TclWinDriveLetterForVolMountPoint(mp->PathBuffer);
-		if (drive != -1) {
-		    char driveSpec[3] = {
-			'\0', ':', '\0'
-		    };
-
-		    driveSpec[0] = drive;
-		    retVal = Tcl_NewStringObj(driveSpec, 2);
-		    Tcl_IncrRefCount(retVal);
-		    Tcl_Free(reparseBuffer);
-		    return retVal;
-		}
-
-		/*
-		 * This is actually a mounted drive, which doesn't exists as a
-		 * DOS drive letter. This means the path isn't actually a
-		 * link, although we partially treat it like one ('file type'
-		 * will return 'link'), but then the link will actually just
-		 * be treated like an ordinary directory. I don't believe any
-		 * serious inconsistency will arise from this, but it is
-		 * something to be aware of.
-		 */
-
-		goto invalidError;
-	    } else if (wcsncmp(mp->PathBuffer, L"\\\\?\\", 4) == 0) {
-		/*
-		 * Strip off the prefix.
-		 */
-
-		offset = 4;
-	    } else if (wcsncmp(mp->PathBuffer, L"\\??\\", 4) == 0) {
-		/*
-		 * Strip off the prefix.
-		 */
-
-		offset = 4;
+	    Tcl_DStringInit(&ds);
+	    Tcl_DStringAppend(&ds, (const char *) linkDirPath,
+		    wcslen(linkDirPath) * sizeof(WCHAR));
+	    sep = wcsrchr((WCHAR *) Tcl_DStringValue(&ds), '\\');
+	    if (sep == NULL) {
+		sep = wcsrchr((WCHAR *) Tcl_DStringValue(&ds), '/');
 	    }
+	    Tcl_DStringSetLength(&ds, sep == NULL ? 0 :
+		    (sep + 1 - (WCHAR *) Tcl_DStringValue(&ds)) * sizeof(WCHAR));
+	    Tcl_DStringAppend(&ds, (const char *) target,
+		    targetLen * sizeof(WCHAR) + 1);
+	    Tcl_DStringSetLength(&ds, Tcl_DStringLength(&ds) - 1);
+	    fullLen = GetFullPathNameW((WCHAR *) Tcl_DStringValue(&ds), 0,
+		    NULL, NULL);
+	    full = (WCHAR *) Tcl_Alloc((fullLen + 1) * sizeof(WCHAR));
+	    fullLen = GetFullPathNameW((WCHAR *) Tcl_DStringValue(&ds),
+		    fullLen + 1, full, NULL);
+	    Tcl_DStringFree(&ds);
+	    Tcl_DStringInit(&ds);
+	    Tcl_WCharToUtfDString(full, fullLen, &ds);
+	    Tcl_Free(full);
+	} else {
+	    Tcl_DStringInit(&ds);
+	    Tcl_WCharToUtfDString(target, targetLen, &ds);
 	}
-
-	Tcl_DStringInit(&ds);
-	Tcl_WCharToUtfDString(mp->PathBuffer, mp->SubstituteNameLength >> 1,
-		&ds);
-
-	copy = Tcl_DStringValue(&ds) + offset;
-	len = Tcl_DStringLength(&ds) - offset;
-	retVal = Tcl_NewStringObj(copy, len);
+	retVal = Tcl_DStringToObj(&ds);
 	Tcl_IncrRefCount(retVal);
-	Tcl_DStringFree(&ds);
 	Tcl_Free(reparseBuffer);
 	return retVal;
     }
+
+    /*
+     * Certain native path representations on Windows have a special prefix
+     * to indicate that they are to be treated specially. For example
+     * extremely long paths, or symlinks, or volumes mounted inside
+     * directories.
+     */
+
+    offset = 0;
+    if (targetLen > 0 && target[0] == '\\') {
+	/*
+	 * Check whether this is a mounted volume.
+	 */
+
+	if (wcsncmp(target, L"\\??\\Volume{", 11) == 0) {
+	    char drive;
+
+	    /*
+	     * There is some confusion between \??\ and \\?\ which we have to
+	     * fix here. It doesn't seem very well documented.
+	     */
+
+	    target[1] = '\\';
+
+	    /*
+	     * Check if a corresponding drive letter exists, and use that if it
+	     * is found
+	     */
+
+	    drive = TclWinDriveLetterForVolMountPoint(target);
+	    if (drive != -1) {
+		char driveSpec[3] = {
+		    '\0', ':', '\0'
+		};
+
+		driveSpec[0] = drive;
+		retVal = Tcl_NewStringObj(driveSpec, 2);
+		Tcl_IncrRefCount(retVal);
+		Tcl_Free(reparseBuffer);
+		return retVal;
+	    }
+
+	    /*
+	     * This is actually a mounted drive, which doesn't exists as a DOS
+	     * drive letter. This means the path isn't actually a link,
+	     * although we partially treat it like one ('file type' will
+	     * return 'link'), but then the link will actually just be treated
+	     * like an ordinary directory. I don't believe any serious
+	     * inconsistency will arise from this, but it is something to be
+	     * aware of.
+	     */
+
+	    goto invalidError;
+	} else if (wcsncmp(target, L"\\??\\UNC\\", 8) == 0) {
+	    /*
+	     * \??\UNC\server\share is \\server\share.
+	     */
+
+	    target[6] = '\\';
+	    offset = 6;
+	} else if (wcsncmp(target, L"\\\\?\\", 4) == 0
+		|| wcsncmp(target, L"\\??\\", 4) == 0) {
+	    /*
+	     * Strip off the prefix.
+	     */
+
+	    offset = 4;
+	}
+    }
+
+    Tcl_DStringInit(&ds);
+    Tcl_WCharToUtfDString(target + offset, targetLen - offset, &ds);
+    copy = Tcl_DStringValue(&ds);
+    len = Tcl_DStringLength(&ds);
+    retVal = Tcl_NewStringObj(copy, len);
+    Tcl_IncrRefCount(retVal);
+    Tcl_DStringFree(&ds);
+    Tcl_Free(reparseBuffer);
+    return retVal;
 
   invalidError:
     if (reparseBuffer) {
@@ -2757,7 +2819,7 @@ TclpObjNormalizePath(
 
 	    if (cur != 0 && !isDrive &&
 		    data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT){
-		Tcl_Obj *to = WinReadLinkDirectory(nativePath);
+		Tcl_Obj *to = WinReadLinkDirectory(nativePath, 1);
 
 		if (to != NULL) {
 		    /*
