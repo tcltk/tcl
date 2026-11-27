@@ -2383,7 +2383,7 @@ CompileExprTree(
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+			? TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
 	    }
 	} else {

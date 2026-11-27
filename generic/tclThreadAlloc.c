@@ -21,7 +21,7 @@
  */
 
 #ifndef RCHECK
-#ifdef  NDEBUG
+#ifdef NDEBUG
 #define RCHECK		0
 #else
 #define RCHECK		1

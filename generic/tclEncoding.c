@@ -1639,7 +1639,7 @@ Tcl_ExternalToUtfEx(
 	    /* else 3b continue loop */
 	} else {
 	    assert(result == TCL_CONVERT_SYNTAX ||
-		   result == TCL_CONVERT_UNKNOWN);
+		    result == TCL_CONVERT_UNKNOWN);
 	    break; /* 4, 5 */
 	}
     } /* End while (1) */
@@ -2217,7 +2217,7 @@ Tcl_UtfToExternalEx(
 	    /* else 3b continue loop */
 	} else {
 	    assert(result == TCL_CONVERT_SYNTAX ||
-		   result == TCL_CONVERT_UNKNOWN);
+		    result == TCL_CONVERT_UNKNOWN);
 	    break; /* 4, 5 */
 	}
     } /* End while (1) */
@@ -4066,7 +4066,7 @@ UtfToUtf16Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - 2; /* 2 -> sizeof a UTF-16 code unit */
+    dstEnd = dst + dstLen - 2;	/* 2 -> sizeof a UTF-16 code unit */
     flags |= PTR2INT(clientData);
 
     result = TCL_OK;
@@ -4180,7 +4180,7 @@ UtfToUcs2Proc(
     }
 
     dstStart = dst;
-    dstEnd   = dst + dstLen - 2; /* 2 - size of UCS code unit */
+    dstEnd = dst + dstLen - 2;	/* 2 - size of UCS code unit */
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
@@ -5673,7 +5673,7 @@ Tcl_UtfToNormalized(
     Tcl_Size numBytes,		/* Length of bytes[], or -1 if NUL terminated */
     Tcl_UnicodeNormalizationForm normForm, /* TCL_{NFC,NFD,NFKC,NFKC} */
     int profile,		/* TCL_ENCODING_PROFILE_{STRICT,REPLACE} */
-    char *bufPtr,		/* Pointer to output buffer. Must not be NULL.  */
+    char *bufPtr,		/* Pointer to output buffer. Must not be NULL. */
     Tcl_Size bufLen,		/* Size of bufPtr storage. */
     Tcl_Size *lengthPtr)	/* Length of the output string in bytes excluding
 				 * the trailing NUL byte. May be NULL */

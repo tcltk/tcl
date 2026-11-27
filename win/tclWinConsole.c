@@ -424,7 +424,7 @@ RingBufferIn(
     if (ringPtr->capacity - ringPtr->start > ringPtr->length) {
 	/* There is room at the back */
 	Tcl_Size endSpaceStart = ringPtr->start + ringPtr->length;
-	Tcl_Size endSpace      = ringPtr->capacity - endSpaceStart;
+	Tcl_Size endSpace = ringPtr->capacity - endSpaceStart;
 	if (endSpace >= srcLen) {
 	    /* Everything fits at the back */
 	    memmove(endSpaceStart + ringPtr->bufPtr, srcPtr, srcLen);
@@ -1428,8 +1428,8 @@ ConsoleEventProc(
 			|| handleInfoPtr->lastError != 0)) {
 		mask = TCL_READABLE;
 	    } else if ((chanInfoPtr->watchMask & TCL_WRITABLE)
-		       && (RingBufferHasFreeSpace(&handleInfoPtr->buffer)
-				|| handleInfoPtr->lastError != 0)) {
+		    && (RingBufferHasFreeSpace(&handleInfoPtr->buffer)
+			|| handleInfoPtr->lastError != 0)) {
 		/* Generate write event space available */
 		mask = TCL_WRITABLE;
 	    }

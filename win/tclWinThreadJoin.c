@@ -20,7 +20,7 @@
  */
 
 typedef struct JoinableThread {
-    Tcl_ThreadId  id;		/* The id of the joinable thread. */
+    Tcl_ThreadId id;		/* The id of the joinable thread. */
     int result;			/* A place for the result after the demise of
 				 * the thread. */
     bool done;			/* Initialized to false and set to true

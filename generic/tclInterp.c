@@ -5580,7 +5580,7 @@ Tcl_RegisterPostInitProc(
 	    }
 	}
 	if (postInitRecords.count == postInitRecords.capacity) {
-		   /* T: postinit-1.6 */
+	    /* T: postinit-1.6 */
 	    postInitRecords.capacity *= 2;
 	    postInitRecords.recordsPtr = (TclPostInitRecord *)
 		    Tcl_Realloc(postInitRecords.recordsPtr,

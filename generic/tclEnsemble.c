@@ -1935,6 +1935,7 @@ NsEnsembleImplementationCmdNR(
      * which it is guaranteed to exist,
      *
      *   ((Q: That's not true if the -map option is used, is it?))
+     *   ((A: It is true even then! The -map option is normalised on setting.))
      *
      * but don't do that because caching of the command object should help.
      */

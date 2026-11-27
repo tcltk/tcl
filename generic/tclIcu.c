@@ -529,7 +529,7 @@ IcuObjFromUCharDString(
     Tcl_Size len = Tcl_DStringLength(dsPtr);
     Tcl_DString dsOut;
     int result;
-    result  = Tcl_ExternalToUtfDStringEx(interp, encoding, s, len,
+    result = Tcl_ExternalToUtfDStringEx(interp, encoding, s, len,
 	    strict ? TCL_ENCODING_PROFILE_STRICT : TCL_ENCODING_PROFILE_REPLACE,
 	    &dsOut, NULL);
 
@@ -1499,11 +1499,11 @@ TclIcuInit(
 
 	    /* Ref count number of commands */
 	    icu_fns.nopen += 3;
-	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertto",
+	    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::convertto",
 		    IcuConverttoObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::convertfrom",
+	    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::convertfrom",
 		    IcuConvertfromObjCmd, 0, TclIcuCleanup);
-	    Tcl_CreateObjCommand2(interp,  "::tcl::unsupported::icu::detect",
+	    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::icu::detect",
 		    IcuDetectObjCmd, 0, TclIcuCleanup);
 	}
 

@@ -42,7 +42,7 @@ TclMakeResultObj(
     Tcl_Obj *srcPtr,
     Tcl_Obj *resultPtr)
 {
-    return srcPtr == resultPtr ?  Tcl_DuplicateObj(resultPtr) : resultPtr;
+    return srcPtr == resultPtr ? Tcl_DuplicateObj(resultPtr) : resultPtr;
 }
 
 /*

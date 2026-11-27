@@ -667,7 +667,7 @@ DdeServerProc(
 
 	len = DdeQueryStringW(ddeInstance, ddeTopic, NULL, 0, CP_WINUNICODE);
 	Tcl_DStringInit(&dString);
-	Tcl_DStringSetLength(&dString,  (len + 1) * sizeof(WCHAR) - 1);
+	Tcl_DStringSetLength(&dString, (len + 1) * sizeof(WCHAR) - 1);
 	utilString = (WCHAR *) Tcl_DStringValue(&dString);
 	DdeQueryStringW(ddeInstance, ddeTopic, utilString, (DWORD) len + 1,
 		CP_WINUNICODE);

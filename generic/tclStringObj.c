@@ -3955,7 +3955,7 @@ TclStringFirst(
     for (checkStr = uh + start; checkStr + ln <= endStr; checkStr++) {
 	if ((*checkStr == *un) && (0 ==
 		memcmp(checkStr + 1, un + 1, (ln-1) * sizeof(Tcl_UniChar)))) {
-	    value =  (checkStr - uh);
+	    value = (checkStr - uh);
 	    goto firstEnd;
 	}
     }

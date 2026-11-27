@@ -26,7 +26,7 @@
 #include <dlfcn.h>
 
 #if defined(TCL_LOAD_FROM_MEMORY)
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 #include <mach-o/dyld.h>

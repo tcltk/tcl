@@ -4544,7 +4544,7 @@ TEBCresume(
 	if (b) {
 	    if ((*pc == INST_JUMP_TRUE)
 #ifndef REMOVE_DEPRECATED_OPCODES
-		    ||  (*pc == INST_JUMP_TRUE1)
+		    || (*pc == INST_JUMP_TRUE1)
 #endif
 		    ) {
 		TRACE_APPEND("%.20s true, new pc %" SIZEd "\n", O2S(valuePtr),
@@ -5081,7 +5081,7 @@ TEBCresume(
 		/* Condition (b) met */
 		if (TclListObjLength(NULL, valuePtr, &valueLen) == TCL_OK
 			&& TclGetIntForIndexM(NULL, value2Ptr, valueLen - 1,
-				   &index) == TCL_OK) {
+				&index) == TCL_OK) {
 		    /* Valid scalar index */
 		    if (TclListObjIsNative(valuePtr)) {
 			ListObjGetElements(valuePtr, objc, objv);
@@ -5092,8 +5092,7 @@ TEBCresume(
 			goto lindexFastPath;
 		    } else if (TclObjTypeHasProc(valuePtr, indexProc)) {
 			if (TclObjTypeIndex(NULL, valuePtr, index,
-				    &objResultPtr)
-				== TCL_OK) {
+				&objResultPtr) == TCL_OK) {
 			    CACHE_STACK_INFO();
 			    if (objResultPtr == NULL) {
 				/* Index out of range, return empty result. */
@@ -9372,13 +9371,13 @@ GenerateArithSeries(
     void *ptr;
 
     // Hold explicit references.
-    if (from)  {
+    if (from) {
 	Tcl_IncrRefCount(from);
     }
-    if (to)    {
+    if (to) {
 	Tcl_IncrRefCount(to);
     }
-    if (step)  {
+    if (step) {
 	Tcl_IncrRefCount(step);
     }
     if (count) {
@@ -9489,13 +9488,13 @@ GenerateArithSeries(
     if (count) {
 	Tcl_DecrRefCount(count);
     }
-    if (step)  {
+    if (step) {
 	Tcl_DecrRefCount(step);
     }
-    if (to)    {
+    if (to) {
 	Tcl_DecrRefCount(to);
     }
-    if (from)  {
+    if (from) {
 	Tcl_DecrRefCount(from);
     }
     return result;

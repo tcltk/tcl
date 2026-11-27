@@ -620,7 +620,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand2(interp, "testchannelevent", TestChannelEventCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testchancreate", TestChanCreateCmd,
-	     NULL, NULL);
+	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand2(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
@@ -2387,7 +2387,7 @@ static int UtfExtWrapper(
     bufLen = dstLen + 4; /* 4 -> overflow detection */
     dstBufPtr = (char *)Tcl_Alloc(bufLen);
     memset(dstBufPtr, 0xFF, dstLen); /* Need to check nul terminator */
-    memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4);   /* overflow detection */
+    memmove(dstBufPtr + dstLen, "\xAB\xCD\xEF\xAB", 4); /* overflow detection */
     Tcl_Size srcNumBytes;
 
     /* Set up input buffer, including prefix if one has been specified */
@@ -6685,7 +6685,7 @@ TestsaveresultFree(
 /*
  *----------------------------------------------------------------------
  *
- * TestmainthreadCmd  --
+ * TestmainthreadCmd --
  *
  *	Implements the "testmainthread" cmd that is used to test the
  *	'Tcl_GetCurrentThread' API.
@@ -6746,7 +6746,7 @@ MainLoop(void)
 /*
  *----------------------------------------------------------------------
  *
- * TestsetmainloopCmd  --
+ * TestsetmainloopCmd --
  *
  *	Implements the "testsetmainloop" cmd that is used to test the
  *	'Tcl_SetMainLoop' API.
@@ -6775,7 +6775,7 @@ TestsetmainloopCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestexitmainloopCmd  --
+ * TestexitmainloopCmd --
  *
  *	Implements the "testexitmainloop" cmd that is used to test the
  *	'Tcl_SetMainLoop' API.
@@ -9656,7 +9656,7 @@ TestChanSinkWatch(
 typedef struct TestChanSourceState {
     Tcl_Size numSourced;	/* How many bytes returned so far */
     Tcl_Size contentLength;	/* Total number of bytes in channel. */
-    size_t   dataLength;	/* Size of data[] */
+    size_t dataLength;		/* Size of data[] */
     unsigned char data[TCLFLEXARRAY];
 } TestChanSourceState;
 
@@ -9929,10 +9929,10 @@ TestChanCreateCmd(
     char channelName[100];
     static int nameCounter;
     snprintf(channelName,
-	     sizeof(channelName) / sizeof(channelName[0]),
-	     "%s%d",
-	     cmds[cmd],
-	     ++nameCounter);/* don't bother about race conditions */
+	    sizeof(channelName) / sizeof(channelName[0]),
+	    "%s%d",
+	    cmds[cmd],
+	    ++nameCounter);/* don't bother about race conditions */
 
     chan = Tcl_CreateChannel(dispatchPtr, channelName, instancePtr, flags);
     if (chan == NULL) {

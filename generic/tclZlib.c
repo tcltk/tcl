@@ -3320,7 +3320,7 @@ ZlibTransformInput(
 	 */
 
 	decBytes = ResultDecompress(chanDataPtr, buf, toRead,
-		(readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH,  errorCodePtr);
+		(readBytes != 0) ? Z_NO_FLUSH : Z_SYNC_FLUSH, errorCodePtr);
 	if (decBytes == -1) {
 	    return -1;
 	}

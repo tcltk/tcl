@@ -2047,7 +2047,7 @@ ReflectTruncate(
 
     Tcl_Preserve(rcPtr);
 
-    lenObj  = Tcl_NewWideIntObj(length);
+    lenObj = Tcl_NewWideIntObj(length);
     Tcl_IncrRefCount(lenObj);
 
     if (InvokeTclMethod(rcPtr,METH_TRUNCATE,lenObj,NULL,&resObj)!=TCL_OK) {
@@ -3217,7 +3217,7 @@ ForwardProc(
 
     case ForwardedSetOpt: {
 	Tcl_Obj *optionObj = Tcl_NewStringObj(paramPtr->setOpt.name, -1);
-	Tcl_Obj *valueObj  = Tcl_NewStringObj(paramPtr->setOpt.value, -1);
+	Tcl_Obj *valueObj = Tcl_NewStringObj(paramPtr->setOpt.value, -1);
 
 	Tcl_IncrRefCount(optionObj);
 	Tcl_IncrRefCount(valueObj);

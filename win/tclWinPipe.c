@@ -1398,8 +1398,8 @@ static TclWinExecutableType
 ApplicationType(
     Tcl_Interp *interp,		/* Interp, for error message. */
     const char *originalName,	/* Name of the application to find in native
-				   format (must use \ not / separator).
-				   Must not point into dsFullNamePtr */
+				 * format (must use \ not / separator).
+				 * Must not point into dsFullNamePtr */
     Tcl_DString *dsFullNamePtr)	/* Filled with complete path to application.
 				 * Must always be Tcl_DStringFree'd */
 {

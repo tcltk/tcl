@@ -364,7 +364,7 @@ struct Class {
     PropertyStorage properties;	/* Information relating to the lists of
 				 * properties that this class *claims* to
 				 * support. */
-   Tcl_Obj *delegateNameObj;	/* The cache of the name of the class's
+    Tcl_Obj *delegateNameObj;	/* The cache of the name of the class's
 				 * delegate. Class delegates are special
 				 * classes mixed into ordinary classes to
 				 * allow class methods to be findable as

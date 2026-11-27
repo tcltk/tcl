@@ -480,7 +480,7 @@ TclCompileStringInsertCmd(
 	/* Prepend the insertion string */
 	OP(			SWAP);
 	OP1(			STR_CONCAT1, 2);
-    } else  if (idx == (int)TCL_INDEX_END) {
+    } else if (idx == (int)TCL_INDEX_END) {
 	/* Append the insertion string */
 	OP1(			STR_CONCAT1, 2);
     } else {
@@ -1945,7 +1945,7 @@ TclCompileSwitchCmd(
 
 	/* Allocate enough space to work in. */
 	maxLen = TclMaxListLength(bytes, numBytes, NULL);
-	if (maxLen < 2)  {
+	if (maxLen < 2) {
 	    return TCL_ERROR;
 	}
 	bodyTokenArray = (Tcl_Token *) TclStackAlloc(interp,

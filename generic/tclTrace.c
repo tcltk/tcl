@@ -73,7 +73,7 @@ typedef struct {
  * TCL_TRACE_LEAVE_DURING_EXEC  - Trace each command inside the command
  *				  currently being traced, after execution.
  * TCL_TRACE_ANY_EXEC		- OR'd combination of all EXEC flags.
- * TCL_TRACE_EXEC_IN_PROGRESS   - The callback function on this trace is
+ * TCL_TRACE_EXEC_IN_PROGRESS	- The callback function on this trace is
  *				  currently executing. Therefore we don't let
  *				  further traces execute.
  * TCL_TRACE_EXEC_DIRECT	- This execution trace is triggered directly
@@ -1356,7 +1356,7 @@ TclCheckExecutionTraces(
 
 	    if (tcmdPtr->flags != 0) {
 		tcmdPtr->curFlags = traceFlags | TCL_TRACE_EXEC_DIRECT;
-		tcmdPtr->curCode  = code;
+		tcmdPtr->curCode = code;
 		tcmdPtr->refCount++;
 		if (state == NULL) {
 		    state = Tcl_SaveInterpState(interp, code);

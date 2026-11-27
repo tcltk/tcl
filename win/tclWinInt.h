@@ -223,7 +223,7 @@ static inline WCHAR *
 TclWinPathInit(
     TclWinPath *pathBufPtr,	/* Structure to be initialized */
     DWORD *capacityPtr)		/* On return, capacity in WCHARS
-				   Must NOT be NULL */
+				 * Must NOT be NULL */
 {
     pathBufPtr->bufferPtr = pathBufPtr->buffer;
     *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));
@@ -278,7 +278,7 @@ static inline WCHAR *
 TclWinPathReset(
     TclWinPath *pathBufPtr,	/* Structure to be initialized */
     DWORD *capacityPtr)		/* On return, capacity in WCHARS
-				   Must NOT be NULL */
+				 * Must NOT be NULL */
 {
     TclWinPathFree(pathBufPtr);
     *capacityPtr = (DWORD)(sizeof(pathBufPtr->buffer) / sizeof(WCHAR));

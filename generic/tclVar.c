@@ -5085,7 +5085,7 @@ Tcl_VariableObjCmd(
     Var *varPtr, *arrayPtr;
     Tcl_Obj *varValuePtr;
     Tcl_Size i;
-    int  result;
+    int result;
     Tcl_Obj *varNamePtr, *tailPtr;
 
     for (i=1 ; i<objc ; i+=2) {

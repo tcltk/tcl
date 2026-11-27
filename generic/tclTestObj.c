@@ -682,7 +682,7 @@ TestintobjCmd(
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
     Tcl_Size varIndex;
-#if (INT_MAX != LONG_MAX)   /* int is not the same size as long */
+#if (INT_MAX != LONG_MAX)	/* int is not the same size as long */
     int i;
 #endif
     Tcl_WideInt wideValue;
@@ -797,7 +797,7 @@ TestintobjCmd(
 	if (objc != 3) {
 	    goto wrongNumArgs;
 	}
-#if (INT_MAX == LONG_MAX)   /* int is same size as long int */
+#if (INT_MAX == LONG_MAX)	/* int is same size as long int */
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), "1", -1);
 #else
 	if ((varPtr[varIndex] != NULL) && !Tcl_IsShared(varPtr[varIndex])) {

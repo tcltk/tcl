@@ -1038,7 +1038,7 @@ ListRepUnsharedFreeUnreferenced(
 
     /* Collect garbage at back */
     count = (storePtr->firstUsed + storePtr->numUsed)
-	  - (spanPtr->spanStart + spanPtr->spanLength);
+	    - (spanPtr->spanStart + spanPtr->spanLength);
     LIST_COUNT_ASSERT(count);
     if (count > 0) {
 	/* T:listrep-6.{1:8} */
@@ -2046,7 +2046,7 @@ TclListObjInsertIfAbsent(
 		const char *toElemStr
 			= Tcl_GetStringFromObj(toElem, &toElemLen);
 		int exists = (toElemLen == newElemLen
-			     && memcmp(newElem, toElemStr, newElemLen) == 0);
+			&& memcmp(newElem, toElemStr, newElemLen) == 0);
 		Tcl_BounceRefCount(toElem);
 		if (exists) {
 		    /* Present, so skip adding it */
@@ -3191,7 +3191,7 @@ TclLsetFlat(
 		 * attach it. Further, in case of errors down the road, we
 		 * will need to delete this attached sublist so that original
 		 * value is preserved - Bug [3019348fff].
-		  */
+		 */
 		TclNewObj(subListObj);
 		Tcl_ListObjAppendElement(NULL, parentList, subListObj);
 		if (appendedTo == NULL) {

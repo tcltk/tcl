@@ -677,7 +677,7 @@ TcpClose2Proc(
  */
 
 #ifndef NEED_FAKE_RFC2553
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
@@ -701,7 +701,7 @@ IPv6AddressNeedsNumericRendering(
     return (addr.s6_addr[12] == 0 && addr.s6_addr[13] == 0
 	    && addr.s6_addr[14] == 0 && addr.s6_addr[15] == 0);
 }
-#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
+#if defined (__clang__) || ((__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))
 #pragma GCC diagnostic pop
 #endif
 #endif /* NEED_FAKE_RFC2553 */

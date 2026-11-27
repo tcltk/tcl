@@ -407,8 +407,8 @@ typedef int (ClockScanTokenProc)(ClockFmtScnCmdArgs *opts,
 	DateInfo *info, const ClockScanToken *tok);
 
 typedef enum {
-   CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
-   CFMTT_PROC
+    CTOKT_INT = 1, CTOKT_WIDE, CTOKT_PARSER, CTOKT_SPACE, CTOKT_WORD, CTOKT_CHAR,
+    CFMTT_PROC
 } CLCKTOK_TYPE;
 
 typedef struct ClockScanTokenMap {

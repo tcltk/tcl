@@ -642,7 +642,7 @@ Tcl_GetEncodingNameFromEnvironment(
     Tcl_DStringFree(&ds);
     if (Tcl_DStringLength(bufPtr)) {
 	return Tcl_DStringValue(bufPtr);
-   }
+    }
 #endif /* HAVE_LANGINFO */
 
     /*

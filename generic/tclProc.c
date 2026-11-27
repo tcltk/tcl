@@ -816,7 +816,7 @@ TclObjGetFrame(
 	} else if (TclGetWideBitsFromObj(NULL, objPtr, &w) == TCL_OK) {
 	    /*
 	     * If this were an integer, we'd have succeeded already.
-	     * Docs say we have to treat this as a 'bad level'  error.
+	     * Docs say we have to treat this as a 'bad level' error.
 	     */
 	    result = -1;
 	}
@@ -2917,7 +2917,7 @@ DuplicateProc(
     for (Tcl_Size i = 0; i < newProc->numArgs; i++) {
 	if (DuplicateArgument(newProc, origLocal, i) != TCL_OK) {
 	    // Don't set the interp result here. Since a malloc just failed,
-	    // first clean up some memory before doing that */
+	    // first clean up some memory before doing that.
 	    goto procError;
 	}
 	origLocal = origLocal->nextPtr;

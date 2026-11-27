@@ -461,7 +461,7 @@ TclStrIdxTreeGetFromObj(
 static void
 TclStrIdxTreePrint(
     Tcl_Interp *interp,
-    TclStrIdx  *tree,
+    TclStrIdx *tree,
     int offs)
 {
     Tcl_Obj *obj[2];

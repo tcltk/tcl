@@ -1152,7 +1152,7 @@ Tcl_InitSubsystems(void)
 	     * implementation of self-initializing locks.
 	     */
 
-	    TclInitThreadStorage();     /* Creates hash table for
+	    TclInitThreadStorage();	/* Creates hash table for
 					 * thread local storage */
 #if defined(USE_TCLALLOC) && USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */

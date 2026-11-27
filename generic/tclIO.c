@@ -1638,7 +1638,7 @@ Tcl_CreateChannel(
 	Tcl_Panic("channel type %s must define inputProc when used for reader channel",
 		typePtr->typeName);
     }
-    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc)) {
+    if ((TCL_WRITABLE & mask) && (NULL == typePtr->outputProc)) {
 	Tcl_Panic("channel type %s must define outputProc when used for writer channel",
 		typePtr->typeName);
     }

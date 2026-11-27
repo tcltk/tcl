@@ -72,7 +72,7 @@ typedef struct {
     int numIterations;		/* Number of times each thread should loop */
     int yield;			/* Whether threads should yield when looping */
     union {
-	unsigned long long counter;		/* Used in lock tests */
+	unsigned long long counter;	/* Used in lock tests */
 	ProducerConsumerQueue queue;	/* Used in condition variable tests */
     } u;
 } MutexSharedContext;
@@ -84,8 +84,8 @@ typedef struct {
 typedef struct {
     MutexSharedContext *sharedContextPtr; /* Pointer to shared context */
     Tcl_ThreadId threadId;		  /* Only access in creator */
-    unsigned long long numOperations;		  /* Use is dependent on the test */
-    unsigned long long timeouts;		  /* Timeouts on condition variables */
+    unsigned long long numOperations;	  /* Use is dependent on the test */
+    unsigned long long timeouts;	  /* Timeouts on condition variables */
 } MutexThreadContext;
 
 /* Used to track how many test threads running. Also used as trigger */

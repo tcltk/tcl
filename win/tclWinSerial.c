@@ -68,7 +68,7 @@ enum SerialFlags {
  */
 enum TclWinCommErrorMasks {
     SERIAL_READ_ERRORS =	/* Errors in the reader side. */
-	(CE_RXOVER | CE_OVERRUN | CE_RXPARITY | CE_FRAME  | CE_BREAK),
+	(CE_RXOVER | CE_OVERRUN | CE_RXPARITY | CE_FRAME | CE_BREAK),
     SERIAL_WRITE_ERRORS =	/* Errors in the writer side. */
 	(CE_TXFULL | CE_PTO)
 };
@@ -1912,7 +1912,7 @@ SerialSetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	infoPtr->sysBufRead  = inSize;
+	infoPtr->sysBufRead = inSize;
 	infoPtr->sysBufWrite = outSize;
 
 	/*
@@ -2177,7 +2177,7 @@ SerialGetOptionProc(
 	 * Query the pending data in Tcl's internal queues.
 	 */
 
-	inBuffered  = Tcl_InputBuffered(infoPtr->channel);
+	inBuffered = Tcl_InputBuffered(infoPtr->channel);
 	outBuffered = Tcl_OutputBuffered(infoPtr->channel);
 
 	/*

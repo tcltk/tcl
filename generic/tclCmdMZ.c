@@ -2064,7 +2064,7 @@ StringMapCmd(
     Tcl_Size objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument objects. */
 {
-    Tcl_Size length1, length2,  mapElemc, index;
+    Tcl_Size length1, length2, mapElemc, index;
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
@@ -4232,7 +4232,7 @@ Tcl_TimeRateObjCmd(
 #endif
 #define TR_MIN_FACTOR 2		/* Min allowed factor calculating threshold. */
 #define TR_MAX_FACTOR 50	/* Max allowed factor calculating threshold. */
-#define TR_FACT_SINGLE_ITER 25  /* This or larger factor value will force the
+#define TR_FACT_SINGLE_ITER 25	/* This or larger factor value will force the
 				 * threshold 1, to avoid drastic growth of
 				 * execution time by quadratic O() complexity. */
     unsigned short factor = 16;	/* Factor (2..50) limiting threshold to avoid

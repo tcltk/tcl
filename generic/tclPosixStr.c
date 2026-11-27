@@ -376,7 +376,7 @@ Tcl_ErrnoId(void)
 #ifdef ENXIO
     case ENXIO: return "ENXIO";
 #endif
-#if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
+#if defined(EOPNOTSUPP) && (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
     case EOPNOTSUPP: return "EOPNOTSUPP";
 #endif
 #ifdef EOTHER
@@ -870,7 +870,7 @@ Tcl_ErrnoMsg(
 #ifdef ENXIO
     case ENXIO: return "no such device or address";
 #endif
-#if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
+#if defined(EOPNOTSUPP) && (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
     case EOPNOTSUPP: return "operation not supported on socket";
 #endif
 #ifdef EOTHER
