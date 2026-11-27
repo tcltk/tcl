@@ -99,6 +99,8 @@ to the userbase.
  - [lseq: out of range double count](https://core.tcl-lang.org/tcl/tktview/97dbd7)
  - [Crash on invalid Unicode code points](https://core.tcl-lang.org/tcl/tktview/28de50)
  - [Transchan loses input data when written to](https://core.tcl-lang.org/tcl/tktview/6141c1)
+ - [execing command that starts with 2 fails](https://core.tcl-lang.org/tcl/tktview/233990)
+ - [arguments to TclCreatePipeline cannot start with '|'](https://core.tcl-lang.org/tcl/tktview/186235)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3

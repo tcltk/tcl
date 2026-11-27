@@ -508,14 +508,20 @@ TclCreatePipeline(
 	    if (*p == '&') {
 		p++;
 	    }
-	    if (*p == '\0') {
-		if ((i == (lastBar + 1)) || (i == (argc - 1))) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "illegal use of | or |& in command", -1));
-		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
-			    "PIPESYNTAX", (char *)NULL);
-		    goto error;
-		}
+	    if (*p != '\0') {
+		/*
+		 * Got a word starting with "|", e.g. "|foo", not a bar.
+		 */
+
+		needCmd = 0;
+		break;
+	    }
+	    if ((i == (lastBar + 1)) || (i == (argc - 1))) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"illegal use of | or |& in command", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "EXEC",
+			"PIPESYNTAX", (char *)NULL);
+		goto error;
 	    }
 	    lastBar = i;
 	    cmdCount++;
@@ -623,6 +629,11 @@ TclCreatePipeline(
 
 	case '2':
 	    if (*p != '>') {
+		/*
+		 * Got a command word starting with "2", e.g. "2DSlider".
+		 */
+
+		needCmd = 0;
 		break;
 	    }
 	    p++;
