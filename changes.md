@@ -107,7 +107,6 @@ to the userbase.
  - [Crash on use-after-free in Windows socket thread](https://core.tcl-lang.org/tcl/tktview/06f19c)
  - [AfterDelay overflow](https://core.tcl-lang.org/tcl/tktview/180289)
 
-
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3
  - itcl 4.3.9
