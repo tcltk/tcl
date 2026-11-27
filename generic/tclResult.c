@@ -418,7 +418,7 @@ Tcl_ResetResult(
 	Tcl_DecrRefCount(iPtr->returnOpts);
 	iPtr->returnOpts = NULL;
     }
-    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_LEGACY_COPY);
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_LEGACY_COPY | ERR_STACK_LOGGED);
 }
 
 /*
