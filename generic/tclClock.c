@@ -3910,8 +3910,8 @@ ClockValidDate(
     ClockClientData *dataPtr = opts->dataPtr;
 
 #if 0
-    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %" TCL_LL_MODIFIER "d, "
-	    "yySecondOfDay %" TCL_LL_MODIFIER "d, sec %" TCL_LL_MODIFIER "d, daySec %" TCL_LL_MODIFIER "d, tzOffset %d\n",
+    printf("yyMonth %d, yyDay %d, yyDayOfYear %d, yyHour %d, yyMinutes %d, yySeconds %d, "
+	    "yySecondOfDay %d, sec %" TCL_LL_MODIFIER "d, daySec %" TCL_LL_MODIFIER "d, tzOffset %d\n",
 	    yyMonth, yyDay, yydate.dayOfYear, yyHour, yyMinutes, yySeconds,
 	    yySecondOfDay, yydate.localSeconds, yydate.localSeconds % SECONDS_PER_DAY,
 	    yydate.tzOffset);
@@ -4327,7 +4327,7 @@ ClockFreeScan(
 	yySecondOfDay = 0;
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if (info->flags & CLF_TIME) {
-	yySecondOfDay = TclToSeconds(yyHour, yyMinutes, (int)yySeconds, yyMeridian);
+	yySecondOfDay = TclToSeconds(yyHour, yyMinutes, yySeconds, yyMeridian);
 	info->flags |= CLF_ASSEMBLE_SECONDS;
     } else if ((info->flags & (CLF_DAYOFWEEK | CLF_HAVEDATE)) == CLF_DAYOFWEEK
 	    || (info->flags & CLF_ORDINALMONTH)

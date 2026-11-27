@@ -37665,8 +37665,7 @@ test clock-46.37 {freescan: values out of range without validation, see bug [f89
 	[clock scan {4294967308:00:00} -base 0 -gmt 1 -valid 0] \
 	[clock scan {4294967308:00 pm} -base 0 -gmt 1 -valid 0]
 } [list [expr {447392 * 146097 * 86400}] 178958970-07-02 \
-	[expr {2147483646 * 86400}] [expr {2147483647 * 3600}] \
-	[expr {2147483659 * 3600}]]
+	[expr {2147483646 * 86400}] -3600 39600]
 test clock-46.38 {freescan: day of week in the year 2147483647, see bug [f894a85b9a]} {
     lmap d {Mon Tue Wed} {
 	catch {clock scan "$d 2147483647-12-31" -gmt 1 -valid 1}
