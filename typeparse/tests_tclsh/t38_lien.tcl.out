@@ -13,7 +13,7 @@ taille en place: 5
 01020506
 7 {1 2} *(//,int(u,32,le),null=0).opt(rec)/some
 07050000000102
-7 none *(//,int(u,32,le),null=0).opt(rec)
+7 none *(//,int(u,32,le),null=0).opt(rec)/none
 0700000000
 0: none
 1 {9 9}
@@ -31,5 +31,5 @@ taille en place: 5
 1: *(...): unknown option "blabla" (null, null=VALUE)
 1 {{1 11} {2 12}} 2
 010302010b020c
-1 none 0 *(//,int(u,8),null=0).opt(list($n)<sec>)
+1 none 0 *(//,int(u,8),null=0).opt(list($n)<sec>)/none
 010000

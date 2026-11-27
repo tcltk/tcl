@@ -10,5 +10,5 @@ string is list $P : 1 ; string is double : 0
 string is compilé : 1 0
 compilé int : 1
 failindex : 0 1
-type gardé : pi 3.14159
+type gardé : pi/"3.14159" 3.14159
 incr hors variantes : 1 value "9" matches no variant of k8

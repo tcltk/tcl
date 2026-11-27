@@ -187,6 +187,12 @@ TypeRefObj(Tcl_Interp *interp, TclType *tp, int variant)
     Tcl_Obj *tPtr;
     Tcl_ObjInternalRep ir;
 
+    if (tp->variantOf != NULL && variant < 0) {
+	/* v18b : une valeur de S/v a toujours la variante v (son type est
+	 * S/v : un contrat de variable, un argument, un élément) */
+	variant = (int) tp->variantIdx;
+	slot = variant + 1;
+    }
     if (slot >= 0 && slot < 8 && tp->refCache[slot] != NULL) {
 	return tp->refCache[slot];	/* le cas courant : sans hachage */
     }
@@ -2511,7 +2517,24 @@ Tcl_Obj *
 TclNewAnnotated(Tcl_Interp *interp, TclType *tp, int variant,
 	Tcl_Obj *content)
 {
-    Tcl_Obj *cv = CompactContent(tp, content);
+    Tcl_Obj *cv;
+
+    if (tp->variantOf != NULL && tp->variantIdx < tp->nfields
+	    && tp->fields[tp->variantIdx].type != NULL
+	    && tp->fields[tp->variantIdx].type->variantOf != NULL
+	    && !TclIsAnnotated(content)) {
+	/* v18b : S/v/w : la charge est une valeur de W/w, elle garde sa
+	 * variante (une valeur de S/v/w reste S/v/w sous le type S) */
+	TclType *pt = tp->fields[tp->variantIdx].type;
+	Tcl_Obj *pc = TclNewAnnotated(interp, pt->variantOf,
+		(int) pt->variantIdx, content), *r;
+
+	Tcl_IncrRefCount(pc);
+	r = MakeAnnotated(pc, TypeRefObj(interp, tp, variant));
+	Tcl_DecrRefCount(pc);
+	return r;
+    }
+    cv = CompactContent(tp, content);
 
     return MakeAnnotated(cv != NULL ? cv : Tcl_DuplicateObj(content),
 	    TypeRefObj(interp, tp, variant));
@@ -2794,16 +2817,18 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    Tcl_DecrRefCount(saved);
 
 	    if (sum != NULL && sum->kind == TCLT_SUM) {
-		char *vname = (char *) Tcl_Alloc(len - (dot - text));
+		/* v18b : S/v, S/v/w : le type de variante */
+		TclType *vt;
 
-		memcpy(vname, dot + 1, len - (dot - text) - 1);
-		vname[len - (dot - text) - 1] = '\0';
-		idx = TclTypeFieldIndex(sum, vname);
-		Tcl_Free(vname);
-		if (idx >= 0 && sum->fields[idx].type != NULL) {
+		saved = Tcl_GetObjResult(interp);
+		Tcl_IncrRefCount(saved);
+		vt = TclTypeParse(interp, text, len);
+		Tcl_SetObjResult(interp, saved);
+		Tcl_DecrRefCount(saved);
+		if (vt != NULL && vt->variantOf != NULL) {
 		    *statusPtr = TCLA_RAW;
-		    *tpPtr = sum;
-		    *variantPtr = (int) idx;
+		    *tpPtr = vt;
+		    *variantPtr = (int) vt->variantIdx;
 		    return TCL_OK;
 		}
 		badVariant = 1;		/* Val.zz : pas d'indulgence */
@@ -3317,8 +3342,13 @@ TclAnnotTypeOf(Tcl_Interp *interp, Tcl_Obj *textObj)
     TclType *tp = NULL;
     int v = -1;
 
-    if (ClassifyAnnot(interp, textObj, NULL, &tp, &v) != ANN_TYPE || v >= 0) {
+    if (ClassifyAnnot(interp, textObj, NULL, &tp, &v) != ANN_TYPE) {
 	return NULL;
+    }
+    if (v >= 0) {
+	/* v18b : {S/v}x déclare une variable de type S/v */
+	return (tp != NULL && tp->kind == TCLT_SUM && v < tp->nfields)
+		? TclTypeVariantOf(tp, v, NULL) : NULL;
     }
     return tp;
 }
@@ -3400,7 +3430,7 @@ static int
 ClassifyAnnotRaw(Tcl_Interp *interp, Tcl_Obj *textObj, TclType **tpPtr,
 	int *variantPtr)
 {
-    Tcl_Size len, idx;
+    Tcl_Size len;
     const char *text = Tcl_GetStringFromObj(textObj, &len);
     Tcl_InterpState saved;
     TclType *tp;
@@ -3450,37 +3480,23 @@ ClassifyAnnotRaw(Tcl_Interp *interp, Tcl_Obj *textObj, TclType **tpPtr,
 	    TclType *sum = TclTypeParse(interp, text, dot - text);
 
 	    if (sum != NULL && sum->kind == TCLT_SUM) {
-		char *vname = (char *) Tcl_Alloc(len - (dot - text));
+		/* v18b : S/v, S/v/w : un type de variante ; Val/zz, Val
+		 * connu : une faute sur la variante, pas une note */
+		TclType *vt = TclTypeParse(interp, text, len);
 
-		memcpy(vname, dot + 1, len - (dot - text) - 1);
-		vname[len - (dot - text) - 1] = '\0';
-		idx = TclTypeFieldIndex(sum, vname);
-		Tcl_Free(vname);
-		if (idx >= 0 && sum->fields[idx].type != NULL) {
-		    Tcl_RestoreInterpState(interp, saved);
-		    if (tpPtr != NULL) {
-			*tpPtr = sum;
-		    }
-		    if (variantPtr != NULL) {
-			*variantPtr = (int) idx;
-		    }
-		    return ANN_TYPE;
-		}
-		/* Val/zz, Val connu : une faute sur la variante, pas une
-		 * note. */
 		Tcl_RestoreInterpState(interp, saved);
-		return ANN_BAD;
+		if (vt == NULL) {
+		    return ANN_BAD;
+		}
+		if (tpPtr != NULL) {
+		    *tpPtr = vt;
+		}
+		return ANN_TYPE;
 	    }
 	    if (sum != NULL && sum->kind == TCLT_PRODUCT) {
 		/* P/f (v18a) : une étiquette qualifiée, lue par le
-		 * constructeur de P (ProductFieldTag) ; un champ inconnu est
-		 * une faute */
-		char *fname = (char *) Tcl_Alloc(len - (dot - text));
-
-		memcpy(fname, dot + 1, len - (dot - text) - 1);
-		fname[len - (dot - text) - 1] = '\0';
-		idx = TclTypeFieldIndex(sum, fname);
-		Tcl_Free(fname);
+		 * constructeur de P (ProductFieldTag, qui signale un champ
+		 * inconnu) */
 		Tcl_RestoreInterpState(interp, saved);
 		return ANN_UNKNOWN;
 	    }
@@ -3622,6 +3638,26 @@ TclAnnotPending(Tcl_Obj *objPtr)
  * la valeur n'a pas d'annotation en attente. Sert aux étiquettes de champ
  * d'un constructeur de produit : set {paire}p {nom}jean {age}12.
  */
+/* v18b : {S}{/v/w}x : une chaîne d'étiquettes sous le type d'une somme ;
+ * le type devient S/v/w (la charge restreinte). Rien à faire pour {/v}. */
+static int
+SettleLabelChain(Tcl_Interp *interp, TclType **tpPtr, Tcl_Obj *label)
+{
+    Tcl_Size l;
+    const char *t = Tcl_GetStringFromObj(label, &l);
+    TclType *vt;
+
+    if (l < 2 || memchr(t + 1, '/', l - 1) == NULL) {
+	return TCL_OK;
+    }
+    vt = TclTypeMember(interp, NULL, *tpPtr, t, l);
+    if (vt == NULL) {
+	return TCL_ERROR;
+    }
+    *tpPtr = vt;
+    return TCL_OK;
+}
+
 /* v18a : une ancienne étiquette {nom:} en attente sur la valeur : erreur
  * (message de TclTypeParse, qui donne {/nom}). */
 int
@@ -3648,6 +3684,55 @@ TclAnnotCheckOldLabel(Tcl_Interp *interp, Tcl_Obj *objPtr)
     }
     Tcl_DecrRefCount(pd);
     return code;
+}
+
+/*
+ * v18b : la charge d'une somme qui est elle-même une valeur d'une somme
+ * garde sa variante : type get l'écrit à la suite (mesure/some/celsius).
+ */
+void
+TclAppendPayloadChain(Tcl_Obj *res, const TclType *tp, int variant,
+	Tcl_Obj *content)
+{
+    int depth;
+
+    for (depth = 0; depth < 32; depth++) {
+	TclType *it = NULL, *root;
+	int iv = -1;
+	Tcl_Obj *ic = NULL;
+	Tcl_DString ds;
+
+	if (tp == NULL || tp->kind != TCLT_SUM || variant < 0
+		|| variant >= tp->nfields || content == NULL) {
+	    return;
+	}
+	if (tp->variantOf != NULL && tp->fields[variant].type != NULL
+		&& tp->fields[variant].type->variantOf != NULL) {
+	    return;			/* S/v/w : le nom le dit déjà */
+	}
+	if (TclAnnotInfo(content, &ic, &it, &iv, NULL) != 1 || it == NULL
+		|| it->kind != TCLT_SUM || iv < 0 || iv >= it->nfields
+		|| TclTypeSumRoot(it) == TclTypeSumRoot(tp)) {
+	    return;
+	}
+	root = TclTypeSumRoot(it);
+	if (it->variantOf != NULL) {
+	    /* S/v (ou S/v/w) : la suite de son nom */
+	    Tcl_AppendToObj(res, it->name + strlen(root->name), -1);
+	} else {
+	    Tcl_DStringInit(&ds);
+	    Tcl_DStringAppend(&ds, "/", 1);
+	    TclTypeAppendMemberName(&ds, it->fields[iv].name != NULL
+		    ? Tcl_GetString(it->fields[iv].name)
+		    : it->fields[iv].literal != NULL
+		    ? Tcl_GetString(it->fields[iv].literal) : "?");
+	    Tcl_AppendToObj(res, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	    Tcl_DStringFree(&ds);
+	}
+	tp = it;
+	variant = iv;
+	content = ic;
+    }
 }
 
 /* v18a : une ancienne étiquette {nom:} est-elle en attente ? (sans
@@ -3851,6 +3936,14 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 		Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
 			Tcl_GetString(elv[i]));
 
+		if (fi >= 0 && SettleLabelChain(interp, &rt[nr - 1],
+			elv[i]) != TCL_OK) {
+		    if (atNotes != NULL) {
+			Tcl_DecrRefCount(atNotes);
+		    }
+		    Tcl_DecrRefCount(pend);
+		    return TCL_ERROR;
+		}
 		if (fi >= 0) {
 		    rv[nr - 1] = (int) fi;
 		    keep[i] = 0;	/* consommée */
@@ -3922,6 +4015,14 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    Tcl_Size fi = TclAnnotLabelIndex(rt[nr - 1],
 		    Tcl_GetString(elv[i]));	/* {/v} (v16l) */
 
+	    if (fi >= 0 && SettleLabelChain(interp, &rt[nr - 1], elv[i])
+		    != TCL_OK) {
+		if (atNotes != NULL) {
+		    Tcl_DecrRefCount(atNotes);
+		}
+		Tcl_DecrRefCount(pend);
+		return TCL_ERROR;
+	    }
 	    if (fi >= 0) {
 		rv[nr - 1] = (int) fi;
 		keep[i] = 0;
@@ -4005,7 +4106,19 @@ TclAnnotSettle(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    && rt[0]->kind == TCLT_SUM && rv[0] >= 0) {
 	/* v16w : {const:}$d, d typée (string) : l'étiquette nomme la
 	 * variante, la valeur de d est sa charge */
-	Tcl_Obj *copy = Tcl_DuplicateObj(content);
+	Tcl_Obj *copy;
+	TclType *pt = rv[0] < rt[0]->nfields ? rt[0]->fields[rv[0]].type
+		: NULL;
+
+	if (pt != NULL && pt->kind == TCLT_SUM && curVar >= 0
+		&& TclTypeSumRoot(cur) == TclTypeSumRoot(pt)) {
+	    /* v18b : {/some}$t, t une valeur de la somme qu'est la charge :
+	     * la charge garde son type et sa variante (mesure/some/celsius) */
+	    copy = MakeAnnotated(Tcl_DuplicateObj(content),
+		    TypeRefObj(interp, pt, curVar));
+	} else {
+	    copy = Tcl_DuplicateObj(content);
+	}
 
 	Tcl_IncrRefCount(copy);
 	if (TclTypeComplete(interp, rt[0], copy, rv[0], &variant) != TCL_OK) {
@@ -4789,24 +4902,29 @@ TclAnnotDisplay(Tcl_Interp *interp, Tcl_Obj *objPtr, int withNotes)
 	    if (TclSumTagged(tp)) {
 		variant = TclSumDecode(tp, content, NULL);	/* v16w */
 	    }
-	    if (tp->kind == TCLT_SUM && variant >= 0
+	    if (tp->variantOf != NULL) {
+		/* v18b : S/v (son nom dit déjà la variante) */
+		TclAppendPayloadChain(res, tp, variant, content);
+	    } else if (tp->kind == TCLT_SUM && variant >= 0
 		    && variant < (int) tp->nfields
 		    && tp->fields[variant].name != NULL) {
 		Tcl_AppendToObj(res, "/", 1);
 		Tcl_AppendObjToObj(res, tp->fields[variant].name);
-	    } else if (TclSumTagged(tp) && variant >= 0
-		    && variant < (int) tp->nfields) {
-		/* v16w : une variante littérale d'une somme qui a aussi des
-		 * variantes typées (opt : "none") ; pas pour une énumération */
-		Tcl_Size k;
+		TclAppendPayloadChain(res, tp, variant, content);
+	    } else if (tp->kind == TCLT_SUM && variant >= 0
+		    && variant < (int) tp->nfields
+		    && tp->fields[variant].literal != NULL) {
+		/* v18b : un littéral est une variante à valeur unique :
+		 * opt(int)/none, E/on, binop/"+" */
+		Tcl_DString mn;
 
-		for (k = 0; k < tp->nfields; k++) {
-		    if (tp->fields[k].type != NULL) {
-			Tcl_AppendToObj(res, "/", 1);
-			Tcl_AppendObjToObj(res, tp->fields[variant].literal);
-			break;
-		    }
-		}
+		Tcl_DStringInit(&mn);
+		Tcl_DStringAppend(&mn, "/", 1);
+		TclTypeAppendMemberName(&mn, Tcl_GetString(
+			tp->fields[variant].literal));
+		Tcl_AppendToObj(res, Tcl_DStringValue(&mn),
+			Tcl_DStringLength(&mn));
+		Tcl_DStringFree(&mn);
 	    }
 	}
 	/* Une annotation en attente (même un type connu, pas encore résolu
@@ -5442,6 +5560,15 @@ TclAnnotLabelIndex(const TclType *tp, const char *text)
 
     if (tp == NULL || !TclLabelIs(text, len) || len > sizeof(buf)) {
 	return -1;
+    }
+    {
+	/* v18b : {/some/celsius}, une chaîne : la variante de tp est le
+	 * premier membre (la suite restreint sa charge) */
+	const char *sl = (const char *) memchr(text + 1, '/', len - 1);
+
+	if (sl != NULL) {
+	    len = sl - text;
+	}
     }
     memcpy(buf, text + 1, len - 1);	/* {/nom} : le nom suit la barre */
     buf[len - 1] = '\0';

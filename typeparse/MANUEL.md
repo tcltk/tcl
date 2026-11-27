@@ -325,8 +325,8 @@ Conséquences :
 | `type literal -of T` | les littéraux de T (les valeurs permises d'une énumération) |
 | `type is {sum?}T`, `{enum?}T` | une somme ; une énumération (que des littéraux). Pour une valeur : `type is {sum?}[type get $v]` |
 
-* **Limite** : une somme placée directement dans la charge d'une autre (`opt(S)`) ne garde que
-  la variante extérieure ; l'intérieure est redéduite à la lecture.
+* (v18b) Une somme placée dans la charge d'une autre (`opt(S)`) garde la variante intérieure :
+  voir « La variante, un type ».
 
 ### Membres : `{/nom}` et `X/m` (v18a)
 
@@ -358,8 +358,40 @@ s'écrivent tous avec la barre `/`, qu'on parle d'une valeur ou d'un type :
   `label {nom:} is now written {/nom}`, `S.v` donne
   `a variant of a type is now written with "/": S/v`.
 * Les **chemins** ne changent pas : `$p(x)`, `set {rect}R(A.x, A.y) …` (le point y imbrique).
-* À venir : enchaîner les membres (`mesure/some/celsius`, `list.temp/celsius`), quand une
-  variante deviendra un type à part entière.
+
+### La variante, un type (v18b)
+
+Une somme est une collection de types alternatifs : chaque variante est un **type**, `S/v`,
+la somme `S` restreinte à sa variante `v`. C'est un sous-type de `S`.
+
+    type def temp   {{double}celsius, {double}fahrenheit}
+    type def mesure {{temp}some, "none"}
+
+    set {temp/celsius}u 4            ;# u n'accepte que des celsius
+    set u 5                          ;# 5.0, temp/celsius : rien d'ambigu
+    set u [type cast temp/fahrenheit 9]   ;# erreur : is temp/fahrenheit, not temp/celsius
+    proc f {{temp/celsius}x} {...}   ;# un argument, un retour, un champ, un élément
+    set {list.temp/celsius}L 1 2 3   ;# list.(temp/celsius) : la barre lie plus fort que le point
+
+* **Sous-type.** Une valeur de `temp/celsius` entre telle quelle là où l'on attend un `temp`
+  (elle y reste celsius). Une valeur de `temp` n'entre dans `temp/celsius` que si sa variante
+  est celsius ; convertir reste un cast écrit, qui passe par la règle
+  (`type convert temp/fahrenheit temp/celsius …`). `type include temp temp/celsius` vaut 1,
+  l'inverse 0 ; `type eq` compare le type entier, chaîne comprise.
+* **Chaînes.** `mesure/some/celsius` : la variante celsius de la charge de `some`. Une
+  variable, un argument, un élément de ce type n'accepte que cela.
+* **Sommes imbriquées.** La charge garde sa variante : `set {mesure}m {/some}$t` (t un
+  celsius) donne `mesure/some/celsius`, `$m(some)` rend le `temp/celsius`. Les étiquettes
+  s'enchaînent : `{/some/fahrenheit}7`, `return {/some/celsius}3`. `type canonic` écrit la
+  chaîne (`{mesure/some/fahrenheit}7.0`), `type parse` la relit ; `x is mesure/some/celsius`
+  la vérifie. (C'était la limite connue de la v17z.)
+* **Littéraux.** Un littéral est une variante à valeur unique, comme le serait
+  `{string(($ eq "none"))}none` : `type get` d'un `none` donne `mesure/none`, `x is
+  opt(int)/none` marche, une énumération `{"on", "off"}` donne `onoff/on`. Un littéral qui
+  n'est pas un nom s'écrit entre guillemets : `binop/"+"`, `pi/"3.14159"`.
+  `type literal -of` et `type variant -of` restent distincts.
+* Les **types de champ** ne changent pas : `point/x` est le type du champ (`double`), pas un
+  sous-type de `point`.
 
 ### `type include`, `num`, `inexact` (v17z)
 

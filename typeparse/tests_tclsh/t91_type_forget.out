@@ -3,9 +3,9 @@ redéfinir sans oublier: 1 type "binop" is already defined
 oublier: 0 
 redéfinir: 0 
 nouveau binop: 0 *
-v : ancienne valeur: 0 + binop
+v : ancienne valeur: 0 + binop/\"+\"
 v : ancien contrat: 1 value "*" matches no variant of binop
-w : ancienne valeur: 0 ** binop
+w : ancienne valeur: 0 ** binop/\"**\"
 -- refus
 inconnu: 1 type "nexistepas" is not defined
 intégré: 1 type "int" is built in: it cannot be forgotten

@@ -266,6 +266,36 @@ TclTypeIsNameChar(int c)
 
 /* Un mot nu de valeur (après "=") : tout sauf blanc et ponctuation. */
 
+/* v18b : la suite de membres collée à un nom de type, /v/w (les variantes
+ * d'une somme, ou le champ d'un produit) : sa longueur, 0 s'il n'y en a pas */
+static Tcl_Size
+MemberSpan(const char *p, const char *limit)
+{
+    const char *q = p;
+
+    while (q + 1 < limit && *q == '/'
+	    && (TclTypeIsNameChar(q[1]) || q[1] == '"')) {
+	q++;
+	if (*q == '"') {
+	    /* /"+" : un littéral entre guillemets */
+	    for (q++; q < limit && *q != '"'; q++) {
+		if (*q == '\\' && q + 1 < limit) {
+		    q++;
+		}
+	    }
+	    if (q >= limit) {
+		return 0;
+	    }
+	    q++;
+	    continue;
+	}
+	while (q < limit && TclTypeIsNameChar(*q)) {
+	    q++;
+	}
+    }
+    return q - p;
+}
+
 static int
 IsValueChar(int c)
 {
@@ -429,11 +459,9 @@ ParseTypeLexeme(
 	/* v16u : ::geom::point, un nom qualifié absolu */
 	end = start + 2 + TclTypeNameSpan(start + 2, start + numBytes);
 	*lexemePtr = BAREWORD;
-	if (literalPtr != NULL) {
-	    *literalPtr = Tcl_NewStringObj(start, end - start);
-	}
 	if ((end < start + numBytes) && (*end == '(')) {
 	    const char *close = TclTypeFindArgsEnd(end + 1, start + numBytes);
+	    Tcl_Size ms;
 
 	    if (close == NULL) {
 		*lexemePtr = UNCLOSED;
@@ -442,7 +470,17 @@ ParseTypeLexeme(
 	    if (argsPtr != NULL) {
 		*argsPtr = Tcl_NewStringObj(end + 1, close - end - 1);
 	    }
-	    return close + 1 - start;
+	    ms = MemberSpan(close + 1, start + numBytes);
+	    if (literalPtr != NULL) {
+		/* v18b : T(args)/v, le nom suivi de ses membres */
+		*literalPtr = Tcl_NewStringObj(start, end - start);
+		Tcl_AppendToObj(*literalPtr, close + 1, ms);
+	    }
+	    return close + 1 + ms - start;
+	}
+	end += MemberSpan(end, start + numBytes);
+	if (literalPtr != NULL) {
+	    *literalPtr = Tcl_NewStringObj(start, end - start);
 	}
 	return end - start;
     }
@@ -518,13 +556,11 @@ ParseTypeLexeme(
 	    end += TclTypeNameSpan(end, start + numBytes);
 	}
 	*lexemePtr = BAREWORD;
-	if (literalPtr != NULL) {
-	    *literalPtr = Tcl_NewStringObj(start, end - start);
-	}
 	if ((end < start + numBytes) && (*end == '(')) {
 	    /* mot(arguments) : l'arité d'une collection */
 
 	    const char *close = TclTypeFindArgsEnd(end + 1, start + numBytes);
+	    Tcl_Size ms;
 
 	    if (close == NULL) {
 		*lexemePtr = UNCLOSED;
@@ -533,7 +569,20 @@ ParseTypeLexeme(
 	    if (argsPtr != NULL) {
 		*argsPtr = Tcl_NewStringObj(end + 1, close - end - 1);
 	    }
-	    return close + 1 - start;
+	    ms = (byte == '$') ? 0 : MemberSpan(close + 1, start + numBytes);
+	    if (literalPtr != NULL) {
+		/* v18b : T(args)/v, le nom suivi de ses membres */
+		*literalPtr = Tcl_NewStringObj(start, end - start);
+		Tcl_AppendToObj(*literalPtr, close + 1, ms);
+	    }
+	    return close + 1 + ms - start;
+	}
+	if (byte != '$' || 1) {
+	    /* v18b : temp/celsius, $T/v : les membres font partie du mot */
+	    end += MemberSpan(end, start + numBytes);
+	}
+	if (literalPtr != NULL) {
+	    *literalPtr = Tcl_NewStringObj(start, end - start);
 	}
 	return end - start;
     }
@@ -2694,6 +2743,10 @@ TclCompileTypeTree(
 {
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;
+    const char *mp;		/* v18b : les membres /v/w d'un mot de type */
+    Tcl_Size ml;
+    char wbuf[256];		/* le mot sans ses membres */
+    int code;
 
     while (1) {
 	int next;
@@ -2716,6 +2769,8 @@ TclCompileTypeTree(
 	}
 
 	nodePtr->mark++;
+	mp = NULL;
+	ml = 0;
 	switch (next) {
 	case OT_EMPTY:
 	    PushItem(envPtr, SK_NAME);		/* groupe sans nom */
@@ -2724,7 +2779,20 @@ TclCompileTypeTree(
 	    Tcl_Obj *obj = **typeObjvPtr;
 	    Tcl_Size len;
 	    const char *w = Tcl_GetStringFromObj(obj, &len);
-	    int dollar = (len > 0 && w[0] == '$');
+	    int dollar;
+
+	    if ((mp = (const char *) memchr(w, '/', len)) != NULL) {
+		ml = len - (mp - w);	/* temp/celsius : temp, puis /celsius */
+		len = mp - w;
+		if (len >= (Tcl_Size) sizeof(wbuf)) {
+		    ERR(interp, "SYNTAX", "type name too long");
+		    return TCL_ERROR;
+		}
+		memcpy(wbuf, w, len);
+		wbuf[len] = '\0';
+		w = wbuf;
+	    }
+	    dollar = (len > 0 && w[0] == '$');
 	    const TypeParam *prm = TclTypeFindParam(envPtr->params, w + dollar,
 		    len - dollar);
 	    TypeGeneric *g;
@@ -2770,6 +2838,18 @@ TclCompileTypeTree(
 	    TypeGeneric *g;
 	    TclType *tp;
 	    TypeItem *it;
+
+	    if ((mp = (const char *) memchr(w, '/', len)) != NULL) {
+		ml = len - (mp - w);	/* opt(int)/some */
+		len = mp - w;
+		if (len >= (Tcl_Size) sizeof(wbuf)) {
+		    ERR(interp, "SYNTAX", "type name too long");
+		    return TCL_ERROR;
+		}
+		memcpy(wbuf, w, len);
+		wbuf[len] = '\0';
+		w = wbuf;
+	    }
 
 	    (*typeObjvPtr)++;
 	    (*argObjvPtr)++;
@@ -3031,6 +3111,31 @@ TclCompileTypeTree(
 	}
 	default:
 	    nodePtr = nodes + next;		/* sous-arbre : on descend */
+	}
+	if (mp != NULL) {
+	    /* v18b : T/v/w : les membres s'appliquent au type de l'opérande
+	     * (ils lient plus fort que « . » : list.temp/celsius) */
+	    TypeItem *top = ITEMS(envPtr) + envPtr->nStack - 1;
+	    TclType *mt = NULL;
+
+	    code = ResolveCtor(interp, envPtr, top);
+	    if (code == TCL_OK && (top->kind != SK_TYPE || top->type == NULL)) {
+		ERR(interp, "BADMEMBER", "\"%.*s\" follows no type", (int) ml,
+			mp);
+		code = TCL_ERROR;
+	    }
+	    if (code == TCL_OK) {
+		mt = TclTypeMember(interp, envPtr->d, top->type, mp, ml);
+		if (mt == NULL) {
+		    code = TCL_ERROR;
+		} else {
+		    top->type = mt;
+		}
+	    }
+	    mp = NULL;
+	    if (code != TCL_OK) {
+		return TCL_ERROR;
+	    }
 	}
     }
 }

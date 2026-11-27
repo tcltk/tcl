@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v18a"
+#define TCL_TYPES_VERSION "v18b"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -214,6 +214,15 @@ struct TclType {
     Tcl_Interp *predInterp;	/* v17u : où l'évaluer (NULL : interp supprimé) */
     void *predProg;		/* v17u : forme numérique compilée (MProg), ou
 				 * NULL ; (void *) 1 : pas de forme numérique */
+    struct TclType *variantOf;	/* v18b : type de variante S/v : la somme S
+				 * (la racine, jamais un type de variante) ;
+				 * NULL sinon. Le type est une somme (mêmes
+				 * variantes) dont seule variantIdx est
+				 * permise ; sa charge peut être restreinte
+				 * (S/v/w : fields[variantIdx].type est W/w) */
+    Tcl_Size variantIdx;
+    struct TclType **variants;	/* v18b : S/v déjà internés, par variante
+				 * (charge non restreinte), ou NULL */
 };
 #define TCLT_SUM_TAGGED	0
 #define TCLT_SUM_UNION	1
@@ -235,6 +244,11 @@ struct TclType {
  * somme) ; le nom suit la barre. L'ancienne écriture {nom:} est refusée
  * (TclLabelIsOld) avec un message qui donne la nouvelle.
  */
+/* v18b : le type de variante S/v (voir TclType.variantOf) */
+#define TclTypeIsVariant(tp)	((tp) != NULL && (tp)->variantOf != NULL)
+/* la somme d'un type de variante, ou le type lui-même */
+#define TclTypeSumRoot(tp)	((tp)->variantOf != NULL ? (tp)->variantOf : (tp))
+
 #define TclLabelIs(t, l)	((l) > 1 && (t)[0] == '/')
 #define TclLabelIsOld(t, l)	((l) > 1 && (t)[0] != '/' && (t)[0] != '-' \
 	&& (t)[0] != '@' && (t)[(l) - 1] == ':' && (t)[(l) - 2] != ':')
@@ -349,6 +363,8 @@ Tcl_Size TclAnnotLabelIndex(const TclType *tp, const char *text);
 int	TclAnnotOldLabel(Tcl_Interp *interp, const TclType *tp, const char *text);
 Tcl_Obj *TclAnnotLabelOf(Tcl_Obj *objPtr);
 int	TclAnnotCheckOldLabel(Tcl_Interp *interp, Tcl_Obj *objPtr);
+void	TclAppendPayloadChain(Tcl_Obj *res, const TclType *tp, int variant,
+	    Tcl_Obj *content);
 int	TclAnnotateValue(Tcl_Interp *interp, Tcl_Obj *typeText, Tcl_Obj *value,
 	    Tcl_Obj **resultPtr);
 /*
@@ -562,6 +578,11 @@ int	TclTypeCastImplicit(Tcl_Interp *interp, Tcl_Obj *src,
 int	TclTypeCast(Tcl_Interp *interp, Tcl_Obj *src, TclType *target,
 	    Tcl_Obj **resultPtr);
 Tcl_Size TclTypeFieldIndex(const TclType *tp, const char *name);
+Tcl_Size TclTypeMemberIndex(const TclType *tp, const char *name, Tcl_Size len);
+TclType *TclTypeVariantOf(TclType *sum, Tcl_Size idx, TclType *payload);
+void	TclTypeAppendMemberName(Tcl_DString *ds, const char *name);
+TclType *TclTypeMember(Tcl_Interp *interp, struct TypeData *d, TclType *tp,
+	    const char *p, Tcl_Size len);
 /* Évalue le script d'un défaut (au niveau global) et rend son résultat dans
  * *resultPtr (objet neuf, refCount 0). what décrit le champ pour le message
  * d'erreur. Le résultat n'est PAS validé : l'appelant le conforme au type. */

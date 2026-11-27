@@ -18,7 +18,7 @@ union int | string: ERREUR union: alternatives i and s can take the same value, 
 point | vecteur : refusée: ERREUR union: alternatives p and v can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 point , vecteur : somme: 0
 mélange , et |: ERREUR mixing "," and "|" at the same level: a sum (,) tags its variants, a union (|) does not; group the inner part
-énumération en union: on onoff
+énumération en union: on onoff/on
 variante produit à un champ: {double}r
 {-strict} n'existe plus: ERREUR type def: {-strict} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
 {-deduce} n'existe plus: ERREUR type def: {-deduce} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
@@ -35,7 +35,7 @@ type cast S/i 5: S/i
 type cast S 5: ERREUR value "5" fits variants i and s of S: write {/i}5
 type cast S {i 5}: S/s
 point, vecteur: {1.0 2.0} PV/v 1.0
-littéral seul: vide Lit
+littéral seul: vide Lit/vide
 littéral : {/n}4: 4 Lit/n
 variante typée nue: 4 Lit/n
 --- lire
@@ -59,7 +59,7 @@ lappend nu: S/i S/s
 lset {/s}x: x
 produit: {5 3} S/s
 retour de procédure: S/s
-somme imbriquée: ERREUR value "5" fits variants i and s of S: write {/i}5
+somme imbriquée: 5 E2/k/s S/s
 --- modifier
 set v 8 : ambigu: ERREUR value "8" fits variants i and s of S: write {/i}8
 set v(i) 8: 8

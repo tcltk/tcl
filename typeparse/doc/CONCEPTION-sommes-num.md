@@ -354,7 +354,29 @@ Fait en v18a (première étape) :
 * un nom de variante peut être un nom de type (`{{int}int, {string}string}`) : la restriction
   n'a plus de raison d'être, l'exception faite pour `num` disparaît.
 
-À faire (deuxième étape) : la variante, type interné (somme, indice, type de la charge) vers
-lequel pointe l'annotation ; chaînes `mesure/some/celsius`, `list.temp/celsius` ; une étiquette
-sur une valeur déjà typée garde ce type (`{/some}$t`), ce qui lève la limite des sommes
-imbriquées (§ 8) ; `type include` par la chaîne des sous-types, `type eq` sur la chaîne entière.
+Deuxième étape, faite en v18b (validée le 27 novembre : une variable `{S/v}x` n'accepte que
+v ; `list.temp/celsius` = `list.(temp/celsius)` ; un littéral est une variante à valeur unique,
+au sens de `string(($ eq "litteral"))`, idée de l'utilisateur) :
+
+* **Le type de variante.** `S/v` est interné (`TclTypeVariantOf`) : une somme qui a les
+  variantes de S, n'en permet qu'une (`variantOf`, `variantIdx`), et dont la charge peut être
+  restreinte (`S/v/w`). La grammaire lit les membres collés au mot (`MemberSpan`,
+  `TclTypeMember`), avant le point : `list.temp/celsius`, `opt(int)/some`, `binop/"+"`.
+* **Les valeurs.** Une valeur de S/v est annotée S/v (son contrat, celui d'une variable, d'un
+  argument) ; rangée dans un S (variable, élément), elle devient une valeur de S de variante v
+  (`TypeCastEx`). La validation lit la variante d'une valeur déjà annotée (élément de liste,
+  argument) au lieu de la redéduire ; une variante différente est refusée sans règle
+  implicite, convertie par un cast écrit.
+* **Sommes imbriquées.** La charge d'une somme peut être une valeur annotée d'une autre somme :
+  elle garde sa variante (`{/some}$t`, `{/some/celsius}5`, la chaîne restreinte d'un type
+  S/v/w). `type get` et `type canonic` écrivent la chaîne (`TclAppendPayloadChain`). La limite
+  du § 8 est levée.
+* **Inclusion.** `type include` et l'inclusion interne suivent la restriction ; `is` vérifie
+  la variante et la charge.
+* **Littéraux.** `type get` donne `M/auto` ; `type variant $v` reste vide pour un littéral,
+  `type literal -of` et `type variant -of` restent distincts.
+
+Ce qui reste : `type variant $v` d'un littéral (vide, ou le littéral ?) ; `type def chaud
+temp/celsius` (un nominal d'un type de variante) n'a pas de nom propre dans `type get` ;
+`type canonic` d'un élément imbriqué écrit `{/some}{{/celsius}1.0}` plutôt que
+`{/some/celsius}1.0` (relu correctement).

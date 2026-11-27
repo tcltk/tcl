@@ -1,0 +1,48 @@
+== le type S/v
+type cast temp/celsius                 temp/celsius
+variable {temp/celsius}u               5.0 temp/celsius
+u refuse fahrenheit                    ERREUR: value "5.0" is temp/fahrenheit, not temp/celsius
+un temp reçoit un temp/fahrenheit      temp/fahrenheit
+t reste un temp (ambigu)               ERREUR: value "6" fits variants celsius and fahrenheit of temp: write {/celsius}6
+conversion écrite, sans règle          ERREUR: the current variant of temp is "fahrenheit", not "celsius"; both have the same form, so reading one as the other needs a rule: type convert temp/fahrenheit temp/celsius {{x} ...}
+conversion écrite, par la règle        100.0 temp/celsius
+argument {temp/celsius}x               temp/celsius
+argument : autre variante refusée      ERREUR: argument "x": value "5.0" is temp/fahrenheit, not temp/celsius
+retour {temp/fahrenheit}               temp/fahrenheit
+type def temp/celsius (la charge)      double
+dans un produit                        {temp/celsius}c; {int}n
+== listes : list.temp/celsius = list.(temp/celsius)
+construction                           list<temp/celsius> {temp/celsius temp/celsius temp/celsius}
+lappend 4                              temp/celsius
+lappend fahrenheit refusé              ERREUR: value "5.0" is temp/fahrenheit, not temp/celsius
+liste de temp : variantes gardées      temp/celsius temp/fahrenheit
+list.temp vers list.temp/celsius       ERREUR: value "5.0" is temp/fahrenheit, not temp/celsius
+== inclusion, égalité, is
+temp ⊇ temp/celsius                    1
+temp/celsius ⊉ temp                    0
+temp/celsius ⊉ temp/fahrenheit         0
+mesure ⊇ mesure/some/celsius           1
+mesure/some ⊇ mesure/some/celsius      1
+type eq                                1
+tc is temp/celsius                     1
+tc is temp/fahrenheit                  0
+== littéraux : des variantes à valeur unique
+mesure/none                            mesure/none
+binop/"+"                              binop/"+"
+{binop/"+"}x                           binop/"+"
+littéral refusé                        ERREUR: value "**" is not a binop/"+"
+== sommes imbriquées : la variante de la charge est gardée
+{/some}$t                              mesure/some/celsius temp/celsius
+{/some}[chaud]                         mesure/some/fahrenheit temp/fahrenheit
+chaîne {/some/fahrenheit}7             mesure/some/fahrenheit temp/fahrenheit
+chaîne inconnue                        ERREUR: temp has no variant "kelvin"
+{mesure/some/celsius}c                 mesure/some/celsius
+restreint : fahrenheit refusé          ERREUR: value "5.0" is temp/fahrenheit, not temp/celsius
+liste de mesures                       mesure/some/celsius mesure/none mesure/some/fahrenheit
+canonic                                {list.mesure}{{{/some}{{/celsius}1.0}} none {{/some}{{/fahrenheit}5.0}}}
+parse                                  mesure/some/celsius mesure/none mesure/some/fahrenheit
+canonic d'une mesure                   {mesure/some/fahrenheit}7.0
+retour {/some/celsius}3                mesure/some/celsius
+is mesure/some/fahrenheit              1
+is mesure/some/celsius                 0
+argument mesure                        temp/fahrenheit

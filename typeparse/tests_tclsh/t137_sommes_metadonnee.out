@@ -5,8 +5,8 @@ chemin v(i)                        5 int
 une seule variante                 abc S/s
 deux variantes : erreur            ERREUR value "5" fits variants i and s of S: write {/i}5, or set {S}v(i) 5
 même forme : erreur                ERREUR value "5" fits variants i and j of A: write {/i}5, or set {A}v(i) 5
-littéral : lui-même                auto M
-littéral contre variante           L2
+littéral : lui-même                auto M/auto
+littéral contre variante           L2/auto
 rien de collant                    value "8" fits variants i and s of S: write {/i}8
 cast vers la variante              int
 cast vers string                   5
@@ -34,13 +34,13 @@ réétiqueter vers un littéral       ERREUR type variant: M has no variant "aut
 réétiqueter n'est pas convertir    100.0 temp/fahrenheit
 == la forme chaîne
 variante écrite : i                {{S/i}5} ≡
-déduite : une seule variante       {{S}abc} ≡
+déduite : une seule variante       {{S/s}abc} ≡
 variante écrite : s                {{S/s}5} ≡
 même forme                         {{A/j}5} ≡
 dans une liste                     {{list.S}{{{/s}5} {{/i}6} x}} ≡
 dans un produit                    {{P}{{{/s}5} {{/j}7}}} ≡
 relu : les variantes               A/j A/i
 par la chaîne nue : erreur         ERREUR value "5" fits variants i and j of A: write {/i}5
-variante inconnue                  ERREUR type parse: S has no variant "zz"
+variante inconnue                  ERREUR S has no variant "zz"
 étiquette inconnue : un texte      {{/zz}5}
 charge refusée                     ERREUR expected integer but got "abc"
