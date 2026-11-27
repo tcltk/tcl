@@ -1458,6 +1458,9 @@ NRInterpCmd(
 	TclNewObj(resultPtr);
 	hPtr = Tcl_FirstHashEntry(&iiPtr->parent.childTable, &hashSearch);
 	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
+	    if (((Child *) Tcl_GetHashValue(hPtr))->interpCmd == NULL) {
+		continue;
+	    }
 	    string = (char *) Tcl_GetHashKey(&iiPtr->parent.childTable, hPtr);
 	    Tcl_ListObjAppendElement(NULL, resultPtr,
 		    Tcl_NewStringObj(string, -1));
@@ -2689,6 +2692,10 @@ GetInterp(
 	    break;
 	}
 	childPtr = (Child *) Tcl_GetHashValue(hPtr);
+	if (childPtr->interpCmd == NULL) {
+	    searchInterp = NULL;
+	    break;
+	}
 	searchInterp = childPtr->childInterp;
 	if (searchInterp == NULL) {
 	    break;
