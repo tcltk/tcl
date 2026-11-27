@@ -103,6 +103,7 @@ to the userbase.
  - [arguments to TclCreatePipeline cannot start with '|'](https://core.tcl-lang.org/tcl/tktview/186235)
  - [Tcl_GetInterpPath() and Tcl_GetParent() used freed memory](https://core.tcl-lang.org/tcl/tktview/257742)
  - [an error in an execution trace lost the frame of the traced command](https://core.tcl-lang.org/tcl/tktview/afa8c9)
+ - ["binary format" with huge counts or offsets](https://core.tcl-lang.org/tcl/tktview/afa8c9)
 
 # Updated bundled packages, libraries, standards, data
  - http 2.10.3

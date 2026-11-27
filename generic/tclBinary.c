@@ -801,6 +801,19 @@ TclAppendBytesToByteArray(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Advance the offset in the first pass of [binary format], reporting an
+ * error instead of overflowing. [Bugs 2788582, ce4483c2cb]
+ */
+
+#define ADD_OFFSET(n) \
+    do {								\
+	if ((n) > BYTEARRAY_MAX_LEN - offset) {				\
+	    goto tooLong;						\
+	}								\
+	offset += (n);							\
+    } while (0)
+
 static int
 BinaryFormatCmd(
     TCL_UNUSED(void *),
@@ -871,11 +884,11 @@ BinaryFormatCmd(
 	    }
 	    arg++;
 	    if (cmd == 'a' || cmd == 'A') {
-		offset += count;
+		ADD_OFFSET(count);
 	    } else if (cmd == 'b' || cmd == 'B') {
-		offset += (count + 7) / 8;
+		ADD_OFFSET(count / 8 + (count % 8 != 0));
 	    } else {
-		offset += (count + 1) / 2;
+		ADD_OFFSET(count / 2 + (count % 2));
 	    }
 	    break;
 	case 'c':
@@ -947,7 +960,10 @@ BinaryFormatCmd(
 		}
 		arg++;
 	    }
-	    offset += count*size;
+	    if (count > BYTEARRAY_MAX_LEN / size) {
+		goto tooLong;
+	    }
+	    ADD_OFFSET(count * size);
 	    break;
 
 	case 'x':
@@ -958,7 +974,7 @@ BinaryFormatCmd(
 	    } else if (count == BINARY_NOCOUNT) {
 		count = 1;
 	    }
-	    offset += count;
+	    ADD_OFFSET(count);
 	    break;
 	case 'X':
 	    if (count == BINARY_NOCOUNT) {
@@ -994,6 +1010,9 @@ BinaryFormatCmd(
     }
     if (length == 0) {
 	return TCL_OK;
+    }
+    if (length > BYTEARRAY_MAX_LEN) {
+	goto tooLong;
     }
 
     /*
@@ -1279,6 +1298,13 @@ BinaryFormatCmd(
   badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
+
+  tooLong:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "max size for a Tcl value (%" TCL_SIZE_MODIFIER "d bytes) exceeded",
+	    BYTEARRAY_MAX_LEN));
+    Tcl_SetErrorCode(interp, "TCL", "MEMORY", (char *)NULL);
+    return TCL_ERROR;
 
   badField:
     {
