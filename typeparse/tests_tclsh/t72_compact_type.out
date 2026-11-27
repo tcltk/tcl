@@ -26,7 +26,7 @@ refus : produit avec chaîne        1 type def {-compact}pq: only a list of fixe
 refus : option inconnue            1 type def: unknown option {-zz}: must be {-compact}
 refus : alias                      1 type alias: unknown option {-compact} (an alias is not a new type: it takes no option)
 refus : famille                    1 type def {-compact}: not yet for a type family (v({int}n))
-question inconnue                  1 unknown question "zz?": must be compact?, disjoint? or union?
+question inconnue                  1 unknown question "zz?": must be compact?, disjoint?, enum?, sum? or union?
 sans question                      1 type is takes one question: type is {compact?}T or type is {compact?}$value
 export : llvm                      1 type export: the target llvm! is not available yet: must be c!
 export : sans cible                1 type export needs one target: type {c!}export T ?T ...?

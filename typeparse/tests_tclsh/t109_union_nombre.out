@@ -1,17 +1,17 @@
 == définition
-num accepté                        num.i
+num intégré                        num.int
 disjoint? num                      
 int | string refusé                ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 double | string refusé             ERREUR union: alternatives d and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
 == lecture : la variante du texte canonique
-num 10                             10 num.i
-num -3                             -3 num.i
-num 0x10                           16 num.i
-num 2.0                            2.0 num.d
-num 2e1                            20.0 num.d
-num 1e300                          1e+300 num.d
-num .5                             0.5 num.d
-num inf                            Inf num.d
+num 10                             10 num.int
+num -3                             -3 num.int
+num 0x10                           16 num.int
+num 2.0                            2.0 num.double
+num 2e1                            20.0 num.double
+num 1e300                          1e+300 num.double
+num .5                             0.5 num.double
+num inf                            Inf num.double
 num abc refusé                     ERREUR value "abc" matches no variant of num
 num {} refusé                      ERREUR value "" matches no variant of num
 union : pas d'étiquette            ERREUR value "d 1.5" matches no variant of num
@@ -23,10 +23,10 @@ double / 2                         2.5
 champs int                         3
 champs mixtes                      3.5
 champ lu nu                        1 2.5
-type du champ                      num.i num.d
+type du champ                      num.int num.double
 == listes et boucles
 list.num normalisée                1 2.0 16 3.0
-lindex typé                        num.i num.d
+lindex typé                        num.int num.double
 boucle : éléments nus              {} {}
 éléments nus en boucle             0 1.0
 somme                              6.5

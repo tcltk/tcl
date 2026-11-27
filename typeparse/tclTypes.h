@@ -21,7 +21,7 @@
  * VAR_* de tclInt.h). La valeur ci-dessous est un PLACEHOLDER. */
 /* Version du prototype TIP 764 (typeparse/VERSION, maj.sh, et
  * tcl::unsupported::typesversion). */
-#define TCL_TYPES_VERSION "v17y"
+#define TCL_TYPES_VERSION "v17z"
 
 #ifndef VAR_TYPED
 #define VAR_TYPED	0x400000
@@ -219,8 +219,16 @@ struct TclType {
 #define TCLT_SUM_UNION	1
 /* v16w : une somme dont la valeur écrit sa variante (pas une union, pas une
  * somme S($champ) dont la variante est dans un champ voisin) */
-#define TclSumTagged(tp) ((tp)->kind == TCLT_SUM \
+#define TclSumTagged(tp) (0 && (tp)->kind == TCLT_SUM \
 	&& (tp)->sumMode == TCLT_SUM_TAGGED && (tp)->binTag == NULL)
+/* v17z : la variante est une métadonnée (TclSumTagged ne vaut plus : la
+ * valeur est la charge seule). Une somme (pas une union, pas une somme
+ * binaire S($champ)) ne devine jamais entre deux variantes de même rang ;
+ * l'étiquette la désigne. */
+#define TclSumStrict(tp) ((tp)->kind == TCLT_SUM \
+	&& (tp)->sumMode == TCLT_SUM_TAGGED && (tp)->binTag == NULL)
+/* une somme dont la variante s'étiquette (somme ou union) */
+#define TclSumLabeled(tp) ((tp)->kind == TCLT_SUM && (tp)->binTag == NULL)
 
 /*
  * v16u : les descripteurs appartiennent à la table de types d'un
@@ -492,6 +500,8 @@ void *TclTypePathCellsBegin(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	const char *path, Tcl_Size K, Tcl_Size count, unsigned char **dst,
 	size_t *dstep, const char **whyPtr, int *copiedPtr);
 void TclTypePathCellsEnd(void *h, int commit);
+int TclTypeIntToDoubleCheck(Tcl_Interp *interp, const TclType *tp,
+	const TclType *from, Tcl_Obj *content);
 int TclTypePathWriteCellColumns(Tcl_Interp *interp, Tcl_Obj *nameObj,
 	const char *path, Tcl_Size K, Tcl_Obj *const cols[]);
 Tcl_Obj *TclCompactRepeat(TclType *ltp, Tcl_Obj *value, Tcl_Size n);

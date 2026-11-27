@@ -16,7 +16,7 @@ type d'un espace               {{::g110::P}{1.0 2.0}} ≡
 list d'un type d'espace        {{list.::g110::P}{{1.0 2.0}}} ≡
 cases (-compact)               {list.double}{1.0 2.0}
 == sommes et unions
-somme : la variante            {{S110}{d 2.0}} ≡
+somme : la variante            {{S110}2.0} ≡
 littéral                       {{opt110}none} ≡
 union : lue du contenu         {{num110}31} ≡
 list.num110                    {{list.num110}{1 2.0 16}} ≡

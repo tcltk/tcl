@@ -1,0 +1,75 @@
+string         ⊇ temp           1
+int            ⊇ int            1
+int            ⊇ int(s,16)      1
+int(s,16)      ⊇ int(u,8)       1
+int(u,8)       ⊇ int            0
+double         ⊇ mm             1
+mm             ⊇ double         0
+mm             ⊇ px             0
+int            ⊇ pair           1
+pair           ⊇ int            0
+pair           ⊇ pair           1
+double         ⊇ int            0
+double         ⊇ int(s,32)      1
+double         ⊇ int(s,64)      0
+double         ⊇ int(u,8)       1
+double         ⊇ double(32)     1
+double(32)     ⊇ double         0
+num            ⊇ int            1
+num            ⊇ double         1
+num            ⊇ int(u,8)       1
+num            ⊇ mm             1
+double         ⊇ num            0
+int            ⊇ num            0
+string         ⊇ num            1
+temp           ⊇ temp.celsius   1
+double         ⊇ temp.celsius   1
+double         ⊇ temp           1
+S              ⊇ int            0
+S              ⊇ string         0
+E3             ⊇ E2             1
+E2             ⊇ E3             0
+list.int       ⊇ list.pair      1
+list.pair      ⊇ list.int       0
+list.double    ⊇ list.int       0
+list(2).int    ⊇ list.int       0
+list.int       ⊇ list(2).int    1
+point          ⊇ pt2            0
+point          ⊇ point          1
+var.int        ⊇ var.pair       0
+var.int        ⊇ var.int        1
+opt2           ⊇ int            1
+double         ⊇ inexact        1
+inexact        ⊇ double         0
+== type eq : les types seuls
+même variante, valeurs différentes       1
+même valeur, variantes différentes       1 0
+nu et typé                               0
+deux nus                                 1
+nominal et sa base                       0
+les notes ne comptent pas                1
+addition d'unités                        -12.222222222222221 -2.2222222222222214
+== num
+num 5                                    5 num.int
+num 5.0                                  5.0 num.double
+num 0x10                                 16 num.int
+num abc                                  ERREUR value "abc" matches no variant of num
+variantes                                int double
+redéfinir num                            ERREUR type "num" is already defined
+oublier num                              ERREUR type "num" is built in: it cannot be forgotten
+{double:}5                               5.0 num.double
+== int -> double : exact, ou une erreur
+5                                        5.0
+2^53                                     9007199254740992.0
+2^53+1                                   ERREUR the integer 9007199254740993 has no exact double (beyond 2^53): to round it, cast it to inexact (type cast inexact $n)
+2^53+2 (exact)                           9007199254740994.0
+-(2^53+1)                                ERREUR the integer -9007199254740993 has no exact double (beyond 2^53): to round it, cast it to inexact (type cast inexact $n)
+10^20 (exact)                            1e+20
+10^20+1                                  ERREUR the integer 100000000000000000001 has no exact double (beyond 2^53): to round it, cast it to inexact (type cast inexact $n)
+cast                                     ERREUR the integer 9007199254740993 has no exact double (beyond 2^53): to round it, cast it to inexact (type cast inexact $n)
+argument                                 ERREUR argument "d": the integer 9007199254740993 has no exact double (beyond 2^53): to round it, cast it to inexact (type cast inexact $n)
+liste                                    ERREUR the integer 9007199254740993 has no exact double (beyond 2^53): to round it, cast it to inexact (type cast inexact $n)
+texte nu : lu par Tcl                    9007199254740992.0
+inexact                                  9007199254740992.0 inexact
+inexact entre dans double                9007199254740992.0 double
+double n'entre pas dans inexact          ERREUR type mismatch: expected inexact but got double (use an explicit cast)

@@ -1,7 +1,8 @@
-# t66 : variantes de même forme (v16w). La valeur d'une somme écrit sa
-#   variante ("j 5") : rien n'est deviné, une valeur nue est refusée avec un
-#   message qui montre l'écriture. La variante survit dans les listes, les
-#   produits, par la chaîne, et aux modifications (elle est dans la valeur).
+# t66 : variantes de même forme (v16w, puis v17z). La variante d'une somme
+#   est une métadonnée ; une valeur nue n'est déduite que si une seule
+#   variante l'accepte, sinon une erreur montre l'étiquette. La variante
+#   survit dans les listes et les produits ; une modification nue est
+#   déduite à nouveau (rien n'est collant).
 proc t {l s} { set rc [catch {uplevel 1 $s} m]; puts [format "%-30s %s %s" $l $rc $m] }
 type def A {{int}i, {int}j}
 type def B {{int}i, {double}d, {string}s}
@@ -10,7 +11,7 @@ type def Q {{int}a; {int}b}
 type def C {{P}p, {Q}q}
 type def R {{A}a; {int}n}
 puts "-- la valeur dit sa variante"
-t "B 5 : int, la plus stricte"  {set {B}v 5; type get $v}
+t "B 5 : i, d et s l'acceptent" {set {B}v 5; type get $v}
 t "B 2.5"                       {set {B}v 2.5; type get $v}
 t "B abc"                       {set {B}v abc; type get $v}
 t "A 5 : i et j"                {set {A}v 5}

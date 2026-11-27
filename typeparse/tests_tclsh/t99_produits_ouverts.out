@@ -25,7 +25,7 @@ llength      : 2 1 string
 champ        : <hello world> 1
 champ        : <3> 1
 --- sommes, listes de produits
-somme        : 2 1 
+somme        : 2 1 double
 list.point   : 2 point 2
 concat {*}   : 1.0 2.0 3.0 4.0
 produit mixte: 2 3 1

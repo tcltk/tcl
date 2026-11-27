@@ -41,7 +41,7 @@ namespace eval ::math::geometry {
     # sourcing this file: their structs hold doubles.
     variable coord
     if {![info exists coord]} {set coord num}
-    if {$coord eq "num"} {type def num {{int}i | {double}d}}
+    # num est intégré (v17z) : num.int, num.double
     type alias coord $coord
     type def point    {{coord}x; {coord}y}
     type alias vector point

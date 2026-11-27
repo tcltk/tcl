@@ -7,7 +7,7 @@
 ../ écrit        5 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  0000030a0b
 liste            7 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  02030501020304
 taille après     9 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  030003010203040506
-chaînée        C=Tcl 1  1 {some {2 {some {3 none}}}}
+chaînée        C=Tcl 1  1 {2 {3 none}}
 chaînée écrite   6 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  010202040300
 signé          C=Tcl 1  1 5 6 {5 6}
 at + lien        4 octets  C=Tcl 1  relu C=Tcl 1  relu=v 1  04020909

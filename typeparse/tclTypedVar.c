@@ -102,7 +102,7 @@ LabeledElems(Tcl_Interp *interp, TclType *tp, Tcl_Obj *list)
     Tcl_Size n, i;
     Tcl_Obj **ev, *lab, *e;
 
-    if (tp->kind != TCLT_LIST || tp->elem == NULL || !TclSumTagged(tp->elem)
+    if (tp->kind != TCLT_LIST || tp->elem == NULL || !TclSumLabeled(tp->elem)
 	    || TclListObjGetElements(NULL, list, &n, &ev) != TCL_OK) {
 	return TCL_OK;
     }
@@ -351,7 +351,7 @@ TclTypedVarPrepareWrite(Tcl_Interp *interp, Var *varPtr,
 	    return TCL_ERROR;
 	}
 	if ((*flagsPtr & TCL_LIST_ELEMENT) && contract->kind == TCLT_LIST
-		&& contract->elem != NULL && TclSumTagged(contract->elem)
+		&& contract->elem != NULL && TclSumLabeled(contract->elem)
 		&& (lab0 = TclAnnotLabelOf(value)) != NULL) {
 	    /* v16w : lappend L {b:}3 dans une liste de sommes : l'étiquette
 	     * (lue par lappend, qui reçoit le mot) fait l'élément "b 3" */
@@ -603,6 +603,10 @@ TclTypedConformHint(Tcl_Interp *interp, TclType *tp, Tcl_Obj *arg, int hint)
 	    && TclTypeValidate(interp, at, content, variant, NULL) != TCL_OK) {
 	return NULL;
     }
+    if ((status == TCLA_RAW || status == TCLA_TYPED)
+	    && TclTypeIntToDoubleCheck(interp, tp, at, content) != TCL_OK) {
+	return NULL;			/* v17z : int -> double, exact */
+    }
     if ((status == TCLA_TYPED || status == TCLA_RAW) && tp->pred != NULL
 	    && tp->predBase != NULL && !TclTypeEnters(tp, at)
 	    && TclTypeEnters(tp->predBase, at)) {
@@ -793,7 +797,9 @@ BuildList(Tcl_Interp *interp, TclType *tp, Tcl_Size n, Tcl_Obj *const a[],
 	    }
 	    for (j = 0; j < m; j++) {
 		c = Tcl_DuplicateObj(e[j]);
-		if (TclTypeValidate(interp, tp->elem, c, -1, NULL) != TCL_OK) {
+		if (TclTypeValidate(interp, tp->elem, c, -1, NULL) != TCL_OK
+			|| TclTypeIntToDoubleCheck(interp, tp->elem, at->elem,
+			c) != TCL_OK) {
 		    TclDiscard(c);
 		    goto done;
 		}
@@ -1444,9 +1450,10 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	return TCL_ERROR;
     }
     c = Tcl_DuplicateObj(content);
-    if (status == TCLA_RAW && variant >= 0 && TclSumTagged(tp)) {
+    if (status == TCLA_RAW && variant >= 0 && TclSumLabeled(tp)) {
 	/* set {S}x {d:}5 : l'étiquette donne la variante, la valeur est sa
-	 * charge (v16w) */
+	 * charge, conformée à la variante (v16w ; v17z : la variante reste en
+	 * métadonnée, la valeur est la charge seule) */
 	Tcl_Obj *pl;
 
 	if (tp->fields[variant].type == NULL) {
@@ -1459,9 +1466,14 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 	    }
 	}
 	TclDiscard(c);
-	c = TclSumMake(tp, variant, pl);
-	if (pl != NULL) {
-	    TclDiscard(pl);
+	if (TclSumTagged(tp)) {
+	    c = TclSumMake(tp, variant, pl);
+	    if (pl != NULL) {
+		TclDiscard(pl);
+	    }
+	} else {
+	    c = (pl != NULL) ? pl
+		    : Tcl_DuplicateObj(tp->fields[variant].literal);
 	}
 	*variantPtr = variant;
 	*contentPtr = c;
@@ -1499,7 +1511,7 @@ BuildSum(Tcl_Interp *interp, TclType *tp, int forced, Tcl_Size n,
 		    }
 		}
 	    }
-	    if (found >= 0 && again >= 0 && TclSumTagged(tp)) {
+	    if (found >= 0 && again >= 0 && TclSumStrict(tp)) {
 		/* v16w : deux variantes de ce type : laquelle ? */
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf("a value of type %s "
 			"fits variants %s and %s of %s: write {%s:}value",

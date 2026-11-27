@@ -3634,6 +3634,7 @@ PathWrite(Tcl_Interp *interp, Tcl_Obj *containerPtr, const char *path,
 	rc = PathWrite(interp, containerPtr, path, pathObj, 1, &packed,
 		newPtr);
 	Tcl_DecrRefCount(packed);
+	CompiledPathRelease(cp);	/* v17z : (fuite) */
 	return rc;
     }
     if (FlattenValues(interp, set, nvals, vals, &flat) != TCL_OK) {

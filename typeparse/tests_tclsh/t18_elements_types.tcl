@@ -13,7 +13,7 @@ check "lmap list.int" [lmap e $N {type get $e}] {{} {} {}}
 catch {unset e}
 type def Val {{int}i, {string}s}
 set {list.Val}L {i:}5 {s:}hello {s:}7 {Val.i}8
-check "L" $L {{i 5} {s hello} {s 7} {i 8}}
+check "L" $L {5 hello 7 8}
 catch {unset e}
 check "variantes foreach" [lmap e $L {type get $e}] {Val.i Val.s Val.s Val.i}
 check "L(2) garde la balise" [type get $L(2)] Val.s

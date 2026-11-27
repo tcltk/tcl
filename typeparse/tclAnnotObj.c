@@ -2477,7 +2477,8 @@ NormContent(TclType *tp, int variant, Tcl_Obj *v)
 		|| !NormNeeded(vt, 0)) {
 	    return NULL;
 	}
-	if (tp->sumMode == TCLT_SUM_UNION) {
+	if (tp->sumMode == TCLT_SUM_UNION || !TclSumTagged(tp)) {
+	    /* une union ; v17z : une somme, sa charge seule */
 	    return NormContent(vt, -1, v);
 	}
 	if (tp->binTag != NULL
@@ -2738,7 +2739,7 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 		return TCL_ERROR;		/* {v}$x : écrire {v:} */
 	    }
 	    if (idx >= 0 && (ctx->fields[idx].type != NULL
-		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
+		    || TclSumStrict(ctx))) {	/* v16w : {none:} */
 		*statusPtr = TCLA_RAW;
 		*tpPtr = (TclType *) ctx;
 		*variantPtr = (int) idx;
@@ -2772,7 +2773,7 @@ TclAnnotResolve(Tcl_Interp *interp, Tcl_Obj *objPtr, const TclType *ctx,
 	    return TCL_ERROR;			/* {v} : écrire {v:} */
 	}
 	if (idx >= 0 && (ctx->fields[idx].type != NULL
-		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
+		    || TclSumStrict(ctx))) {	/* v16w : {none:} */
 	    *statusPtr = TCLA_RAW;
 	    *tpPtr = (TclType *) ctx;
 	    *variantPtr = (int) idx;
@@ -3244,7 +3245,7 @@ ClassifyAnnot(Tcl_Interp *interp, Tcl_Obj *textObj, const TclType *ctx,
     if (ctx != NULL && ctx->kind == TCLT_SUM) {
 	idx = TclAnnotLabelIndex(ctx, text);	/* {v:} (v16l) */
 	if (idx >= 0 && (ctx->fields[idx].type != NULL
-		    || TclSumTagged(ctx))) {	/* v16w : {none:} */
+		    || TclSumStrict(ctx))) {	/* v16w : {none:} */
 	    if (variantPtr != NULL) {
 		*variantPtr = (int) idx;
 	    }

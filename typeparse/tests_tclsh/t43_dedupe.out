@@ -6,7 +6,7 @@
 {7 8} {7 8} {9 9}
 1
 --- une cible qui contient un lien n'est pas dédupliquée / a target holding a link is not deduped
-{10 {some {11 none}}} {10 {some {11 none}}}
+{10 {11 none}} {10 {11 none}}
 02040a060a080b000b00
 02040a060a060b00
 1

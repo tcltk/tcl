@@ -9,7 +9,7 @@ M (var : prudent): {a b} {a s} {b s}
 pas une somme: ERREUR type is {disjoint?}: pt is not a sum
 --- définitions
 somme recouvrante : permise: 0
-variante sans nom: ERREUR variant 1 of the sum has no name: a sum writes the name of its variant in its value; name it ({int}name), or write a union with "|" if the value itself tells the alternatives apart
+variante sans nom: ERREUR variant 1 of the sum has no name: a label or a path chooses a variant by its name; name it ({int}name), or write a union with "|" if the value itself tells the alternatives apart
 union disjointe: 1
 union anonyme: 1
 union recouvrante : refusée: ERREUR union: alternatives i and s can take the same value, so the value could not tell which one it is; a union must be disjoint. Write a sum with "," to tag the alternatives
@@ -22,67 +22,67 @@ mélange , et |: ERREUR mixing "," and "|" at the same level: a sum (,) tags its
 variante produit à un champ: {double}r
 {-strict} n'existe plus: ERREUR type def: {-strict} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
 {-deduce} n'existe plus: ERREUR type def: {-deduce} is gone: a sum (",") always writes its variant in its value (v 5), and a union ("|") must be disjoint, so nothing is ever guessed
---- somme : la valeur écrit sa variante
-nue : refusée: ERREUR value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
-{i:}5: {i 5} S.i
-{S.s}5: {s 5} S.s
-en clair: {s 5} S.s
-par la chaîne: S.s
-variante inconnue: ERREUR S has no variant "z" with a value
+--- somme : la valeur est la charge, la variante une métadonnée
+nue : deux variantes: ERREUR value "5" fits variants i and s of S: write {i:}5, or set {S}v(i) 5
+{i:}5: 5 S.i
+{S.s}5: 5 S.s
+en clair : refusé: ERREUR wrong # args: a sum value takes exactly one argument
+par la chaîne: ERREUR value "5" fits variants i and s of S: write {i:}5, or set {S}v(i) 5
+variante inconnue: ERREUR label {z:} names no variant of S
 charge invalide: ERREUR expected integer but got "abc"
 type {S.i}5: S.i
 type cast S.i 5: S.i
-type cast S 5: ERREUR value "5" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 5}, or {i:}5
-type cast S {i 5}: S.i
-point, vecteur: {v {1.0 2.0}} PV.v 1.0
-littéral seul: vide Lit.vide
-littéral : n 4: {n 4} Lit.n
-variante typée nue: ERREUR value "4" names no variant of the sum Lit: a value of a sum is the name of its variant, then its value, as {n 4}, or {n:}4
+type cast S 5: ERREUR value "5" fits variants i and s of S: write {i:}5
+type cast S {i 5}: S.s
+point, vecteur: {1.0 2.0} PV.v 1.0
+littéral seul: vide Lit
+littéral : {n:}4: 4 Lit.n
+variante typée nue: 4 Lit.n
 --- lire
 v(i): 5 int
 expr {$v(i) * 2}: 10
-expr {$v * 2} : refusé: ERREUR cannot use a list as left operand of "*"
-lassign: i 5
+expr {$v * 2}: 10
+lassign: 5 {}
 type variant: s
-type variant littéral: vide
+type variant littéral: 
 type variant, pas une somme: ERREUR type variant: the value is a pt, not a sum
 variante inactive: 5
 f(rect.w): 2.0
 f(w) : la charge courante: 2.0
 f(zz): ERREUR prod<w:double;h:double;> has no field "zz"
---- la variante est dans la valeur
-égalité: 0
-clés de dict: 2
-liste par la chaîne: S.i S.s
+--- la variante est une métadonnée
+égalité en valeur: 1
+clés de dict: 1
+liste par la chaîne: ERREUR value "1" fits variants i and s of S: write {i:}1
 lappend {s:}x: S.i S.s
-lappend en clair: S.i S.s
-lset {s:}x: {s x}
-produit: {{s 5} 3} S.s
+lappend nu: S.i S.s
+lset {s:}x: x
+produit: {5 3} S.s
 retour de procédure: S.s
-somme imbriquée: {k {s 5}} S.s
+somme imbriquée: ERREUR value "5" fits variants i and s of S: write {i:}5
 --- modifier
-set v 8 : refusé: ERREUR value "8" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {i 8}, or {i:}8
-set v(i) 8: i 8
-set v(s) x : change: s x
-incr v(i): i 6
+set v 8 : ambigu: ERREUR value "8" fits variants i and s of S: write {i:}8
+set v(i) 8: 8
+set v(s) x : change: x
+incr v(i): 6
 --- union : la valeur est la charge
 n: 5 U.n n
 paire: {3 4} U.paire paire
 u(paire): 3 4
 expr direct: 10
 étiquette qui confirme: U.paire
-étiquette fausse: ERREUR value "3 4" is not valid for that variant of U
+étiquette fausse: ERREUR expected integer but got "3 4"
 rien ne passe: ERREUR value "abc" matches no variant of U
 --- casts
 énumération -> string: rouge
-somme -> string : son texte: i 5
-somme -> int : refusé: ERREUR a value of the sum S is not of type int: it is "i" then its value; read that value by its path, as $v(i)
+somme -> string : son texte: 5
+somme -> int : sa variante: int
 union -> int: int
 union -> list.int: list<int>
-int -> S : deux variantes ?: i 5
-int -> F: {n 5} F.n
+int -> S : deux variantes ?: 5
+int -> F: 5 F.n
 proc {string} <- énumération: vert
-proc {int} <- somme: ERREUR argument "n": a value of the sum S is not of type int: it is "i" then its value; read that value by its path, as $v(i)
+proc {int} <- somme: 5
 proc {int} <- v(i): 5
 --- options et questions
 {-compact}: 
@@ -90,4 +90,4 @@ sur une liste:
 inconnue: ERREUR type def: unknown option {-bof}: must be {-compact}
 {-compact,-compact}: 1
 alias: 
-question inconnue: ERREUR unknown question "zz?": must be compact?, disjoint? or union?
+question inconnue: ERREUR unknown question "zz?": must be compact?, disjoint?, enum?, sum? or union?

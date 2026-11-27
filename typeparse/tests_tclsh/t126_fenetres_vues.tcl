@@ -1,6 +1,6 @@
 # Fenêtres $L((s0,s1,...):fin:pas), vues d'objets, écriture de colonnes (v17n)
 type def {-compact}cd list.double
-type def num {{int}i | {double}d}
+# num est intégré (v17z)
 proc montre {nom script} {
     if {[catch {uplevel 1 $script} r]} { set r "ERR $r" }
     puts "$nom : $r"

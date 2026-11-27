@@ -7,7 +7,7 @@ argument typé                      16
 list.double                        1.0 20.0
 dict.int                           a 16
 produit                            Jean 12
-somme                              d 1.0
+somme                              1.0 S108.d
 nominal                            20.0
 lappend sous contrat               1.0 20.0
 double : division réelle           2.5

@@ -984,9 +984,11 @@ proc ::fb::enc {r value ctx what outName} {
 		error "type binary: cannot write the target of $what into the space [lindex [originSpace $a] 0]: leave the link unfollowed (-linkdepth 0) to rewrite its address"
 	    }
 	    if {$e ne ""} {
+		# v17z : la variante est une métadonnée ; "none" est un
+		# littéral, reconnu par sa chaîne
 		set tg [type get $value]
-		set vname [string range $tg [expr {[string last . $tg] + 1}] end]
-		if {$vname eq "none"} {
+		set vname [type variant $value]
+		if {$vname eq "none" || ($vname ne "some" && $value eq "none")} {
 		    enc $b $c $ctx "address of $what" out
 		    return
 		}

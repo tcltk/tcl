@@ -2,7 +2,7 @@
 #   union ; type meta. Une exigence vérifie l'état d'une valeur, et la
 #   garde telle quelle (type et notes) : elle ne convertit rien.
 proc tn {v} {list [type get $v] [note get $v]}
-proc m {v} {set r [type meta $v]; list [type variant $r] [note get $r]}
+proc m {v} {set r [type meta $v]; list $r [note get $r]}
 proc t {nom script} {
     if {[catch {uplevel 1 $script} r]} {set r "ERREUR $r"}
     puts [format "%-30s %s" $nom $r]
@@ -17,7 +17,7 @@ puts "== type meta"
 foreach v {i ty no tno s} {t "type meta \$$v" [list m [set $v]]}
 t "représentation : list"        {m [list a b]}
 t "représentation : dict"        {m [dict create a 1]}
-t "le résultat est une somme"    {type variant [type meta $ty]}
+t "le résultat est une somme"    {type meta $ty}
 
 puts "== exigences d'un argument"
 proc fb  {{bare}x}       {tn $x}
@@ -60,6 +60,6 @@ t "noms réservés"                {type def typed int}
 
 puts "== forme canonique d'une valeur nue"
 foreach v [list 5 "a b" {}] {
-    t "canonic [list $v]" [list apply {v {set c [type canonic $v]; list $c [type variant [type meta [type parse $c]]] [expr {[type parse $c] eq $v}]}} $v]
+    t "canonic [list $v]" [list apply {v {set c [type canonic $v]; list $c [type meta [type parse $c]] [expr {[type parse $c] eq $v}]}} $v]
 }
 t "type parse {typed}5"          {type parse {{typed}5}}

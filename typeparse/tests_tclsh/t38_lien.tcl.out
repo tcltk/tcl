@@ -11,9 +11,9 @@ taille en place: 5
 1
 {5 6}
 01020506
-7 {some {1 2}} *(//,int(u,32,le),null=0).opt(rec).some
+7 {1 2} *(//,int(u,32,le),null=0).opt(rec).some
 07050000000102
-7 none *(//,int(u,32,le),null=0).opt(rec).none
+7 none *(//,int(u,32,le),null=0).opt(rec)
 0700000000
 0: none
 1 {9 9}
@@ -29,7 +29,7 @@ taille en place: 5
 1: *(...): the opaque option is not implemented yet
 1: *(memory://,u64le): memory:// needs the name of a registered space, as in memory://proc1/
 1: *(...): unknown option "blabla" (null, null=VALUE)
-1 {some {{1 11} {2 12}}} 2
+1 {{1 11} {2 12}} 2
 010302010b020c
-1 none 0 *(//,int(u,8),null=0).opt(list($n)<sec>).none
+1 none 0 *(//,int(u,8),null=0).opt(list($n)<sec>)
 010000

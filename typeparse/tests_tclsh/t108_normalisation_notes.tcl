@@ -15,7 +15,7 @@ t "argument typé"           {proc f {{int}x} {return $x}; f 0x10}
 t "list.double"             {set {list.double}L {*}{1 2e1}; set L}
 t "dict.int"                {set {dict.int}D a 0x10; set D}
 t "produit"                 {type def pt108 {{string}nom; {int}age}; set {pt108}p Jean 0x0C; set p}
-t "somme"                   {type def S108 {{int}i, {double}d}; set {S108}s {d 1}; set s}
+t "somme"                   {type def S108 {{int}i, {double}d}; set {S108}s {d:}1; list $s [type get $s]}
 t "nominal"                 {type def v108 double; set {v108}v 2e1; set v}
 t "lappend sous contrat"    {set {list.double}M 1; lappend M 2e1; set M}
 t "double : division réelle" {set {double}x 5; expr {$x / 2}}

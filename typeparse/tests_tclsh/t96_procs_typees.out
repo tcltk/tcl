@@ -15,7 +15,7 @@ contrat dans le corps: ERREUR expected integer but got "x"
 défaut calculé: 42
 défaut calculé, champ avant: 4 8
 variante d'un argument: S.s
-argument somme strict, nu: ERREUR argument "v": value "abc" names no variant of the sum S: a value of a sum is the name of its variant, then its value, as {s abc}, or {s:}abc
+argument somme strict, nu: S.s
 appel compilé: {4.0 4.0}
 --- le reste : {list.T}args
 args: 10
@@ -41,9 +41,9 @@ récursion: 3628800 int
 eval dans le corps: ERREUR return value {int}: expected integer but got "x"
 coroutine: 1 2
 --- étiquettes : la variante d'une somme rendue
-{point:}: {point {1.0 2.0}} R.point
-{n:}: {n 4} R.n
-somme stricte, valeur nue: ERREUR return value {R}: value "7" names no variant of the sum R: a value of a sum is the name of its variant, then its value, as {n 7}, or {n:}7
+{point:}: {1.0 2.0} R.point
+{n:}: 4 R.n
+somme stricte, valeur nue: 7
 variante inconnue: ERREUR label {zz:} on a return value: R has no variant "zz"
 étiquette, pas une somme: ERREUR label {zz:} on a return value: the return type int is not a sum
 {S.s}nom : toujours s: S.s

@@ -6,7 +6,7 @@ proc t {nom script} {
 }
 
 puts "== définition"
-t "num accepté"                 {type def num {{int}i | {double}d}; type get [type cast num 1]}
+t "num intégré"                 {type get [type cast num 1]}
 t "disjoint? num"               {type is {disjoint?}num}
 t "int | string refusé"         {type def ns109 {{int}i | {string}s}}
 t "double | string refusé"      {type def ds109 {{double}d | {string}s}}

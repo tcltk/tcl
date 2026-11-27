@@ -11,7 +11,7 @@ list.any   : <{1.0 2.0} 5.0> list<any> : point double
 list.double: <3.0 4.0> list<double> : {} {}
 list(2).int: refus : expected integer but got "3.0"
 dict.any   : point
-somme      : <p {3.0 4.0}> list : {} {}
+somme      : <3.0 4.0> list : {} {}
 poly       : <{0.0 0.0} {3.0 4.0}> list<point> : point point
 poly nu    : <{0.0 0.0} {3.0 4.0}> list : {} {}
 chaîne     : 1

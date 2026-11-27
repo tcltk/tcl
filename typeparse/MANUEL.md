@@ -277,17 +277,73 @@ pas la même chose.
 
 Conséquences :
 * Il n'y a **pas d'`union` du C dans ce modèle**, volontairement : on garde les garde-fous.
-  Une somme ne peut pas être lue « de travers ». Depuis la v16w, sa valeur écrit même sa
-  variante (`x {…}`), comme le champ « tag » à côté d'une union C dans une `struct`. L'**union**
-  `{A}x | {B}y` de la v16w n'est pas non plus une union C : elle accepte une valeur de l'une des
-  formes, ses alternatives doivent être disjointes, et la valeur montre elle-même laquelle elle
-  est.
+  Une somme ne peut pas être lue « de travers ». Sa variante est une **métadonnée**, comme son
+  type (v17z) : la valeur est la charge seule, `type get` donne `S.x`, et rien n'est deviné
+  (voir ci-dessous). L'**union** `{A}x | {B}y` n'est pas non plus une union C : elle accepte une
+  valeur de l'une des formes, ses alternatives doivent être disjointes, et la valeur montre
+  elle-même laquelle elle est.
 * Quand le format ne dit pas quelle variante est valide (la `Tcl_ObjInternalRep` de Tcl, dont
   le discriminant est l'adresse `typePtr`, extérieure à l'union), on choisit la variante
   **à l'appel** : `Tcl_ObjAs(twoPtrValue)` (voir `exemples/tcl_obj.tcl`). C'est l'appelant qui
   sait, comme en C, mais le type reste vérifié.
 * Une somme dont plusieurs variantes ont la **même forme** n'est pas ambiguë dès que la variante
   est choisie par son nom (`S(y)`) : il n'y a plus rien à deviner.
+
+### La variante, une métadonnée (v17z)
+
+    type def S {{int}i, {string}s}
+    set {S}v {s:}5            ;# la valeur est 5, type get $v donne S.s
+    expr {$v * 2}             ;# 10 : une somme se lit comme sa variante
+    set {S}w abc              ;# une seule variante l'accepte : S.s
+    set {S}w 5                ;# erreur : fits variants i and s of S: write {i:}5
+
+* **La valeur est la charge.** La variante suit la valeur comme son type (copies, arguments,
+  retours, éléments de liste, champs) ; `$v(i)` lit la charge en vérifiant la variante.
+* **Rien n'est deviné.** Une valeur nue n'est déduite que si une seule variante l'accepte ; un
+  littéral (`"auto"`) se reconnaît toujours. Sinon, une erreur montre l'étiquette (`{i:}5`) ou
+  le chemin (`set v(i) 5`). Rien n'est collant non plus : `set v 8` sur un `S.s` redéduit.
+  (La règle « la plus stricte gagne » reste celle des unions, donc de `num`.)
+* **Égalité en valeur, identité par les types.** `eq`, `==`, les clés de dict comparent la
+  valeur : `{i:}5` et `{s:}5` sont égaux. `type eq $a $b` compare les types seuls, variante
+  comprise (ni la valeur ni les notes) :
+
+      if {![type eq $a $b]} {set b [type cast [type get $a] $b]}   ;# fahrenheit -> celsius
+      expr {$a + $b}
+
+* **Par la chaîne.** Hors de l'interpréteur (fichier, socket, C), la variante se perd comme le
+  type ; relue, une valeur ambiguë est une erreur. `type canonic` écrit la variante quand la
+  chaîne ne la dit pas (`{S.s}5`, et `{s:}5` pour un élément d'une structure :
+  `{list.S}{{{s:}5} 6 x}`), `type parse` la relit.
+* **Variantes et littéraux.** Une variante nommée porte une charge et s'atteint par un chemin ;
+  un littéral est sa propre valeur (`type get` d'un littéral donne le type seul, `M`).
+
+| commande | rend |
+|---|---|
+| `type variant $v` | la variante nommée de la valeur ; vide pour un littéral |
+| `type variant $v NAME` | la même charge sous la variante NAME (réétiqueter ; convertir, c'est `type cast S.NAME $v`) |
+| `type variant -of T ?NAME?` | les variantes nommées de T, ou le type de la charge de NAME |
+| `type literal -of T` | les littéraux de T (les valeurs permises d'une énumération) |
+| `type is {sum?}T`, `{enum?}T` | une somme ; une énumération (que des littéraux). Pour une valeur : `type is {sum?}[type get $v]` |
+
+* **Limite** : une somme placée directement dans la charge d'une autre (`opt(S)`) ne garde que
+  la variante extérieure ; l'intérieure est redéduite à la lecture.
+
+### `type include`, `num`, `inexact` (v17z)
+
+`type include U T` : toute valeur de T entre dans U sans cast, sans vérification qui puisse
+échouer, et reste égale à elle-même (au sens de `==`). La base inclut ses raffinements, ses
+nominaux et ses prédicats (`int` ⊇ `int(u,8)`, `double` ⊇ `mm`, `int` ⊇ `pair`), jamais
+l'inverse ; deux nominaux sans lien ne s'incluent pas ; une somme inclut ses variantes
+(`type include temp temp.celsius`) ; les listes et dicts sont covariants, les liens `var.T`
+invariants ; `double` n'inclut que les entiers exacts (`int(s,32)` oui, `int` non).
+
+`num` est intégré : une union de ses représentations, `num.int` et `num.double`, lue comme
+`expr` lit un nombre (`{num}5` → `num.int`, `{num}0x10` → 16, `{num}5.0` → `num.double`).
+
+Le passage d'un entier typé en `double` est **exact, ou une erreur** :
+`set {double}x {int}9007199254740993` est refusé (2^53 + 1 n'a pas de double). L'arrondi se
+demande : `type cast inexact $n`. `inexact` est un nominal de `double`, il y entre. Un texte
+nu reste lu comme Tcl lit un nombre.
 
 ### Exister, être nul, ne pas exister
 
