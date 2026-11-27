@@ -59,3 +59,4 @@ lappend-liste-typee.patch
 boucles-vectorisables.patch
 boucles-vectorisables-compilees.patch
 membres-barre.patch
+is-affectation.patch

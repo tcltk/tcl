@@ -1,0 +1,12 @@
+global : ok                          lu
+global : err                         non result/err
+r est posée                          result/err
+procédure : ok                       lu
+procédure : err                      erreur (result/err)
+valeur nue                           1 0 abc
+procédure, valeur nue                1 0
+variable typée                       1 7
+déclaration                          1
+déclaration en procédure             non result/err
+is ordinaire inchangé                1
+sans parenthèses : k = (5 is int)    0

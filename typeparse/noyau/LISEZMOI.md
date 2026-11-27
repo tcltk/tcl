@@ -130,6 +130,15 @@ la commande `::tcl::mathop::is` (dans `tclTypes.c`, fournie avec les sources).
   `INVOKE_STK 3`, donc sans nouvelle instruction.
 * Limites : pas d'élément de tableau à gauche (`a(1) is int` serait un appel de
   fonction) ; `is` seul, pas de `isnt` (écrire `!(x is T)`).
+* v18c (`is-affectation.patch`, à appliquer après `membres-barre.patch`) : une
+  affectation entre parenthèses désigne sa variable, comme une lvalue de C++ :
+  `(r = [ouvrir $fn]) is result/ok` affecte puis teste `r` ;
+  `(r is T = v) is U` déclare, affecte puis teste. `AssignUnderIs` reconnaît une
+  affectation à gauche de `is` (à travers `OPEN_PAREN` et `NULL_FUNC`) ; la
+  compilation garde le nom : `over 1`, `reverse 2`, `storeStk`, `pop` (dans une
+  procédure, le nom n'est pas pris comme locale compilée directe : `storeStk`
+  la trouve par son nom) ; pour la déclaration, `over 2`, `reverse 4`,
+  `reverse 3` avant `declare`, puis `pop`.
 
 ## Affectation typée dans expr
 

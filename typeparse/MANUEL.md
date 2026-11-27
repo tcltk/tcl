@@ -340,6 +340,7 @@ s'écrivent tous avec la barre `/`, qu'on parle d'une valeur ou d'un type :
 | `S/v` | la variante `v` de la somme `S` : `{temp/celsius}4`, `type cast temp/fahrenheit $t`, `type get` |
 | `{P/f}valeur` | étiquette qualifiée, vérifiée contre `P` (`set {pt}a {pt/nom}Jean`) |
 | `x is S/v` | dans `expr` : la variable `x` est une valeur de `S`, de variante `v` |
+| `(r = val) is S/v` | (v18c) l'affectation désigne sa variable : `r` reçoit la valeur, puis est testée |
 
     type def temp {{double}celsius, {double}fahrenheit}
     set {temp}t {/celsius}50        ;# type get $t -> temp/celsius
@@ -358,6 +359,22 @@ s'écrivent tous avec la barre `/`, qu'on parle d'une valeur ou d'un type :
   `label {nom:} is now written {/nom}`, `S.v` donne
   `a variant of a type is now written with "/": S/v`.
 * Les **chemins** ne changent pas : `$p(x)`, `set {rect}R(A.x, A.y) …` (le point y imbrique).
+
+**Tester un résultat (v18c).** À gauche de `is` il y a toujours une variable (comme à gauche
+de `=` dans la TIP 759) ; une affectation entre parenthèses la désigne, comme une lvalue de
+C++ :
+
+    type def result {{string}ok, {string}err}
+    proc {result}ouvrir {fn} {
+        if {[catch {open $fn} fh]} { return {/err}$fh }
+        return {/ok}$fh
+    }
+    if {(r = [ouvrir $fn]) is result/ok} { read $r } else { puts "erreur : $r" }
+    if {(r is result = [ouvrir $fn]) is result/ok} { ... }   ;# déclaration, même chose
+
+`[type get $r] is …` ne marche pas : la chaîne `result/ok` serait lue comme un nom de
+variable (`is` rend alors 0). Une affectation par tuple (`((a,b) = $L) is T`) n'est pas
+encore prise en charge.
 
 ### La variante, un type (v18b)
 

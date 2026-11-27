@@ -36,6 +36,7 @@ typedef struct {
     unsigned char constant;	/* Flag marking constant subexpressions. */
 } OpNode;
 
+
 /*
  * The storage for the tree is dynamically allocated array of OpNodes. The
  * array is grown as parsing needs dictate according to a scheme similar to
@@ -521,6 +522,30 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
 static const char *	FindTupleTarget(const char *start, Tcl_Size numBytes);
+/*
+ * v18c : is the ASSIGN node IDX the left operand of an "is" (through
+ * parentheses) : "(r = value) is T" ?
+ */
+static int
+AssignUnderIs(const OpNode *nodes, int idx)
+{
+    int cur = idx, p = nodes[idx].p.parent;
+
+    while (p >= 0) {
+	unsigned char lx = nodes[p].lexeme;
+
+	if (lx == IS_TYPE) {
+	    return nodes[p].left == cur;
+	}
+	if (lx != OPEN_PAREN && lx != NULL_FUNC) {
+	    return 0;		/* (des parenthèses : OPEN_PAREN, NULL_FUNC) */
+	}
+	cur = p;
+	p = nodes[p].p.parent;
+    }
+    return 0;
+}
+
 static int		IsTypeAhead(const char *start, Tcl_Size numBytes);
 static Tcl_Size		ElementTargetLen(const char *start, Tcl_Size numBytes);
 static void		CollectTuplePaths(OpNode *nodes, int index, int *path,
@@ -1017,21 +1042,29 @@ ParseExpr(
 	    const char *q = start, *qe = start + numBytes;
 	    Tcl_Obj *typeName;
 
-	    while (q < qe && (isalnum(UCHAR(*q)) || *q == '_' || *q == ':'
-		    || *q == '.')) {
-		q++;
-	    }
-	    if (q < qe && *q == '(') {
-		int d = 0;
-
-		while (q < qe) {
-		    if (*q == '(') {
-			d++;
-		    } else if (*q == ')' && --d == 0) {
-			q++;
-			break;
-		    }
+	    /* v18a : noms, « . », « /membre » et groupes entre parenthèses
+	     * alternés : list(2).int, temp/celsius, opt(int)/some */
+	    while (q < qe) {
+		if (isalnum(UCHAR(*q)) || *q == '_' || *q == ':' || *q == '.'
+			|| (*q & 0x80)) {
 		    q++;
+		} else if (*q == '/' && q + 1 < qe
+			&& (isalnum(UCHAR(q[1])) || q[1] == '_')) {
+		    q++;
+		} else if (*q == '(') {
+		    int d = 0;
+
+		    while (q < qe) {
+			if (*q == '(') {
+			    d++;
+			} else if (*q == ')' && --d == 0) {
+			    q++;
+			    break;
+			}
+			q++;
+		    }
+		} else {
+		    break;
 		}
 	    }
 	    typeName = Tcl_NewStringObj(start, q - start);
@@ -3144,8 +3177,16 @@ CompileExprTree(
 		     * A compiled local: declareLocal; otherwise invoke
 		     * ::tcl::unsupported::declare name type value.
 		     */
-		    int d;
+		    int d, under = AssignUnderIs(nodes, nodePtr - nodes);
 
+		    if (under) {
+			/* v18c : "(r is T = value) is U" : [name type value]
+			 * devient [name name type value] ; le nom reste pour
+			 * "is" */
+			TclEmitInstInt4(INST_OVER, 2, envPtr);
+			TclEmitInstInt4(INST_REVERSE, 4, envPtr);
+			TclEmitInstInt4(INST_REVERSE, 3, envPtr);
+		    }
 		    for (d = 0; d < nDecl; d++) {
 			if (declNode[d] == nodePtr->left) {
 			    break;
@@ -3153,6 +3194,9 @@ CompileExprTree(
 		    }
 		    if (d < nDecl) {
 			TclEmitInstInt4(INST_DECLARE_LOCAL, declLocal[d], envPtr);
+			if (under) {
+			    TclEmitOpcode(INST_POP, envPtr);
+			}
 			goto declared;
 		    }
 		    TclEmitPush(TclRegisterLiteral(envPtr,
@@ -3161,6 +3205,9 @@ CompileExprTree(
 		    TclEmitInstInt4(INST_REVERSE, 4, envPtr);
 		    TclEmitInstInt4(INST_REVERSE, 3, envPtr);
 		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, 4);
+		    if (under) {
+			TclEmitOpcode(INST_POP, envPtr);
+		    }
 		declared:
 		    ;
 		} else if (nodePtr->left >= 0
@@ -3211,7 +3258,17 @@ CompileExprTree(
 			    break;
 			}
 		    }
-		    if (d < nAssign && assignLocal[d] <= 255) {
+		    if (AssignUnderIs(nodes, nodePtr - nodes)) {
+			/*
+			 * v18c : "(r = value) is T" : the assignment designates
+			 * its variable (as in C++, an lvalue) ; the stack holds
+			 * [name value], it keeps [name] for "is".
+			 */
+			TclEmitInstInt4(INST_OVER, 1, envPtr);
+			TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+			TclEmitOpcode(INST_STORE_STK, envPtr);
+			TclEmitOpcode(INST_POP, envPtr);
+		    } else if (d < nAssign && assignLocal[d] <= 255) {
 			TclEmitInstInt1(INST_STORE_SCALAR1, assignLocal[d],
 				envPtr);
 		    } else if (d < nAssign) {
@@ -3358,7 +3415,8 @@ CompileExprTree(
 			declNode[nDecl] = nodePtr - nodes;
 			declLocal[nDecl++] = lv;
 		    } else if (lv >= 0 && nodePtr->lexeme == ASSIGN
-			    && nAssign < DECL_MAX) {
+			    && nAssign < DECL_MAX
+			    && !AssignUnderIs(nodes, nodePtr - nodes)) {
 			assignNode[nAssign] = nodePtr - nodes;
 			assignLocal[nAssign++] = lv;
 			(*litObjvPtr)++;
