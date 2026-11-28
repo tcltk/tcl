@@ -10187,6 +10187,19 @@ DefText(const TclType *tp, int top, Tcl_DString *ds)
 	Tcl_DStringAppend(ds, tp->name, -1);
 	return;
     }
+    if (tp->variantOf != NULL) {
+	/* v18e : type def chaud temp/celsius : sa définition, temp/celsius
+	 * (et la chaîne d'une charge restreinte) */
+	const TclType *pl = tp->fields[tp->variantIdx].type;
+
+	Tcl_DStringAppend(ds, tp->variantOf->name, -1);
+	Tcl_DStringAppend(ds, "/", 1);
+	TclTypeAppendMemberName(ds, MemberName(tp, tp->variantIdx));
+	if (pl != NULL && pl->variantOf != NULL) {
+	    Tcl_DStringAppend(ds, pl->name + strlen(pl->variantOf->name), -1);
+	}
+	return;
+    }
     if (top != 1 && (tp->nominal || tp->reserved)) {
 	Tcl_DStringAppend(ds, tp->name, -1);
 	return;
@@ -17538,7 +17551,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     }
     if (strcmp(sub, "variant") == 0) {
 	/* v16w : type variant VALEUR : le nom de la variante d'une valeur
-	 * d'une somme ou d'une union ; v17z : vide pour un littéral ; avec
+	 * d'une somme ou d'une union ; v18e : un littéral, son nom ; avec
 	 * NAME, la même charge sous la variante NAME (une nouvelle valeur) */
 	TclType *tp = NULL;
 	Tcl_Obj *content = NULL;
@@ -17569,6 +17582,23 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_Size k = TclTypeFieldIndex(tp, Tcl_GetString(objv[3]));
 	    Tcl_Obj *copy, *nv;
 
+	    if (k < 0 && (k = SumLiteralIndex(tp, objv[3])) >= 0) {
+		/* v18e : un littéral, variante à valeur unique : la valeur
+		 * doit être ce littéral */
+		if (strcmp(Tcl_GetString(content),
+			Tcl_GetString(tp->fields[k].literal)) != 0) {
+		    ERR(interp, "VARIANT", "type variant: the variant %s of %s "
+			    "is the value \"%s\", not \"%s\"",
+			    Tcl_GetString(objv[3]), tp->name,
+			    Tcl_GetString(tp->fields[k].literal),
+			    Tcl_GetString(content));
+		    return TCL_ERROR;
+		}
+		nv = TclNewAnnotated(interp, TclTypeSumRoot(tp), (int) k,
+			tp->fields[k].literal);
+		Tcl_SetObjResult(interp, TclAnnotCarryNotes(objv[2], nv));
+		return TCL_OK;
+	    }
 	    if (k < 0 || tp->fields[k].type == NULL) {
 		ERR(interp, "VARIANT", "type variant: %s has no variant \"%s\""
 			"%s", tp->name, Tcl_GetString(objv[3]),
@@ -17601,9 +17631,11 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 		    tp->name);
 	    return TCL_ERROR;
 	}
+	/* v18e : un littéral est une variante à valeur unique : son nom est
+	 * sa valeur (M/auto) */
 	Tcl_SetObjResult(interp, tp->fields[v].name != NULL
-		? tp->fields[v].name : tp->fields[v].type == NULL
-		? Tcl_NewObj() : Tcl_NewWideIntObj(v));
+		? tp->fields[v].name : tp->fields[v].literal != NULL
+		? tp->fields[v].literal : Tcl_NewWideIntObj(v));
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
@@ -17695,6 +17727,53 @@ IsCmdOp(Tcl_Interp *interp, Tcl_Obj *nameObj)
     return TCL_OK;
 }
 
+/*
+ * v18d : ((a,b) = valeur) is T : le test porte sur la VALEUR affectée (une
+ * affectation par tuple désigne plusieurs variables). Une valeur typée :
+ * son type entre dans T (S/v : sa variante, sa charge) ; une valeur nue :
+ * elle est valide pour T.
+ */
+static int
+IsValueObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    TclType *want, *vt = NULL;
+    Tcl_Obj *content = NULL;
+    int vv = -1, result = 0, dv = -1;
+    Tcl_Size tl;
+    const char *tt;
+    (void) clientData;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value type");
+	return TCL_ERROR;
+    }
+    tt = Tcl_GetStringFromObj(objv[2], &tl);
+    want = TclTypeParse(interp, tt, tl);
+    if (want == NULL) {
+	return TCL_ERROR;
+    }
+    if (TclAnnotInfo(objv[1], &content, &vt, &vv, NULL) == 1 && vt != NULL) {
+	if (want->variantOf != NULL) {
+	    TclType *root = want->variantOf;
+	    int vi = (int) want->variantIdx;
+
+	    result = (TclTypeSumRoot(vt) == root && vv == vi && (vt == want
+		    || want->fields[vi].type == root->fields[vi].type
+		    || TclTypeValidate(NULL, want, content, vi, NULL)
+		    == TCL_OK));
+	} else {
+	    result = (vt == want || TypeIncludes(want, vt, 0));
+	}
+    } else {
+	content = TCL_ANNOT_CONTENT(objv[1]);
+	result = (TclTypeValidate(NULL, want, content, -1, &dv) == TCL_OK);
+    }
+    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
+}
+
 static int
 IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_Obj *const objv[])
@@ -17717,6 +17796,35 @@ IsOpObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
     want = TclTypeParse(interp, typeText, typeLen);
     if (want == NULL) {
 	return TCL_ERROR;
+    }
+    {
+	/* v18e : à gauche, un nom de variable. Une variable qui n'existe
+	 * pas : faux ; mais un texte qui est un type ([type get $r] is T,
+	 * result/ok) est une confusion : une erreur qui le dit. */
+	Tcl_Obj *cn = NULL, *val = NULL;
+	int exists = 0;
+	Tcl_Size nl;
+	const char *nt = Tcl_GetStringFromObj(objv[1], &nl);
+
+	if (TclVarRefCanon(interp, objv[1], &cn) == TCL_OK) {
+	    Tcl_IncrRefCount(cn);
+	    exists = TclVarRefType(interp, Tcl_GetString(cn)) != NULL
+		    || TclVarRefGet(interp, Tcl_GetString(cn), &val) == TCL_OK;
+	    Tcl_DecrRefCount(cn);
+	}
+	Tcl_ResetResult(interp);
+	if (!exists && nl > 0) {
+	    Tcl_InterpState st = Tcl_SaveInterpState(interp, TCL_OK);
+	    TclType *lt = TclTypeParse(interp, nt, nl);
+
+	    Tcl_RestoreInterpState(interp, st);
+	    if (lt != NULL) {
+		ERR(interp, "ISNAME", "\"%s\" is a type, not a variable: the "
+			"left of \"is\" names a variable (x is T), or assigns "
+			"one ((r = value) is T)", nt);
+		return TCL_ERROR;
+	    }
+	}
     }
     if (want->variantOf != NULL) {
 	/* v18a, v18b : x is S/v, la variable vaut une valeur de S (ou de
@@ -18415,6 +18523,8 @@ TclTypesInit(Tcl_Interp *interp)
     }
     Tcl_CreateObjCommand2(interp, "type", TypeObjCmd, d, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::mathop::is", IsOpObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand2(interp, "::tcl::unsupported::isvalue",
+	    IsValueObjCmd, NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::content", ContentObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand2(interp, "::tcl::unsupported::declare", DeclareObjCmd,
@@ -18664,14 +18774,14 @@ CanonContent(const TclType *tp, int variant, Tcl_Obj *v, int depth)
 {
     Tcl_Size n, i;
     Tcl_Obj **ev, *res, *e;
-    int ev0Variant = -1;
+    int ev0Variant = -1, ownVariant = 0;
 
     if (TclIsAnnotated(v)) {
 	TclType *et = NULL;
 
-	if (TclAnnotInfo(v, NULL, &et, &ev0Variant, NULL) != 1
-		|| et != tp) {
-	    ev0Variant = -1;
+	if (TclAnnotInfo(v, NULL, &et, &ev0Variant, NULL) != 1 || et == NULL
+		|| tp == NULL || TclTypeSumRoot(et) != TclTypeSumRoot(tp)) {
+	    ev0Variant = -1;		/* (v18e : S/v compte comme S) */
 	}
 	v = TCL_ANNOT_CONTENT(v);
     }
@@ -18729,11 +18839,32 @@ CanonContent(const TclType *tp, int variant, Tcl_Obj *v, int depth)
 	    pair[1] = e;
 	    return Tcl_NewListObj(2, pair);
 	}
+	ownVariant = (ev0Variant >= 0);
 	if (variant < 0 && ev0Variant >= 0) {
 	    variant = ev0Variant;	/* l'élément garde sa variante */
 	}
 	if (variant < 0) {
 	    TclTypeValidate(NULL, tp, v, -1, &variant);
+	}
+	if (variant >= 0 && variant < (int) tp->nfields
+		&& tp->fields[variant].type == NULL && ownVariant && depth > 1
+		&& tp->fields[variant].literal != NULL) {
+	    /* v18e : un littéral dans une charge, sa variante gardée :
+	     * {/none}none (la chaîne d'étiquettes du niveau au-dessus le
+	     * reprend : {/m/none}none) ; un littéral qui n'est pas un nom
+	     * reste sa valeur */
+	    const char *lt = Tcl_GetString(tp->fields[variant].literal), *q;
+
+	    for (q = lt; *q != '\0' && TclTypeIsNameChar(*q); q++) {
+	    }
+	    if (*q == '\0' && q > lt) {
+		Tcl_Obj *one = Tcl_NewListObj(1, &v), *lab;
+
+		Tcl_IncrRefCount(one);
+		lab = Tcl_ObjPrintf("{/%s}%s", lt, Tcl_GetString(one));
+		Tcl_DecrRefCount(one);
+		return lab;
+	    }
 	}
 	if (variant < 0 || variant >= (int) tp->nfields
 		|| tp->fields[variant].type == NULL) {
@@ -18745,12 +18876,32 @@ CanonContent(const TclType *tp, int variant, Tcl_Obj *v, int depth)
 	     * pas la variante : {s:}5 */
 	    int dv = -1;
 
+	    TclType *pt = NULL;
+	    int nested = (TclAnnotInfo(v, NULL, &pt, NULL, NULL) == 1
+		    && pt != NULL && pt->kind == TCLT_SUM)
+		    || (ownVariant && depth > 1);	/* dans une charge */
+
 	    Tcl_IncrRefCount(e);
-	    if (TclTypeValidate(NULL, tp, e, -1, &dv) != TCL_OK
+	    /* v18e : une charge qui est elle-même une valeur d'une somme
+	     * (sa variante gardée) s'écrit toujours avec sa chaîne
+	     * d'étiquettes ; une étiquette dans e aussi */
+	    if (nested || (Tcl_GetString(e)[0] == '{'
+		    && Tcl_GetString(e)[1] == '/')
+		    || TclTypeValidate(NULL, tp, e, -1, &dv) != TCL_OK
 		    || dv != variant) {
 		Tcl_Obj *one = Tcl_NewListObj(1, &e), *lab;
+		const char *et = Tcl_GetString(e), *cl;
 
 		Tcl_IncrRefCount(one);
+		if (et[0] == '{' && et[1] == '/' && (cl = strchr(et, '}'))
+			!= NULL && memchr(et + 1, '{', cl - et - 1) == NULL) {
+		    /* v18e : la charge, elle-même étiquetée ({/celsius}1.0) :
+		     * une chaîne d'étiquettes, {/some/celsius}1.0 */
+		    lab = Tcl_ObjPrintf("{/%s%.*s",
+			    Tcl_GetString(tp->fields[variant].name),
+			    (int) (cl - et - 1), et + 1);
+		    Tcl_AppendToObj(lab, cl, -1);
+		} else
 		lab = Tcl_ObjPrintf("{/%s}%s",
 			Tcl_GetString(tp->fields[variant].name),
 			Tcl_GetString(one));
@@ -18990,12 +19141,53 @@ ParseLabels(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v, int depth,
 	    return NULL;
 	}
 	{
-	    /* {/v}charge (v18a) */
-	    Tcl_Obj *nm = Tcl_NewStringObj(t + 2, c - t - 2);
+	    /* {/v}charge (v18a) ; {/v/w}charge (v18e) : la suite de la chaîne
+	     * étiquette la charge, relue dans le type de la variante */
+	    const char *sl = (const char *) memchr(t + 2, '/', c - t - 2);
+	    Tcl_Obj *nm = Tcl_NewStringObj(t + 2, (sl != NULL ? sl : c) - t
+		    - 2);
 
 	    Tcl_IncrRefCount(nm);
 	    idx = TclTypeFieldIndex(tp, Tcl_GetString(nm));
+	    if (idx < 0) {
+		idx = SumLiteralIndex(tp, nm);
+	    }
 	    Tcl_DecrRefCount(nm);
+	    if (sl != NULL && idx >= 0 && tp->fields[idx].type != NULL) {
+		Tcl_Obj *one, *rest;
+
+		pl = Tcl_NewStringObj(c + 1, TCL_AUTO_LENGTH);
+		Tcl_IncrRefCount(pl);
+		if (Tcl_ListObjGetElements(NULL, pl, &np, &pv) != TCL_OK
+			|| np != 1) {
+		    Tcl_DecrRefCount(pl);
+		    return NULL;
+		}
+		one = Tcl_NewListObj(1, pv);
+		Tcl_IncrRefCount(one);
+		rest = Tcl_ObjPrintf("{%.*s}%s", (int) (c - sl), sl,
+			Tcl_GetString(one));
+		Tcl_DecrRefCount(one);
+		Tcl_DecrRefCount(pl);
+		Tcl_IncrRefCount(rest);
+		e = ParseLabels(interp, tp->fields[idx].type, rest, depth + 1,
+			errPtr);
+		Tcl_DecrRefCount(rest);
+		if (e == NULL || *errPtr) {
+		    if (e != NULL) {
+			Tcl_BounceRefCount(e);
+		    }
+		    if (!*errPtr) {
+			ERR(interp, "PARSE", "type parse: bad label chain in "
+				"\"%s\"", t);
+			*errPtr = 1;
+		    }
+		    return NULL;
+		}
+		inner = e;
+		Tcl_IncrRefCount(inner);
+		goto haveInner;
+	    }
 	}
 	if (idx < 0) {
 	    return NULL;
@@ -19019,6 +19211,7 @@ ParseLabels(Tcl_Interp *interp, TclType *tp, Tcl_Obj *v, int depth,
 		Tcl_IncrRefCount(inner);
 	    }
 	}
+      haveInner:
 	if (*errPtr || TclTypeComplete(interp, tp, inner, (int) idx, NULL)
 		!= TCL_OK) {
 	    *errPtr = 1;

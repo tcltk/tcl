@@ -44,7 +44,7 @@ expr {$v(i) * 2}: 10
 expr {$v * 2}: 10
 lassign: 5 {}
 type variant: s
-type variant littéral: 
+type variant littéral: vide
 type variant, pas une somme: ERREUR type variant: the value is a pt, not a sum
 variante inactive: 5
 f(rect.w): 2.0

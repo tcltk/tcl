@@ -376,7 +376,10 @@ au sens de `string(($ eq "litteral"))`, idée de l'utilisateur) :
 * **Littéraux.** `type get` donne `M/auto` ; `type variant $v` reste vide pour un littéral,
   `type literal -of` et `type variant -of` restent distincts.
 
-Ce qui reste : `type variant $v` d'un littéral (vide, ou le littéral ?) ; `type def chaud
-temp/celsius` (un nominal d'un type de variante) n'a pas de nom propre dans `type get` ;
-`type canonic` d'un élément imbriqué écrit `{/some}{{/celsius}1.0}` plutôt que
-`{/some/celsius}1.0` (relu correctement).
+Finitions (v18e) : `type variant $v` d'un littéral rend son nom (et `type variant $v auto`
+le choisit si la valeur est `auto`) ; `type def chaud temp/celsius` : `type get` dit `chaud`,
+`type def chaud` dit `temp/celsius` ; `type canonic` d'un élément imbriqué écrit une chaîne
+d'étiquettes (`{/some/celsius}1.0`, `{/m/none}none`), `type parse` la relit (aller-retour
+exact, `type get` compris) ; à gauche de `is`, un texte qui est un type sans être une
+variable est une erreur. Les sommes sont terminées ; restent les chantiers à part (unions `|`,
+notes en arbres, `num` ouvert).

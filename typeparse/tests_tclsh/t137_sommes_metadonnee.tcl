@@ -47,7 +47,7 @@ t "is {sum?}"                      {list [type is {sum?}S] [type is {sum?}E] [ty
 t "is {enum?}"                     {list [type is {enum?}E] [type is {enum?}M] [type is {enum?}S]}
 t "is {sum?} d'une valeur"         {set {S}v {/i}5; type is {sum?}[type get $v]}
 t "variant \$v"                    {set {S}v {/s}5; type variant $v}
-t "variant d'un littéral : vide"   {set {M}m auto; list <[type variant $m]>}
+t "variant d'un littéral     "   {set {M}m auto; list <[type variant $m]>}
 t "réétiqueter"                    {set {A}v {/i}5; set w [type variant $v j]; list $w [type get $w] [type get $v]}
 t "réétiqueter : charge refusée"   {set {S}v {/s}abc; type variant $v i}
 t "réétiqueter vers un littéral"   {set {M}m {/n}5; type variant $m auto}

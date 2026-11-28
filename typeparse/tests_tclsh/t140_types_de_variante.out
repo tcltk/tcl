@@ -39,10 +39,21 @@ chaîne inconnue                        ERREUR: temp has no variant "kelvin"
 {mesure/some/celsius}c                 mesure/some/celsius
 restreint : fahrenheit refusé          ERREUR: value "5.0" is temp/fahrenheit, not temp/celsius
 liste de mesures                       mesure/some/celsius mesure/none mesure/some/fahrenheit
-canonic                                {list.mesure}{{{/some}{{/celsius}1.0}} none {{/some}{{/fahrenheit}5.0}}}
+canonic                                {list.mesure}{{{/some/celsius}1.0} none {{/some/fahrenheit}5.0}}
 parse                                  mesure/some/celsius mesure/none mesure/some/fahrenheit
 canonic d'une mesure                   {mesure/some/fahrenheit}7.0
 retour {/some/celsius}3                mesure/some/celsius
 is mesure/some/fahrenheit              1
 is mesure/some/celsius                 0
 argument mesure                        temp/fahrenheit
+== v18e : finitions
+type variant d'un littéral             auto M2/auto
+réétiqueter vers un littéral           M2/auto
+réétiqueter : pas la valeur            ERREUR: type variant: the variant auto of M2 is the value "auto", not "5"
+type def chaud temp/celsius            chaud temp/celsius
+chaud refuse fahrenheit                ERREUR: value "5.0" is temp/fahrenheit, not chaud
+canonic, trois niveaux                 {list.N}{{{/m/some/fahrenheit}5.0} {{/m/none}none} 4}
+parse, trois niveaux                   N/m/some/fahrenheit N/m/none N/k
+aller-retour                           1
+[type get $r] is T : erreur            ERREUR: "temp/fahrenheit" is a type, not a variable: the left of "is" names a variable (x is T), or assigns one ((r = value) is T)
+variable absente : faux                0

@@ -341,6 +341,7 @@ s'écrivent tous avec la barre `/`, qu'on parle d'une valeur ou d'un type :
 | `{P/f}valeur` | étiquette qualifiée, vérifiée contre `P` (`set {pt}a {pt/nom}Jean`) |
 | `x is S/v` | dans `expr` : la variable `x` est une valeur de `S`, de variante `v` |
 | `(r = val) is S/v` | (v18c) l'affectation désigne sa variable : `r` reçoit la valeur, puis est testée |
+| `((a,b) = $Z) is T` | (v18d) une affectation par tuple : la valeur affectée est testée |
 
     type def temp {{double}celsius, {double}fahrenheit}
     set {temp}t {/celsius}50        ;# type get $t -> temp/celsius
@@ -372,9 +373,16 @@ C++ :
     if {(r = [ouvrir $fn]) is result/ok} { read $r } else { puts "erreur : $r" }
     if {(r is result = [ouvrir $fn]) is result/ok} { ... }   ;# déclaration, même chose
 
+Une affectation par tuple désigne plusieurs variables : devant `is`, c'est la **valeur
+affectée** qui est testée (v18d) ; sans parenthèses, la forme est ambiguë et refusée :
+
+    if {((re,im) = $Z) is Complex} { ... }      ;# Z est-il un Complex ? re, im posés
+    expr {(a,b) = Z is Complex}                 ;# erreur : ambiguous ... write ((a,b) = $Z)
+                                                ;#   is T, or Z is T = (a,b)
+    expr {Z is Complex = (a,b)}                 ;# la déclaration, dans l'autre sens
+
 `[type get $r] is …` ne marche pas : la chaîne `result/ok` serait lue comme un nom de
-variable (`is` rend alors 0). Une affectation par tuple (`((a,b) = $L) is T`) n'est pas
-encore prise en charge.
+variable (`is` rend alors 0).
 
 ### La variante, un type (v18b)
 
@@ -400,13 +408,20 @@ la somme `S` restreinte à sa variante `v`. C'est un sous-type de `S`.
 * **Sommes imbriquées.** La charge garde sa variante : `set {mesure}m {/some}$t` (t un
   celsius) donne `mesure/some/celsius`, `$m(some)` rend le `temp/celsius`. Les étiquettes
   s'enchaînent : `{/some/fahrenheit}7`, `return {/some/celsius}3`. `type canonic` écrit la
-  chaîne (`{mesure/some/fahrenheit}7.0`), `type parse` la relit ; `x is mesure/some/celsius`
-  la vérifie. (C'était la limite connue de la v17z.)
+  chaîne (`{mesure/some/fahrenheit}7.0` ; dans une liste, l'étiquette en chaîne
+  `{list.mesure}{{{/some/celsius}1.0} none}`, v18e), `type parse` la relit ;
+  `x is mesure/some/celsius` la vérifie. (C'était la limite connue de la v17z.)
 * **Littéraux.** Un littéral est une variante à valeur unique, comme le serait
   `{string(($ eq "none"))}none` : `type get` d'un `none` donne `mesure/none`, `x is
   opt(int)/none` marche, une énumération `{"on", "off"}` donne `onoff/on`. Un littéral qui
   n'est pas un nom s'écrit entre guillemets : `binop/"+"`, `pi/"3.14159"`.
-  `type literal -of` et `type variant -of` restent distincts.
+  `type variant $v` rend son nom (`auto`, v18e), et `type variant $v auto` le choisit si la
+  valeur est bien `auto`. `type literal -of` et `type variant -of` restent distincts.
+* **Un nom pour une variante** : `type def chaud temp/celsius` ; `type get` dit `chaud`,
+  `type def chaud` dit `temp/celsius`, une valeur fahrenheit est refusée.
+* **`is` et les types.** À gauche de `is`, une variable. Une variable absente donne 0 ; mais
+  un texte qui est un type (`[type get $r] is result/ok`) est une erreur qui le dit
+  (`"result/ok" is a type, not a variable…`), v18e.
 * Les **types de champ** ne changent pas : `point/x` est le type du champ (`double`), pas un
   sous-type de `point`.
 

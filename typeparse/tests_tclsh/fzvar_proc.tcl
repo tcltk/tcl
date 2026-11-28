@@ -38,6 +38,8 @@ for {set n 0} {$n < 200} {incr n} {
     # dans une liste, dans une procédure
     eval "set {list.$T}L \$v \$v"
     chk "liste" [lmap e $L {type get $e}] [list $want $want]
+    chk "liste canonic" [lmap e [type parse [type canonic $L]] {type get $e}] [list $want $want]
+    chk "type variant" [type variant $v] [lindex [split $want /] 1]
     proc p {x} [list type get \$x]
     #
     proc q "{$T}x" {return $x}

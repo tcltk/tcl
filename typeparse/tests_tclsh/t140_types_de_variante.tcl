@@ -66,3 +66,17 @@ t "retour {/some/celsius}3"              {proc {mesure}r {} {return {/some/celsi
 t "is mesure/some/fahrenheit"            {expr {w is mesure/some/fahrenheit}}
 t "is mesure/some/celsius"               {expr {w is mesure/some/celsius}}
 t "argument mesure"                      {proc h {{mesure}x} {type get $x(some)}; h $w}
+
+puts "== v18e : finitions"
+type def M2 {{int}n, "auto"}
+t "type variant d'un littéral"           {set {M2}a auto; list [type variant $a] [type get $a]}
+t "réétiqueter vers un littéral"         {set {M2}b auto; type get [type variant $b auto]}
+t "réétiqueter : pas la valeur"          {set {M2}b 5; type variant $b auto}
+t "type def chaud temp/celsius"          {type def chaud temp/celsius; set {chaud}h 5; list [type get $h] [type def chaud]}
+t "chaud refuse fahrenheit"              {set h [chaud]}
+type def N {{mesure}m, {int}k}
+t "canonic, trois niveaux"               {set {list.N}Q {/m/some/fahrenheit}5 {/m/none}none {/k}4; type canonic $Q}
+t "parse, trois niveaux"                 {lmap e [type parse [type canonic $Q]] {type get $e}}
+t "aller-retour"                         {expr {[type parse [type canonic $Q]] eq $Q}}
+t "\[type get \$r\] is T : erreur"       {expr {[type get [chaud]] is temp}}
+t "variable absente : faux"              {expr {nexistepas is int}}
