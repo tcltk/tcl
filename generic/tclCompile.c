@@ -993,6 +993,19 @@ InstructionDesc const tclInstructionTable[] = {
 	 * of the opnd0'th list of variables.
 	 * Stack: ... listObjs... iterTracker info =>
 	 *			... listObjs... iterTracker info stepIdx */
+    TCL_INSTRUCTION_ENTRY1("grapheme", 2, 0, OPERAND_GRAPHEME_OP),
+	/* Execute the grapheme operation indicated by op1.
+	 * Note: different operations will have different stack effect
+	 * so set as 0 here, will be adjusted by the compiler proc
+	 * for that operation using TclAdjustStackDepth.
+	 */
+    TCL_INSTRUCTION_ENTRY2("graphemeIter", 6, 0, OPERAND_GRAPHEME_OP, OPERAND_LVT4),
+	/* Execute the grapheme operation indicated by op1.
+	 * Iterator variable is at frame slot op2.
+	 * Note: different operations will have different stack effect
+	 * so set as 0 here, will be adjusted by the compiler proc
+	 * for that operation using TclAdjustStackDepth.
+	 */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

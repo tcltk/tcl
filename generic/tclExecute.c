@@ -7855,6 +7855,25 @@ TEBCresume(
 	NEXT_INST_F(2, 0, 1);
     }
 
+    /*
+     * Start of grapheme-related instructions
+     *
+     */
+    case INST_GRAPHEME: {
+	Tcl_UniChar *uniPtr;
+	Tcl_Size ulen;
+	valuePtr = OBJ_AT_TOS;
+	uniPtr = Tcl_GetUnicodeFromObj(valuePtr, &ulen);
+	switch (TclGetUInt1AtPtr(pc+1)) {
+	case GRAPHEME_OP_COUNT:
+	    ulen = Tcl_GraphemeUniCount(uniPtr, ulen);
+	    TclNewIntObj(objResultPtr, ulen);
+	    NEXT_INST_F(2, 1, 1);
+	default:
+	    Tcl_Panic("TEBCResume: unrecognized grapheme op %u", pc[1]);
+	}
+    }
+
     default:
 	Tcl_Panic("TclNRExecuteByteCode: unrecognized opCode %u", *pc);
     } /* end of switch on opCode */

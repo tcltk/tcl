@@ -571,6 +571,7 @@ FormatInstruction(
     char *suffixSrc = NULL;
     Tcl_Obj *suffixObj = NULL;
     AuxData *auxPtr = NULL;
+    const char *name = NULL;
 
     suffixBuffer[0] = '\0';
     Tcl_AppendPrintfToObj(bufferObj, "(%u) %s ", pcOffset, instDesc->name);
@@ -727,6 +728,24 @@ FormatInstruction(
 		break;
 	    }
 	    break;
+	case OPERAND_GRAPHEME_OP:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes);
+	    numBytes++;
+	    switch (opnd) {
+	    case GRAPHEME_OP_COUNT:   name = "count "; break;
+	    case GRAPHEME_OP_INDEX:   name = "index "; break;
+	    case GRAPHEME_OP_OFFSET:  name = "offset "; break;
+	    case GRAPHEME_OP_RANGE:   name = "range "; break;
+	    case GRAPHEME_OP_REVERSE: name = "reverse "; break;
+	    case GRAPHEME_OP_SPLIT:   name = "split "; break;
+	    case GRAPHEME_OP_NEXT:    name = "next "; break;
+	    case GRAPHEME_OP_PREV:    name = "prev "; break;
+	    default:
+		Tcl_Panic("unknown grapheme op");
+	    }
+	    Tcl_AppendToObj(bufferObj, name, -1);
+	    break;
+
 	case OPERAND_NONE:
 	default:
 	    break;

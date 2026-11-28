@@ -975,10 +975,23 @@ enum TclInstruction {
     INST_UPLEVEL,
     INST_FOREACH_INDEX,
 
+    /*
+     * TIP 756 - grapheme operations. To save opcodes, define only
+     * two opcodes, rather than one per operation. The first operand
+     * will specify the operation.
+     * INST_GRAPHEME - for commands that do not have a var argument
+     * holding a cursor into the string.
+     * INST_GRAPHEME_ITER - for iterator commands (next, prev) that do.
+     * Having a single opcode would waste bytes in the bytecode
+     * stream and also show dummy unused arguments in disassembly
+     */
+    INST_GRAPHEME,
+    INST_GRAPHEME_ITER,
+
     /* The last opcode */
     LAST_INST_OPCODE
 };
-
+
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
  * code), total number of code bytes required (including operand bytes), and a
@@ -1013,7 +1026,8 @@ typedef enum InstOperandType {
     OPERAND_SCLS1,		/* Index into tclStringClassTable. */
     OPERAND_UNSF1,		/* Flags for [unset] */
     OPERAND_CLK1,		/* Index into [clock] types. */
-    OPERAND_LRPL1		/* Combination of TCL_LREPLACE_* flags. */
+    OPERAND_LRPL1,		/* Combination of TCL_LREPLACE_* flags. */
+    OPERAND_GRAPHEME_OP,	/* Index into grapheme ops */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -1064,6 +1078,23 @@ typedef struct StringClassDesc {
 } StringClassDesc;
 
 MODULE_SCOPE StringClassDesc const tclStringClassTable[];
+
+/*
+ * Constants corresponding to grapheme operations implemented by
+ * INST_GRAPHEME and INST_GRAPHEME_ITER.
+ */
+typedef enum InstGraphemeOp {
+    GRAPHEME_OP_COUNT,
+    GRAPHEME_OP_INDEX,
+    GRAPHEME_OP_OFFSET,
+    GRAPHEME_OP_RANGE,
+    GRAPHEME_OP_REVERSE,
+    GRAPHEME_OP_SPLIT,
+
+    /* Ops that take a iterator variable  */
+    GRAPHEME_OP_NEXT,
+    GRAPHEME_OP_PREV,
+} InstGraphemeOp;
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
