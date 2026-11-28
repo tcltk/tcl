@@ -425,15 +425,18 @@ la somme `S` restreinte à sa variante `v`. C'est un sous-type de `S`.
 * Les **types de champ** ne changent pas : `point/x` est le type du champ (`double`), pas un
   sous-type de `point`.
 
-### Les requêtes de type (v18f)
+### Les requêtes de type (v18f, v18g)
 
 Tcl ne voit que la valeur ; c'est le source qui dit où un type se vérifie. Les types sont des
-**assertions** : ils refusent, ils ne changent pas un résultat. Quatre requêtes, chacune pour
-une question :
+**assertions** : ils refusent, ils ne changent pas un résultat. Les commandes ignorent le type
+(`incr a $c` additionne deux nombres) ; seuls les constructeurs de variables (`set {T}x`, un
+argument `{T}x`, `type cast`) le consultent. Pour qu'un script décide lui-même, une requête par
+question :
 
 | question | requête |
 |---|---|
 | cette variable est-elle de type T ? | `x is T` (dans `expr`) ; `(r = valeur) is T` |
+| cette valeur peut-elle entrer dans T, et comment ? | `type match T $v` : `auto`, `cast` ou `mismatch` |
 | cette valeur est-elle de type T ? | `type is T $v` (comme `string is` : un type qui entre dans T, ou une valeur nue valide pour T) |
 | ces deux valeurs ont-elles le même type ? | `type eq $a $b` (deux valeurs typées ; une valeur nue est une erreur) |
 | toute valeur de T entre-t-elle dans U ? | `type include U T` (deux types ; une valeur est une erreur qui renvoie à `type is`) |
@@ -445,6 +448,39 @@ une question :
     type is mm $c        ;# 1 : la chaîne nue serait un mm valide
     type eq $a $c        ;# erreur : "1500" has no type
     type include int mm  ;# 1
+
+**`type match T $v` (v18g)** répond par un mot :
+
+* `auto` : la valeur entre telle quelle (`set {T}x $v` et un argument `{T}x` l'acceptent) :
+  le même type, un élargissement (`int(u,8)` → `int`), un nominal vers sa base, une valeur nue
+  valide, un prédicat tenu (`even` d'un `int` 4), une variante vers sa somme ;
+* `cast` : seul `type cast T $v` l'accepte : une règle `type convert`, une famille, une autre
+  variante, une troncature (`int` d'un `double` 2.5) ;
+* `mismatch` : ni l'un ni l'autre.
+
+Les deux essais sont les chemins réels du constructeur et de `type cast` : la réponse ne les
+contredit jamais. Un prédicat ou une règle sont donc évalués (ils doivent être sans effet de
+bord, comme toujours) ; la valeur n'est pas modifiée.
+
+    type def mm int; type def kg int; type def m double
+    type convert mm m {{{mm}x} {expr {$x/1000.0}}}
+    set {mm}a 10; set {kg}c 3
+    type match mm 3      ;# auto : une valeur nue valide
+    type match m $a      ;# cast : la règle mm -> m
+    type match mm $c     ;# mismatch
+    switch [type match [type get $a] $c] {
+        auto     { incr a $c }
+        cast     { incr a [type cast [type get $a] $c] }
+        mismatch { error "type mismatch" }
+    }
+
+`type match` est la requête d'un script ; `type include` compare deux types sans valeur, pour
+l'introspection et le code générique.
+
+Depuis v18g, un argument `{T}x` et `type cast` suivent `set {T}x` pour les prédicats : une
+valeur typée dont le type entre dans la base du prédicat (`int`, `mm` de base `int`) entre dans
+`even` sans cast, le prédicat vérifié. Avant, l'argument la refusait et `type cast even $a`
+répondait `unknown way to cast`.
 
 ### `type include`, `num`, `inexact` (v17z)
 

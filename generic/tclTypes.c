@@ -4911,6 +4911,21 @@ TypeCastEx(Tcl_Interp *interp, Tcl_Obj *src, TclType *target, int implicit,
     if (implicit && from != NULL && TclTypeEnters(target, from)) {
 	implicit = 0;			/* élargissement : sans perte */
     }
+    if (from != NULL && !TclTypeEnters(target, from)
+	    && ((target->pred != NULL && target->predBase != NULL
+	    && TclTypeEnters(target->predBase, from))
+	    || (target->kind == TCLT_LIST && from->kind == TCLT_LIST
+	    && target->elem != NULL && from->elem != NULL
+	    && target->elem->pred != NULL && target->elem->predBase != NULL
+	    && TclTypeEnters(target->elem->predBase, from->elem)))) {
+	/*
+	 * v18g : un T entre dans T((prédicat)) sans cast, le prédicat
+	 * vérifié (le visa), comme pour set {T}x (TclTypedConformHint) :
+	 * un argument et type cast suivent la même règle.
+	 */
+	res = Tcl_DuplicateObj(content);
+	goto validate;
+    }
     /*
      * Variante d'une somme dont le type est exactement celui de la source :
      * une valeur qui convient déjà n'est jamais convertie (v17d : avant
@@ -10351,6 +10366,59 @@ TclTypeResultRename(Tcl_Interp *interp, const char *from, const char *to)
     Tcl_AppendToObj(r, src, -1);
     Tcl_SetObjResult(interp, r);
     Tcl_DecrRefCount(old);
+}
+
+/*
+ * v18g : type match T VALEUR : comment la valeur entre dans T.
+ *   auto     : set {T}x $valeur l'accepte (même type, élargissement,
+ *              valeur nue valide, prédicat tenu, variante de la somme) ;
+ *   cast     : seul type cast T $valeur l'accepte (règle, famille,
+ *              variante, troncature) ;
+ *   mismatch : ni l'un ni l'autre.
+ * Les deux essais sont les chemins réels (TclTypedConform, puis celui de
+ * type cast) : la réponse ne peut pas contredire ce que feront set et
+ * type cast. Un prédicat ou une règle sont donc évalués ; leur résultat
+ * est jeté, la valeur n'est jamais modifiée.
+ */
+static int
+TypeMatchCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
+{
+    TclType *tp;
+    Tcl_Obj *res, *pushed;
+    Tcl_InterpState st;
+    const char *tt, *word;
+    Tcl_Size tl;
+    int rc;
+
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 2, objv, "type value");
+	return TCL_ERROR;
+    }
+    tt = Tcl_GetStringFromObj(objv[2], &tl);
+    tp = TclTypeParse(interp, tt, tl);
+    if (tp == NULL) {
+	return TCL_ERROR;
+    }
+    st = Tcl_SaveInterpState(interp, TCL_OK);
+    res = TclTypedConform(interp, tp, objv[3]);
+    if (res != NULL) {
+	Tcl_IncrRefCount(res);
+	Tcl_DecrRefCount(res);
+	word = "auto";
+    } else {
+	res = NULL;
+	pushed = TclAnnotPush(objv[3], objv[2]);
+	Tcl_IncrRefCount(pushed);
+	rc = TclAnnotSettle(interp, pushed, NULL, 0, &res);
+	if (rc == TCL_OK && res != NULL) {
+	    Tcl_SetObjResult(interp, res);	/* libéré par la restauration */
+	}
+	Tcl_DecrRefCount(pushed);
+	word = (rc == TCL_OK) ? "cast" : "mismatch";
+    }
+    Tcl_RestoreInterpState(interp, st);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(word, -1));
+    return TCL_OK;
 }
 
 /* type is {question?}SUJET : une question sur un type ou une valeur. */
@@ -17378,6 +17446,9 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	Tcl_DecrRefCount(pushed);
 	return rc;
     }
+    if (strcmp(sub, "match") == 0) {
+	return TypeMatchCmd(interp, objc, objv);	/* v18g */
+    }
     if (strcmp(sub, "deref") == 0) {
 	return TypeDerefCmd(interp, objc, objv);
     }
@@ -17678,7 +17749,7 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	return TCL_OK;
     }
     ERR(interp, "SUBCMD", "bad subcommand \"%s\": must be def, alias, "
-	    "call, canonic, cast, convert, debug, deref, eq, export, forget, get, include, is, literal, map, meta, ops, parse, proc, repeat, variant "
+	    "call, canonic, cast, convert, debug, deref, eq, export, forget, get, include, is, literal, map, match, meta, ops, parse, proc, repeat, variant "
 	    "or binary", sub);
     return TCL_ERROR;
 }

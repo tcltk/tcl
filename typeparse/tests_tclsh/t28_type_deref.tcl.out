@@ -19,4 +19,4 @@ type deref needs a typed value
 1
 wrong # args: should be "type deref value"
 1
-bad subcommand "zz": must be def, alias, call, canonic, cast, convert, debug, deref, eq, export, forget, get, include, is, literal, map, meta, ops, parse, proc, repeat, variant or binary
+bad subcommand "zz": must be def, alias, call, canonic, cast, convert, debug, deref, eq, export, forget, get, include, is, literal, map, match, meta, ops, parse, proc, repeat, variant or binary

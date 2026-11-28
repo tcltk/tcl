@@ -1,0 +1,40 @@
+== cas types
+mm               10         mm               -> auto
+mm               3                           -> auto
+mm               abc                         -> mismatch
+mm               3          kg               -> mismatch
+m                10         mm               -> cast
+double           7          int(u,8)         -> auto
+int              7          int(u,8)         -> auto
+int(u,8)         300                         -> mismatch
+int(u,8)         10         mm               -> cast
+int              2.5        double           -> cast
+int              2.5                         -> mismatch
+even             4                           -> auto
+even             3                           -> mismatch
+even             4          int              -> auto
+even             10         mm               -> auto
+temp             100.0      temp/celsius     -> auto
+temp/fahrenheit  100.0      temp/celsius     -> cast
+temp/celsius     100.0      temp/celsius     -> auto
+temp/celsius     50.0       temp/fahrenheit  -> mismatch
+list.int         1 2                         -> auto
+list.int         1 x                         -> mismatch
+list.int         1 2        list<mm>         -> cast
+string           10         mm               -> auto
+pt               1.0 2.0    pt               -> auto
+pt               1 2                         -> auto
+pt               1 2        list<mm>         -> mismatch
+== accord avec l'argument et type cast
+280 cas, 0 écarts
+== prédicat : argument et cast suivent set (v18g)
+f int : even  f mm : even
+cast even mm : even
+1:argument "x": value "3" is not of type even: ($%2==0) is false
+== l'exemple d'Ashok
+15
+1:type mismatch: mm += kg
+== erreurs
+1:unknown type "nosuch"
+1:wrong # args: should be "type match type value"
+la valeur reste : 10 mm, résultat : cast
