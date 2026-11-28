@@ -44,8 +44,8 @@ inexact        ⊇ double         0
 == type eq : les types seuls
 même variante, valeurs différentes       1
 même valeur, variantes différentes       1 0
-nu et typé                               0
-deux nus                                 1
+nu et typé                               ERREUR type eq: the value "5" has no type: type eq compares the types of two values (for a value and a type, write type is T $v; for two types, type include)
+deux nus                                 ERREUR type eq: the value "5" has no type: type eq compares the types of two values (for a value and a type, write type is T $v; for two types, type include)
 nominal et sa base                       0
 les notes ne comptent pas                1
 addition d'unités                        -12.222222222222221 -2.2222222222222214
@@ -73,3 +73,11 @@ texte nu : lu par Tcl                    9007199254740992.0
 inexact                                  9007199254740992.0 inexact
 inexact entre dans double                9007199254740992.0 double
 double n'entre pas dans inexact          ERREUR type mismatch: expected inexact but got double (use an explicit cast)
+== v18f : type is T valeur, et des refus clairs
+type is mm $u                            1
+type is int $u (inclusion)               0
+type is kg $u                            0
+type is mm, valeur nue valide            1
+type is mm, valeur nue invalide          0
+type include : une valeur                ERREUR unknown type "1500" (type include takes two types; for a value, write type is int $value)
+type eq mm kg : deux chaînes             ERREUR type eq: the value "mm" has no type: type eq compares the types of two values (for a value and a type, write type is T $v; for two types, type include)

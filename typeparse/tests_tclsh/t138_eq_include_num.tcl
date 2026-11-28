@@ -65,3 +65,14 @@ t "texte nu : lu par Tcl"                {set {double}x 9007199254740993; set x}
 t "inexact"                              {set y [type cast inexact [type {int}9007199254740993]]; list $y [type get $y]}
 t "inexact entre dans double"            {set {double}w [type cast inexact [type {int}9007199254740993]]; list $w [type get $w]}
 t "double n'entre pas dans inexact"      {set {inexact}z [type {double}1.5]}
+
+puts "== v18f : type is T valeur, et des refus clairs"
+type def kg int
+set {mm}u 1500; set {kg}w 2; set nu 1500
+t "type is mm \$u"                       {type is mm $u}
+t "type is int \$u (inclusion)"          {type is int $u}
+t "type is kg \$u"                       {type is kg $u}
+t "type is mm, valeur nue valide"        {type is mm $nu}
+t "type is mm, valeur nue invalide"      {type is mm abc}
+t "type include : une valeur"            {type include int $u}
+t "type eq mm kg : deux chaînes"         {type eq mm kg}

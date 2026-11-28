@@ -10354,6 +10354,9 @@ TclTypeResultRename(Tcl_Interp *interp, const char *from, const char *to)
 }
 
 /* type is {question?}SUJET : une question sur un type ou une valeur. */
+static int IsValueTest(Tcl_Interp *interp, Tcl_Obj *typeObj,
+	Tcl_Obj *valueObj, int *resultPtr);
+
 static int
 TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
 {
@@ -10362,8 +10365,20 @@ TypeIsCmd(Tcl_Interp *interp, Tcl_Size objc, Tcl_Obj *const objv[])
     Tcl_Size n;
     int rc = TCL_ERROR;
 
+    if (objc == 4) {
+	/* v18f : type is T VALEUR, comme string is : la valeur est-elle de
+	 * type T ? (une valeur typée : son type entre dans T ; nue : elle y
+	 * serait valide) */
+	int r = 0;
+
+	if (IsValueTest(interp, objv[2], objv[3], &r) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(r));
+	return TCL_OK;
+    }
     if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "{question?}type|value");
+	Tcl_WrongNumArgs(interp, 2, objv, "{question?}type|value, or type value");
 	return TCL_ERROR;
     }
     n = LocalWords(objv[2], &words, &subject, &keep);
@@ -17423,6 +17438,24 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    Tcl_WrongNumArgs(interp, 2, objv, "value value");
 	    return TCL_ERROR;
 	}
+	{
+	    /* v18f : deux valeurs typées ; une valeur nue n'a pas de type à
+	     * comparer (type eq mm kg : deux chaînes, pas deux types) */
+	    int k;
+
+	    for (k = 2; k < 4; k++) {
+		TclType *kt = NULL;
+
+		if (TclAnnotInfo(objv[k], NULL, &kt, NULL, NULL) != 1
+			|| kt == NULL) {
+		    ERR(interp, "EQ", "type eq: the value \"%s\" has no type: "
+			    "type eq compares the types of two values (for a "
+			    "value and a type, write type is T $v; for two "
+			    "types, type include)", Tcl_GetString(objv[k]));
+		    return TCL_ERROR;
+		}
+	    }
+	}
 	av[0] = objv[0];
 	av[1] = objv[1];
 	av[2] = objv[2];
@@ -17458,12 +17491,12 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	tt = Tcl_GetStringFromObj(objv[3], &tl);
 	u = ParseTypeOrVariant(interp, ut, ul);
 	if (u == NULL) {
-	    return TCL_ERROR;
+	    goto notAType;
 	}
 	if (!TypeParsesQuietly(interp, tt, tl)) {
 	    t = ParseTypeOrVariant(interp, tt, tl);
 	    if (t == NULL) {
-		return TCL_ERROR;
+		goto notAType;
 	    }
 	    if (t->kind == TCLT_SUM) {
 		/* S/v : une valeur de la variante v de S */
@@ -17487,6 +17520,12 @@ TypeObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TypeIncludes(u, t, 0)));
 	return TCL_OK;
+
+      notAType:
+	/* v18f : une valeur à la place d'un type : le dire */
+	Tcl_AppendResult(interp, " (type include takes two types; for a "
+		"value, write type is ", ut, " $value)", (char *) NULL);
+	return TCL_ERROR;
     }
     if (strcmp(sub, "literal") == 0 || (strcmp(sub, "variant") == 0
 	    && objc >= 4 && strcmp(Tcl_GetString(objv[2]), "-of") == 0)) {
@@ -17734,26 +17773,21 @@ IsCmdOp(Tcl_Interp *interp, Tcl_Obj *nameObj)
  * elle est valide pour T.
  */
 static int
-IsValueObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
-	Tcl_Obj *const objv[])
+IsValueTest(Tcl_Interp *interp, Tcl_Obj *typeObj, Tcl_Obj *valueObj,
+	int *resultPtr)
 {
     TclType *want, *vt = NULL;
     Tcl_Obj *content = NULL;
     int vv = -1, result = 0, dv = -1;
     Tcl_Size tl;
     const char *tt;
-    (void) clientData;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "value type");
-	return TCL_ERROR;
-    }
-    tt = Tcl_GetStringFromObj(objv[2], &tl);
+    tt = Tcl_GetStringFromObj(typeObj, &tl);
     want = TclTypeParse(interp, tt, tl);
     if (want == NULL) {
 	return TCL_ERROR;
     }
-    if (TclAnnotInfo(objv[1], &content, &vt, &vv, NULL) == 1 && vt != NULL) {
+    if (TclAnnotInfo(valueObj, &content, &vt, &vv, NULL) == 1 && vt != NULL) {
 	if (want->variantOf != NULL) {
 	    TclType *root = want->variantOf;
 	    int vi = (int) want->variantIdx;
@@ -17766,8 +17800,26 @@ IsValueObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
 	    result = (vt == want || TypeIncludes(want, vt, 0));
 	}
     } else {
-	content = TCL_ANNOT_CONTENT(objv[1]);
+	content = TCL_ANNOT_CONTENT(valueObj);
 	result = (TclTypeValidate(NULL, want, content, -1, &dv) == TCL_OK);
+    }
+    *resultPtr = result;
+    return TCL_OK;
+}
+
+static int
+IsValueObjCmd(void *clientData, Tcl_Interp *interp, Tcl_Size objc,
+	Tcl_Obj *const objv[])
+{
+    int result = 0;
+    (void) clientData;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value type");
+	return TCL_ERROR;
+    }
+    if (IsValueTest(interp, objv[2], objv[1], &result) != TCL_OK) {
+	return TCL_ERROR;
     }
     Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));

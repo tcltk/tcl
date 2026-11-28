@@ -425,6 +425,27 @@ la somme `S` restreinte à sa variante `v`. C'est un sous-type de `S`.
 * Les **types de champ** ne changent pas : `point/x` est le type du champ (`double`), pas un
   sous-type de `point`.
 
+### Les requêtes de type (v18f)
+
+Tcl ne voit que la valeur ; c'est le source qui dit où un type se vérifie. Les types sont des
+**assertions** : ils refusent, ils ne changent pas un résultat. Quatre requêtes, chacune pour
+une question :
+
+| question | requête |
+|---|---|
+| cette variable est-elle de type T ? | `x is T` (dans `expr`) ; `(r = valeur) is T` |
+| cette valeur est-elle de type T ? | `type is T $v` (comme `string is` : un type qui entre dans T, ou une valeur nue valide pour T) |
+| ces deux valeurs ont-elles le même type ? | `type eq $a $b` (deux valeurs typées ; une valeur nue est une erreur) |
+| toute valeur de T entre-t-elle dans U ? | `type include U T` (deux types ; une valeur est une erreur qui renvoie à `type is`) |
+
+    type def mm int
+    set {mm}a 1500; set c 1500
+    type is mm $a        ;# 1
+    type is int $a       ;# 1 : un mm est un int
+    type is mm $c        ;# 1 : la chaîne nue serait un mm valide
+    type eq $a $c        ;# erreur : "1500" has no type
+    type include int mm  ;# 1
+
 ### `type include`, `num`, `inexact` (v17z)
 
 `type include U T` : toute valeur de T entre dans U sans cast, sans vérification qui puisse
